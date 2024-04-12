@@ -1,8 +1,12 @@
 ## 运行命令 
+
+```
+// 需要加上 --force
 npm  install --force
 npm run dev
 mage -v build:linux
 docker compose up
+```
 -----------------------------------------------------
 # Grafana data source plugin template
 
