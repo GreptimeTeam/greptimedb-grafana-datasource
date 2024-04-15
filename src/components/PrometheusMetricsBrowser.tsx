@@ -61,7 +61,7 @@ export interface SelectableLabel {
 
 export function buildSelector(labels: SelectableLabel[]): string {
   let singleMetric = '';
-  const selectedLabels = [];
+  const selectedLabels = [] as string[];
   for (const label of labels) {
     if ((label.name === METRIC_LABEL || label.selected) && label.values && label.values.length > 0) {
       const selectedValues = label.values.filter((value) => value.selected).map((value) => value.name);

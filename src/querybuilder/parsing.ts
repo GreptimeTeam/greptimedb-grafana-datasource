@@ -229,7 +229,7 @@ function handleFunction(expr: string, node: SyntaxNode, context: Context) {
 
   const body = node.getChild(FunctionCallBody);
   const callArgs = body!.getChild(FunctionCallArgs);
-  const params = [];
+  const params = [] as string[];
   let interval = '';
 
   // This is a bit of a shortcut to get the interval argument. Reasons are
@@ -270,7 +270,7 @@ function handleAggregation(expr: string, node: SyntaxNode, context: Context) {
   let funcName = getString(expr, nameNode);
 
   const modifier = node.getChild(AggregateModifier);
-  const labels = [];
+  const labels = [] as string[];
 
   if (modifier) {
     const byModifier = modifier.getChild(`By`);

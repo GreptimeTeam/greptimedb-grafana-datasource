@@ -183,7 +183,6 @@ export function MetricSelect({
 
       return (
         // TODO: fix keyboard a11y
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div
           {...props.innerProps}
           ref={props.innerRef}

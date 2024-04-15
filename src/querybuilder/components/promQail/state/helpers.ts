@@ -2,8 +2,8 @@ import { AnyAction } from 'redux';
 
 import { llms } from '@grafana/experimental';
 import { reportInteraction } from '@grafana/runtime';
-import { PrometheusDatasource } from '@/datasource';
-import { getMetadataHelp, getMetadataType } from '@/language_provider';
+import { PrometheusDatasource } from '../../../../datasource';
+import { getMetadataHelp, getMetadataType } from '../../../../language_provider';
 
 import { promQueryModeller } from '../../../PromQueryModeller';
 import { buildVisualQueryFromString } from '../../../parsing';

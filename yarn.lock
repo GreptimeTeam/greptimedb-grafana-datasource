@@ -1286,10 +1286,10 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.8.tgz#6b79032e760a0899cd4204710beede972a3a185f"
   integrity sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==
 
-"@prometheus-io/lezer-promql@^0.51.1":
-  version "0.51.2"
-  resolved "https://registry.yarnpkg.com/@prometheus-io/lezer-promql/-/lezer-promql-0.51.2.tgz#66099a4328ade64a24e5560064a05df6100f025e"
-  integrity sha512-hNzCmsSRAFPkkpIQ8GdZcTMQRhcgPZlQtLcMjrVKmdqchYtV3TJe5knSYQeQ3cODtVBPEjJqeMTeDVSpJUQfoA==
+"@prometheus-io/lezer-promql@^0.37.0-rc.1":
+  version "0.37.9"
+  resolved "https://registry.yarnpkg.com/@prometheus-io/lezer-promql/-/lezer-promql-0.37.9.tgz#9b94af2995506b7b2d96ab9a347b30dd9429172e"
+  integrity sha512-4t+ccVJj5rAlAQiRrpg1mms/wWDZMrR2I4Y0IeNu3a30pPjZW9LMEfcGoktWI6hmFetfeWAHk1VzKl1XOF6AWA==
 
 "@rc-component/portal@^1.1.0", "@rc-component/portal@^1.1.1":
   version "1.1.2"

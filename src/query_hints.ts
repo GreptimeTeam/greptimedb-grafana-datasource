@@ -10,7 +10,7 @@ import { PrometheusDatasource } from './datasource';
 export const SUM_HINT_THRESHOLD_COUNT = 20;
 
 export function getQueryHints(query: string, series?: any[], datasource?: PrometheusDatasource): QueryHint[] {
-  const hints = [];
+  const hints = [] as any[];
 
   // ..._bucket metric needs a histogram_quantile()
   const histogramMetric = query.trim().match(/^\w+_bucket$|^\w+_bucket{.*}$/);
@@ -137,7 +137,7 @@ export function getQueryHints(query: string, series?: any[], datasource?: Promet
 }
 
 export function getInitHints(datasource: PrometheusDatasource): QueryHint[] {
-  const hints = [];
+  const hints = [] as any[];
 
   // Hint for big disabled lookups
   if (datasource.lookupsDisabled) {

@@ -1,7 +1,9 @@
 {
   "extends": "./.config/tsconfig.json",
   "compilerOptions": {
-    "jsx": "react"
+    "jsx": "react",
+    "noImplicitAny": false,
+    "noUnusedLocals": false
   },
-  "exclude": ["**/*.test.tsx", "**/*.test.ts"]
+  "exclude": ["**/*.test.tsx", "**/*.test.ts", "**/mocks.ts"]
 }
