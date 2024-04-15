@@ -2,8 +2,8 @@
 
 ```
 // 需要加上 --force
-npm  install --force
-npm run dev
+yarn
+yarn run dev
 mage -v build:linux
 docker compose up
 ```
