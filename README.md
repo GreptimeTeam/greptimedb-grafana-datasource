@@ -1,7 +1,7 @@
 ## 运行命令 
 
 ```
-// 需要加上 --force
+// 需要加上
 yarn
 yarn run dev
 mage -v build:linux

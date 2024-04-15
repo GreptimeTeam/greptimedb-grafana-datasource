@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { DataSourceSettings } from '@grafana/data';
 import { Auth, ConnectionSettings, convertLegacyAuthProps, AuthMethod } from '@grafana/experimental';
 import { SecureSocksProxySettings, useTheme2 } from '@grafana/ui';
-import { AzureAuthSettings } from '@grafana/ui';
+import { AzureAuthSettings } from '../grafanaui/types';
 
 import { PromOptions } from '../types';
 
