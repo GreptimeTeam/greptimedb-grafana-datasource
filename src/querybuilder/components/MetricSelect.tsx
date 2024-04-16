@@ -18,6 +18,7 @@ import {
   useStyles2,
   useTheme2,
 } from '@grafana/ui';
+// @ts-ignore
 import { SelectMenuOptions } from '@grafana/ui/src/components/Select/SelectMenu';
 
 import { PrometheusDatasource } from '../../datasource';

@@ -330,7 +330,7 @@ export const PromSettings = (props: Props) => {
                     },
                     (options) => {
                       // Check buildinfo api and set default version if we can
-                      setPrometheusVersion(options, onOptionsChange, () => {});
+                      // setPrometheusVersion(options, onOptionsChange, () => {});
                       return onOptionsChange({
                         ...options,
                         jsonData: { ...options.jsonData, prometheusVersion: undefined },

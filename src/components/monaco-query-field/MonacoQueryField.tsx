@@ -302,15 +302,15 @@ const MonacoQueryField = (props: Props) => {
               //   ) || [];
               const errors = []
 
-              const markers = errors.map(({ error, ...boundary }) => ({
-                message: `${
-                  error ? `Error parsing "${error}"` : 'Parse error'
-                }. The query appears to be incorrect and could fail to be executed.`,
-                severity: monaco.MarkerSeverity.Error,
-                ...boundary,
-              }));
+              // const markers = errors.map(({ error, ...boundary }) => ({
+              //   message: `${
+              //     error ? `Error parsing "${error}"` : 'Parse error'
+              //   }. The query appears to be incorrect and could fail to be executed.`,
+              //   severity: monaco.MarkerSeverity.Error,
+              //   ...(boundary as object),
+              // }));
 
-              monaco.editor.setModelMarkers(model, 'owner', markers);
+              // monaco.editor.setModelMarkers(model, 'owner', markers);
             });
           }
         }}

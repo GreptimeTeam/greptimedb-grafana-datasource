@@ -45,7 +45,6 @@ export default function ExemplarSetting({ value, onChange, onDelete, disabled }:
           />
         </>
       </InlineField>
-
       {isInternalLink ? (
         <InlineField
           label="Data source"
@@ -54,6 +53,7 @@ export default function ExemplarSetting({ value, onChange, onDelete, disabled }:
           disabled={disabled}
           interactive={true}
         >
+          <div>internallink placeholder</div>
           {/* <DataSourcePicker
             tracing={true}
             current={value.datasourceUid}
