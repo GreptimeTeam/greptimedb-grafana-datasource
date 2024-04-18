@@ -95,6 +95,8 @@
         "name": "Learn more",
         "url": "https://prometheus.io/"
       }
-    ]
+    ],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
   }
 }
