@@ -83,8 +83,8 @@
   "info": {
     "description": "Open source time series database & alerting",
     "author": {
-      "name": "Grafana Labs",
-      "url": "https://grafana.com"
+      "name": "GreptimeDB",
+      "url": "https://greptime.com"
     },
     "logos": {
       "small": "img/prometheus_logo.svg",
@@ -93,7 +93,7 @@
     "links": [
       {
         "name": "Learn more",
-        "url": "https://prometheus.io/"
+        "url": "https://docs.greptime.com/"
       }
     ],
     "version": "%VERSION%",

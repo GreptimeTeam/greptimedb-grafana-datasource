@@ -37,3 +37,5 @@ ci/
 .idea
 
 .eslintcache
+greptime-ds
+greptime-ds-*.zip
