@@ -1,11 +1,16 @@
 version: '3.0'
 
 services:
-  prometheus:
-    platform: 'linux/amd64'
-    image: docker.io/prom/prometheus
+  greptimedb:
+    image: greptime/greptimedb:v0.4.3
+    container_name: greptimedb
+    command: standalone start --http-addr=0.0.0.0:4000 --rpc-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
     ports:
-      - 9090:9090/tcp
+      - 4000:4000
+      - 4001:4001
+      - 4002:4002
+    networks:
+      - greptimedb-datasource
   grafana:
     user: root
     container_name: 'greptime-greptimedb-datasource'
@@ -35,3 +40,9 @@ services:
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: greptime-greptimedb-datasource
+    networks:
+      - greptimedb-datasource
+
+
+networks:
+  greptimedb-datasource:
