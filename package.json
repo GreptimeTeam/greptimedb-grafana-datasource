@@ -64,6 +64,7 @@
     "@grafana/runtime": "10.3.3",
     "@grafana/schema": "10.3.3",
     "@grafana/ui": "10.3.3",
+    "@lezer/common": "^1.2.1",
     "@lezer/highlight": "^1.2.0",
     "@lezer/lr": "^1.4.0",
     "@prometheus-io/lezer-promql": "^0.37.0-rc.1",
