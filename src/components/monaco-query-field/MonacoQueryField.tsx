@@ -9,10 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { GrafanaTheme2 } from '@grafana/data';
 import { selectors } from '@grafana/e2e-selectors';
 import { useTheme2, ReactMonacoEditor, Monaco, monacoTypes } from '@grafana/ui';
-// import {
-//   placeHolderScopedVars,
-//   validateQuery,
-// } from 'app/plugins/datasource/loki/components/monaco-query-field/monaco-completion-provider/validation';
+import {
+  placeHolderScopedVars,
+  validateQuery,
+} from 'app/validation';
 
 import { Props } from './MonacoQueryFieldProps';
 import { getOverrideServices } from './getOverrideServices';
@@ -293,24 +293,24 @@ const MonacoQueryField = (props: Props) => {
                 return;
               }
               const query = model.getValue();
-              // const errors =
-              //   validateQuery(
-              //     query,
-              //     datasource.interpolateString(query, placeHolderScopedVars),
-              //     model.getLinesContent(),
-              //     parser
-              //   ) || [];
-              const errors = []
+              const errors =
+                validateQuery(
+                  query,
+                  datasource.interpolateString(query, placeHolderScopedVars),
+                  model.getLinesContent(),
+                  parser
+                ) || [];
+              // const errors = []
 
-              // const markers = errors.map(({ error, ...boundary }) => ({
-              //   message: `${
-              //     error ? `Error parsing "${error}"` : 'Parse error'
-              //   }. The query appears to be incorrect and could fail to be executed.`,
-              //   severity: monaco.MarkerSeverity.Error,
-              //   ...(boundary as object),
-              // }));
+              const markers = errors.map(({ error, ...boundary }) => ({
+                message: `${
+                  error ? `Error parsing "${error}"` : 'Parse error'
+                }. The query appears to be incorrect and could fail to be executed.`,
+                severity: monaco.MarkerSeverity.Error,
+                ...boundary,
+              }));
 
-              // monaco.editor.setModelMarkers(model, 'owner', markers);
+              monaco.editor.setModelMarkers(model, 'owner', markers);
             });
           }
         }}
