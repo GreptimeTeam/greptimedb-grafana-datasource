@@ -17,3 +17,12 @@ func GetJsonData(settings backend.DataSourceInstanceSettings) (map[string]any, e
 	}
 	return jsonData, nil
 }
+
+func removeUrlEndingSlash(url string) string {
+	length := len(url)
+	if length > 0 && url[length-1] == '/' {
+		return url[:len(url)-1]
+	}
+
+	return url
+}

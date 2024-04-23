@@ -1,4 +1,4 @@
-module github.com/greptime/greptime-db
+module github.com/greptime/greptimedb
 
 go 1.21.0
 
