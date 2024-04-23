@@ -6,12 +6,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-
 	"github.com/greptime/greptimedb/pkg/plugin/instance/promql"
-)
-
-const (
-	path = "/v1/prometheus/api/v1/query_range"
 )
 
 var (
