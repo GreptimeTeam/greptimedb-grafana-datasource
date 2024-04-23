@@ -2,6 +2,8 @@
   "type": "datasource",
   "name": "GreptimeDB",
   "id": "greptime-greptimedb-datasource",
+  "metrics": true,
+  "backend": true,
   "category": "tsdb",
   "routes": [
     {
@@ -72,10 +74,6 @@
       "path": "dashboards/grafana_stats.json"
     }
   ],
-  "metrics": false,
-  "alerting": false,
-  "annotations": false,
-  "backend": true,
   "queryOptions": {
     "minInterval": true
   },
@@ -98,5 +96,9 @@
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=10.3.3",
+    "plugins": []
   }
 }
