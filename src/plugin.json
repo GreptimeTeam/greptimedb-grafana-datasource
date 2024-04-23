@@ -6,27 +6,27 @@
   "routes": [
     {
       "method": "POST",
-      "path": "api/v1/query",
+      "path": "v1/prometheus/api/v1/query",
       "reqRole": "Viewer"
     },
     {
       "method": "POST",
-      "path": "api/v1/query_range",
+      "path": "v1/prometheus/api/v1/query_range",
       "reqRole": "Viewer"
     },
     {
       "method": "POST",
-      "path": "api/v1/series",
+      "path": "v1/prometheus/api/v1/series",
       "reqRole": "Viewer"
     },
     {
       "method": "POST",
-      "path": "api/v1/labels",
+      "path": "v1/prometheus/api/v1/labels",
       "reqRole": "Viewer"
     },
     {
       "method": "POST",
-      "path": "api/v1/query_exemplars",
+      "path": "v1/prometheus/api/v1/query_exemplars",
       "reqRole": "Viewer"
     },
     {

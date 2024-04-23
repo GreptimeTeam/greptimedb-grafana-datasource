@@ -121,7 +121,7 @@ describe('Language completion provider', () => {
       getSeriesLabels(`{${labelName}="${labelValue}"}`, [{ name: labelName, value: labelValue, op: '=' }] as Label[]);
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        `/api/v1/labels`,
+        `/v1/prometheus/api/v1/labels`,
         [],
         {
           end: toPrometheusTimeString,
@@ -146,7 +146,7 @@ describe('Language completion provider', () => {
       getSeriesLabels(`{${labelName}="${labelValue}"}`, [{ name: labelName, value: labelValue, op: '=' }] as Label[]);
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        '/api/v1/series',
+        '/v1/prometheus/api/v1/series',
         [],
         {
           end: toPrometheusTimeString,
@@ -175,7 +175,7 @@ describe('Language completion provider', () => {
       getSeriesLabels(`{${labelName}="${labelValue}"}`, [{ name: labelName, value: labelValue, op: '=' }] as Label[]);
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        `/api/v1/labels`,
+        `/v1/prometheus/api/v1/labels`,
         [],
         {
           end: (
@@ -206,7 +206,7 @@ describe('Language completion provider', () => {
       getSeriesValues('job', '{job="grafana"}');
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        '/api/v1/series',
+        '/v1/prometheus/api/v1/series',
         [],
         {
           end: toPrometheusTimeString,
@@ -229,7 +229,7 @@ describe('Language completion provider', () => {
       getSeriesValues(labelName, `{${labelName}="${labelValue}"}`);
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        `/api/v1/label/${labelName}/values`,
+        `/v1/prometheus/api/v1/label/${labelName}/values`,
         [],
         {
           end: toPrometheusTimeString,
@@ -250,7 +250,7 @@ describe('Language completion provider', () => {
       getSeriesValues('job', '{instance="$instance", job="grafana"}');
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        '/api/v1/series',
+        '/v1/prometheus/api/v1/series',
         [],
         {
           end: toPrometheusTimeString,
@@ -271,7 +271,7 @@ describe('Language completion provider', () => {
       await languageProvider.fetchSeries('{job="grafana"}');
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        '/api/v1/series',
+        '/v1/prometheus/api/v1/series',
         {},
         {
           end: toPrometheusTimeString,
@@ -294,7 +294,7 @@ describe('Language completion provider', () => {
       fetchSeriesLabels('$metric');
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        '/api/v1/series',
+        '/v1/prometheus/api/v1/series',
         [],
         {
           end: toPrometheusTimeString,
@@ -317,7 +317,7 @@ describe('Language completion provider', () => {
       fetchLabelValues('$job');
       expect(requestSpy).toHaveBeenCalled();
       expect(requestSpy).toHaveBeenCalledWith(
-        '/api/v1/label/interpolated-job/values',
+        '/v1/prometheus/api/v1/label/interpolated-job/values',
         [],
         {
           end: toPrometheusTimeString,

@@ -180,7 +180,7 @@ describe('PrometheusDatasource', () => {
       const postSettings = cloneDeep(instanceSettings);
       postSettings.jsonData.httpMethod = 'POST';
       const promDs = new PrometheusDatasource(postSettings, templateSrvStub);
-      promDs.metadataRequest('api/v1/series', { bar: 'baz baz', foo: 'foo' });
+      promDs.metadataRequest('v1/prometheus/api/v1/series', { bar: 'baz baz', foo: 'foo' });
       expect(fetchMock.mock.calls.length).toBe(1);
       expect(fetchMock.mock.calls[0][0].method).toBe('POST');
       expect(fetchMock.mock.calls[0][0].url).not.toContain('bar=baz%20baz&foo=foo');
@@ -215,9 +215,9 @@ describe('PrometheusDatasource', () => {
       });
 
       it('added to metadata request with POST endpoint', () => {
-        promDs.metadataRequest('/api/v1/labels');
+        promDs.metadataRequest('/v1/prometheus/api/v1/labels');
         expect(fetchMock.mock.calls.length).toBe(1);
-        expect(fetchMock.mock.calls[0][0].url).toBe('/api/datasources/uid/ABCDEF/resources/api/v1/labels');
+        expect(fetchMock.mock.calls[0][0].url).toBe('/api/datasources/uid/ABCDEF/resources/v1/prometheus/api/v1/labels');
         expect(fetchMock.mock.calls[0][0].data.customQuery).toBe('123');
       });
     });
