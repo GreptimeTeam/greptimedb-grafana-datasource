@@ -66,7 +66,7 @@ import {
 import { PrometheusVariableSupport } from './variables';
 
 const ANNOTATION_QUERY_STEP_DEFAULT = '60s';
-const GET_AND_POST_METADATA_ENDPOINTS = ['api/v1/query', 'api/v1/query_range', 'api/v1/series', 'api/v1/labels'];
+const GET_AND_POST_METADATA_ENDPOINTS = ['v1/prometheus/api/v1/query', 'v1/prometheus/api/v1/query_range', 'v1/prometheus/api/v1/series', 'v1/prometheus/api/v1/labels'];
 
 export const InstantQueryRefIdIndex = '-Instant';
 
@@ -713,7 +713,7 @@ export class PrometheusDatasource
     }
 
     const params = this.getTimeRangeParams(options.timeRange ?? getDefaultTimeRange());
-    const result = await this.metadataRequest(`/api/v1/label/${options.key}/values`, params);
+    const result = await this.metadataRequest(`/v1/prometheus/api/v1/label/${options.key}/values`, params);
     return result?.data?.data?.map((value: any) => ({ text: value })) ?? [];
   }
 
@@ -750,7 +750,7 @@ export class PrometheusDatasource
 
   async loadRules() {
     try {
-      const res = await this.metadataRequest('/api/v1/rules', {}, { showErrorAlert: false });
+      const res = await this.metadataRequest('/v1/prometheus/api/v1/rules', {}, { showErrorAlert: false });
       const groups = res.data?.data?.groups;
 
       if (groups) {
@@ -765,7 +765,7 @@ export class PrometheusDatasource
   async areExemplarsAvailable() {
     try {
       const res = await this.metadataRequest(
-        '/api/v1/query_exemplars',
+        '/v1/prometheus/api/v1/query_exemplars',
         {
           query: 'test',
           start: dateTime().subtract(30, 'minutes').valueOf().toString(),

@@ -1,6 +1,7 @@
 package promql
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 // Client is a custom Prometheus client. Reason for this is that Prom Go client serializes response into its own
@@ -26,6 +29,35 @@ func NewClient(d *http.Client, method, baseUrl string) *Client {
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	return c.doer.Do(req)
+}
+
+func (c *Client) QueryResource(ctx context.Context, req *backend.CallResourceRequest) (*http.Response, error) {
+	// The way URL is represented in CallResourceRequest and what we need for the fetch function is different
+	// so here we have to do a bit of parsing, so we can then compose it with the base url in correct way.
+	log := backend.NewLoggerWith("************* logger", "greptimedb.promql")
+
+	log.Debug("***************** QueryResource", "req", *req)
+
+	reqUrlParsed, err := url.Parse(req.URL)
+	if err != nil {
+		return nil, err
+	}
+	u, err := c.createUrl(req.Path, nil)
+	if err != nil {
+		return nil, err
+	}
+	u.RawQuery = reqUrlParsed.RawQuery
+
+	log.Debug("***************** QueryResource", "url", u)
+
+	// We use method from the request, as for resources front end may do a fallback to GET if POST does not work
+	// nad we want to respect that.
+	httpRequest, err := createRequest(ctx, req.Method, u, bytes.NewReader(req.Body))
+	if err != nil {
+		return nil, err
+	}
+
+	return c.doer.Do(httpRequest)
 }
 
 func (c *Client) QueryRange(ctx context.Context, q *Query) (*http.Response, error) {

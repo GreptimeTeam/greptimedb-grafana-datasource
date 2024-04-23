@@ -128,7 +128,7 @@ export default class PromQlLanguageProvider extends LanguageProvider {
     const headers = buildCacheHeaders(this.datasource.getDaysToCacheMetadata() * secondsInDay);
     this.metricsMetadata = fixSummariesMetadata(
       await this.request(
-        '/api/v1/metadata',
+        '/v1/prometheus/api/v1/metadata',
         {},
         {},
         {
@@ -192,7 +192,7 @@ export default class PromQlLanguageProvider extends LanguageProvider {
   fetchLabelValues = async (key: string): Promise<string[]> => {
     const params = this.datasource.getAdjustedInterval(this.timeRange);
     const interpolatedName = this.datasource.interpolateString(key);
-    const url = `/api/v1/label/${interpolatedName}/values`;
+    const url = `/v1/prometheus/api/v1/label/${interpolatedName}/values`;
     const value = await this.request(url, [], params, this.getDefaultCacheHeaders());
     return value ?? [];
   };
@@ -208,7 +208,7 @@ export default class PromQlLanguageProvider extends LanguageProvider {
     if (timeRange) {
       this.timeRange = timeRange;
     }
-    const url = '/api/v1/labels';
+    const url = '/v1/prometheus/api/v1/labels';
     const params = this.datasource.getAdjustedInterval(this.timeRange);
     this.labelFetchTs = Date.now().valueOf();
 
@@ -250,7 +250,7 @@ export default class PromQlLanguageProvider extends LanguageProvider {
     };
 
     const value = await this.request(
-      `/api/v1/label/${interpolatedName}/values`,
+      `/v1/prometheus/api/v1/label/${interpolatedName}/values`,
       [],
       urlParams,
       this.getDefaultCacheHeaders()
@@ -297,7 +297,7 @@ export default class PromQlLanguageProvider extends LanguageProvider {
       ...range,
       'match[]': interpolatedName,
     };
-    const url = `/api/v1/series`;
+    const url = `/v1/prometheus/api/v1/series`;
 
     const data = await this.request(url, [], urlParams, this.getDefaultCacheHeaders());
     const { values } = processLabels(data, withName);
@@ -317,7 +317,7 @@ export default class PromQlLanguageProvider extends LanguageProvider {
       ...range,
       'match[]': interpolatedName,
     };
-    const url = `/api/v1/labels`;
+    const url = `/v1/prometheus/api/v1/labels`;
 
     const data: string[] = await this.request(url, [], urlParams, this.getDefaultCacheHeaders());
     // Convert string array to Record<string , []>
@@ -329,7 +329,7 @@ export default class PromQlLanguageProvider extends LanguageProvider {
    * @param match
    */
   fetchSeries = async (match: string): Promise<Array<Record<string, string>>> => {
-    const url = '/api/v1/series';
+    const url = '/v1/prometheus/api/v1/series';
     const range = this.datasource.getTimeRangeParams(this.timeRange);
     const params = { ...range, 'match[]': match };
     return await this.request(url, {}, params, this.getDefaultCacheHeaders());

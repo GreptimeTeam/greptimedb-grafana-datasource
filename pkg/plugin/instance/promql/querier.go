@@ -1,6 +1,7 @@
 package promql
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -11,6 +12,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/maputil"
 	jsoniter "github.com/json-iterator/go"
+)
+
+const (
+	prefixPath = "/v1/prometheus/"
 )
 
 type Querier struct {
@@ -24,12 +29,14 @@ type Querier struct {
 }
 
 func NewQuerier(ctx context.Context, settings backend.DataSourceInstanceSettings) (*Querier, error) {
-	log := backend.NewLoggerWith("logger", "greptimedb.promql")
+	log := backend.NewLoggerWith("************* logger", "greptimedb.promql")
 
 	jsonData, err := GetJsonData(settings)
 	if err != nil {
 		return nil, err
 	}
+
+	log.FromContext(ctx).Debug("promql.NewQuerier", "jsonData", jsonData)
 
 	timeInterval, err := maputil.GetStringOptional(jsonData, "timeInterval")
 	if err != nil {
@@ -46,8 +53,10 @@ func NewQuerier(ctx context.Context, settings backend.DataSourceInstanceSettings
 		return nil, fmt.Errorf("error creating http client: %w", err)
 	}
 
-	baseUrl := removeUrlEndingSlash(settings.URL) + "/v1/prometheus/"
+	baseUrl := removeUrlEndingSlash(settings.URL) + prefixPath
 	promClient := NewClient(httpClient, http.MethodGet, baseUrl)
+
+	log.FromContext(ctx).Debug("promql.NewQuerier", "baseUrl", baseUrl)
 
 	calculator := NewCalculator()
 
@@ -84,6 +93,9 @@ func (querier *Querier) handleQuery(ctx context.Context, q backend.DataQuery) *b
 			Error: err,
 		}
 	}
+
+	querier.log.FromContext(ctx).Debug("************* handleQuery", "data query", q)
+	querier.log.FromContext(ctx).Debug("************* handleQuery", "query", *query)
 
 	r := querier.fetch(ctx, query)
 	if r == nil {
@@ -185,6 +197,8 @@ func (querier *Querier) CheckHealth(ctx context.Context, req *backend.CheckHealt
 
 	url := removeUrlEndingSlash(querier.URL) + "/health"
 
+	querier.log.Debug("*********** check health url: " + url)
+
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return newHealthCheckErrorf("could not create request"), nil
@@ -208,4 +222,34 @@ func (querier *Querier) CheckHealth(ctx context.Context, req *backend.CheckHealt
 		Status:  backend.HealthStatusOk,
 		Message: "Data source is working",
 	}, nil
+}
+
+func (querier *Querier) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	querier.log.FromContext(ctx).Debug("*********** Sending resource query", "req", *req)
+	resp, err := querier.client.QueryResource(ctx, req)
+	if err != nil {
+		return fmt.Errorf("error querying resource: %v", err)
+	}
+
+	defer func() {
+		tmpErr := resp.Body.Close()
+		if tmpErr != nil && err == nil {
+			err = tmpErr
+		}
+	}()
+
+	var buf bytes.Buffer
+	// Should be more efficient than ReadAll. See https://github.com/prometheus/client_golang/pull/976
+	_, err = buf.ReadFrom(resp.Body)
+	body := buf.Bytes()
+	if err != nil {
+		return err
+	}
+	callResponse := &backend.CallResourceResponse{
+		Status:  resp.StatusCode,
+		Headers: resp.Header,
+		Body:    body,
+	}
+
+	return sender.Send(callResponse)
 }
