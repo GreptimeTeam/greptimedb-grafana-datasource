@@ -529,7 +529,7 @@ export const PromSettings = (props: Props) => {
         </div>
       </ConfigSubSection>
 
-      <ExemplarsSettings
+      {/* <ExemplarsSettings
         options={options.jsonData.exemplarTraceIdDestinations}
         onChange={(exemplarOptions) =>
           updateDatasourcePluginJsonDataOption(
@@ -539,7 +539,7 @@ export const PromSettings = (props: Props) => {
           )
         }
         disabled={options.readOnly}
-      />
+      /> */}
     </>
   );
 };
