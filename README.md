@@ -1,5 +1,5 @@
 
-# GreptimeDb DataSource
+# GreptimeDB DataSource
 
 ## 打包插件 zip 包
 
