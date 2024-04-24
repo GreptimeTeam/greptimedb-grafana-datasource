@@ -5,13 +5,15 @@
 
 1. yarn build
 2. mage
-3. 签名（本地使用应该可以略去签名这一步）
-   1. 先获取 Token, 声明环境变量
-  [生成 Sign TOKEN]https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin
-  ```
-  export GRAFANA_ACCESS_POLICY_TOKEN=glc_eyJvIjoiMTEwMzYwOCIsIm4iOiJwbHVnaW4tc2lnbmluZy1wbHVnaW4tc2lnbmluZy10b2tlbjEiLCJrIjoibzFTNXo3QkZCMmRjTzM5aDlXMTByWDdOIiwibSI6eyJyIjoidXMifX0=
-  ```
-   2. yarn sign （签名失败可能是网络问题，需要开 vpn）
+3. yarn sign 
+   签名（本地使用应该可以略去签名这一步）, 先获取 Token, 然后声明环境变量
+   [生成 Sign TOKEN]https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin
+
+   ```
+   export GRAFANA_ACCESS_POLICY_TOKEN=glc_eyJvIjoiMTEwMzYwOCIsIm4iOiJwbHVnaW4tc2lnbmluZy1wbHVnaW4tc2lnbmluZy10b2tlbjEiLCJrIjoibzFTNXo3QkZCMmRjTzM5aDlXMTByWDdOIiwibSI6eyJyIjoidXMifX0=
+   ```
+   
+   签名失败可能是网络问题，需要开 vpn
 4. yarn zip // 生成 zip 包
 
 ## 本地安装 plugin
