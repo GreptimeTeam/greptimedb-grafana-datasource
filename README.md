@@ -1,4 +1,28 @@
-## 运行命令 
+
+# GreptimeDb DataSource
+
+## 打包插件 zip 包
+
+1. yarn build
+2. mage
+3. 签名（本地使用应该可以略去签名这一步）
+   1. 先获取 Token, 声明环境变量
+  [生成 Sign TOKEN]https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin
+  ```
+  export GRAFANA_ACCESS_POLICY_TOKEN=glc_eyJvIjoiMTEwMzYwOCIsIm4iOiJwbHVnaW4tc2lnbmluZy1wbHVnaW4tc2lnbmluZy10b2tlbjEiLCJrIjoibzFTNXo3QkZCMmRjTzM5aDlXMTByWDdOIiwibSI6eyJyIjoidXMifX0=
+  ```
+   2. yarn sign （签名失败可能是网络问题，需要开 vpn）
+4. yarn zip // 生成 zip 包
+
+## 本地安装 plugin
+```
+unzip greptime-ds-1.0.zip -d  /usr/local/var/lib/grafana/plugins
+```
+解压 zip 包到 grafana plugins 目录。
+可以通过编辑 /opt/homebrew/etc/grafana/grafana.ini （grafana.ini 文件根据安装方式或系统不同，可能位置不一样） 中 plugins = /usr/local/var/lib/grafana/plugins 设置（或查看）安装目录
+需先关闭 grafana，解压后启动后可以看到插件。
+
+## 本地调试
 
 ```
 // 使用 yarn， 使用了 grafana-experiment，这个要求 yarn
