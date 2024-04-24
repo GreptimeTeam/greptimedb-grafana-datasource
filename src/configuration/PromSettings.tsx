@@ -507,7 +507,7 @@ export const PromSettings = (props: Props) => {
                 labelWidth={PROM_CONFIG_LABEL_WIDTH}
                 tooltip={
                   <>
-                    You can use either POST or GET HTTP method to query your Prometheus data source. POST is the
+                    You can use either POST or GET HTTP method to query your GreptimeDB Data Source. POST is the
                     recommended method as it allows bigger queries. Change this to GET if you have a Prometheus version
                     older than 2.1 or if POST requests are restricted in your network. {docsTip()}
                   </>

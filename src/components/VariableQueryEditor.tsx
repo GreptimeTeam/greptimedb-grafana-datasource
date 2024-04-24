@@ -233,7 +233,7 @@ export const PromVariableQueryEditor = ({ onChange, query, datasource, range }: 
           label="Query type"
           labelWidth={20}
           tooltip={
-            <div>The Prometheus data source plugin provides the following query types for template variables.</div>
+            <div>The GreptimeDB Data Source plugin provides the following query types for template variables.</div>
           }
         >
           <Select

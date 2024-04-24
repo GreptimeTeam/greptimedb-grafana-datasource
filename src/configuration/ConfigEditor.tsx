@@ -43,15 +43,15 @@ export const ConfigEditor = (props: Props) => {
     <>
       {options.access === 'direct' && (
         <Alert title="Error" severity="error">
-          Browser access mode in the Prometheus data source is no longer available. Switch to server access mode.
+          Browser access mode in the GreptimeDB data source is no longer available. Switch to server access mode.
         </Alert>
       )}
       {/* WRAP IN FEATURE TOGGLE */}
       {prometheusConfigOverhaulAuth ? (
         <>
           <DataSourceDescription
-            dataSourceName="Prometheus"
-            docsLink="https://grafana.com/docs/grafana/latest/datasources/prometheus/configure-prometheus-data-source/"
+            dataSourceName="GreptimeDB"
+            docsLink="https://docs.greptime.com/getting-started/quick-start/prometheus"
           />
           <hr className={`${styles.hrTopSpace} ${styles.hrBottomSpace}`} />
           <DataSourcehttpSettingsOverhaul
@@ -67,7 +67,7 @@ export const ConfigEditor = (props: Props) => {
         </>
       ) : (
         <DataSourceHttpSettings
-          defaultUrl="http://localhost:9090"
+          defaultUrl="http://greptimedb:4000"
           dataSourceConfig={options}
           showAccessOptions={showAccessOptions.current}
           onChange={onOptionsChange}
@@ -75,7 +75,7 @@ export const ConfigEditor = (props: Props) => {
           azureAuthSettings={azureAuthSettings}
           renderSigV4Editor={<SIGV4ConnectionConfig {...props}></SIGV4ConnectionConfig>}
           secureSocksDSProxyEnabled={config.secureSocksDSProxyEnabled}
-          urlLabel="Prometheus server URL"
+          urlLabel="GreptimeDB server URL"
           urlDocs={docsTip()}
         />
       )}

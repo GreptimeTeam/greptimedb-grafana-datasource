@@ -122,7 +122,7 @@ export const DataSourcehttpSettingsOverhaul = (props: Props) => {
         urlPlaceholder="http://localhost:9090"
         config={options}
         onChange={onOptionsChange}
-        urlLabel="Prometheus server URL"
+        urlLabel="GreptimeDB server URL"
         urlTooltip={urlTooltip}
       />
       <hr className={`${styles.hrTopSpace} ${styles.hrBottomSpace}`} />
