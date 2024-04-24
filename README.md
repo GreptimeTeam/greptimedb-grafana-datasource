@@ -1,7 +1,7 @@
 ## 运行命令 
 
 ```
-// 需要加上
+// 使用 yarn， 使用了 grafana-experiment，这个要求 yarn
 yarn
 yarn run dev
 mage -v build:linux

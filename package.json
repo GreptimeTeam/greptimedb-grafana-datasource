@@ -12,7 +12,9 @@
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test",
     "server": "docker-compose up --build",
-    "sign": "npx --yes @grafana/sign-plugin@latest"
+    "sign": "rm -rf greptime-ds && rm -rf greptime-ds*.zip && npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
+    "zip": "yarn sign && mv dist/ greptime-ds && zip greptime-ds-1.0.zip greptime-ds  -r",
+    "unzip": "unzip -fo greptime-ds-1.0.zip -d  /usr/local/var/lib/grafana/plugins"
   },
   "author": "Cs",
   "license": "Apache-2.0",
