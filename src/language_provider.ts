@@ -214,6 +214,9 @@ export default class PromQlLanguageProvider extends LanguageProvider {
 
     const res = await this.request(url, [], params, this.getDefaultCacheHeaders());
     if (Array.isArray(res)) {
+      if (!res.filter((label) => label.name === '__name__').length) {
+        res.push('__name__')
+      }
       this.labelKeys = res.slice().sort();
     }
 
