@@ -180,9 +180,9 @@ export const PromSettings = (props: Props) => {
                 labelWidth={PROM_CONFIG_LABEL_WIDTH}
                 tooltip={
                   <>
-                    This interval is how frequently Prometheus scrapes targets. Set this to the typical scrape and
-                    evaluation interval configured in your Prometheus config file. If you set this to a greater value
-                    than your Prometheus config file interval, Grafana will evaluate the data according to this interval
+                    This interval is how frequently GreptimeDB scrapes targets. Set this to the typical scrape and
+                    evaluation interval configured in your GreptimeDB config file. If you set this to a greater value
+                    than your GreptimeDB config file interval, Grafana will evaluate the data according to this interval
                     and you will see less data points. Defaults to 15s. {docsTip()}
                   </>
                 }
@@ -214,7 +214,7 @@ export const PromSettings = (props: Props) => {
               <InlineField
                 label="Query timeout"
                 labelWidth={PROM_CONFIG_LABEL_WIDTH}
-                tooltip={<>Set the Prometheus query timeout. {docsTip()}</>}
+                tooltip={<>Set the GreptimeDB query timeout. {docsTip()}</>}
                 interactive={true}
                 disabled={options.readOnly}
               >
@@ -269,7 +269,7 @@ export const PromSettings = (props: Props) => {
               tooltip={
                 <>
                   Checking this option will disable the metrics chooser and metric/label support in the query
-                  field&apos;s autocomplete. This helps if you have performance issues with bigger Prometheus instances.{' '}
+                  field&apos;s autocomplete. This helps if you have performance issues with bigger GreptimeDB instances.{' '}
                   {docsTip()}
                 </>
               }
@@ -405,7 +405,7 @@ export const PromSettings = (props: Props) => {
                 tooltip={
                   <>
                     This feature will change the default behavior of relative queries to always request fresh data from
-                    the prometheus instance, instead query results will be cached, and only new records are requested.
+                    the GreptimeDB instance, instead query results will be cached, and only new records are requested.
                     Turn this on to decrease database and network load.
                   </>
                 }
