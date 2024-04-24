@@ -7,7 +7,7 @@
 2. mage
 3. yarn sign 
    签名（本地使用应该可以略去签名这一步）, 先获取 Token, 然后声明环境变量
-   [生成 Sign TOKEN]https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin
+   [生成 Sign TOKEN](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin)
 
    ```
    export GRAFANA_ACCESS_POLICY_TOKEN=glc_eyJvIjoiMTEwMzYwOCIsIm4iOiJwbHVnaW4tc2lnbmluZy1wbHVnaW4tc2lnbmluZy10b2tlbjEiLCJrIjoibzFTNXo3QkZCMmRjTzM5aDlXMTByWDdOIiwibSI6eyJyIjoidXMifX0=
