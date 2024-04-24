@@ -1,6 +1,7 @@
 {
   "extends": "./.config/tsconfig.json",
   "compilerOptions": {
+    "esModuleInterop": true,
     "jsx": "react",
     "noImplicitAny": false,
     "noUnusedLocals": false
