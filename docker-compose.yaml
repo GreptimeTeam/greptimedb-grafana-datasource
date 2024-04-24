@@ -51,7 +51,7 @@ services:
     cap_add:
       - SYS_PTRACE
     volumes:
-      - ./dist:/var/lib/grafana/plugins/greptime-greptimedb-datasource
+      - ./dist:/var/lib/grafana/plugins/greptimedb
       - ./provisioning:/etc/grafana/provisioning
       - .:/root/greptime-greptimedb-datasource
 
@@ -60,7 +60,7 @@ services:
       GF_LOG_FILTERS: plugin.greptime-greptimedb-datasource:debug
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: greptime-greptimedb-datasource
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: greptimedb
       GOPROXY: https://goproxy.cn,direct
     networks:
       - greptimedb-datasource

@@ -2,7 +2,7 @@ apiVersion: 1
 
 datasources:
   - name: 'GreptimeDB'
-    type: 'greptime-greptimedb-datasource'
+    type: 'greptimedb'
     access: proxy
     isDefault: false
     orgId: 1
