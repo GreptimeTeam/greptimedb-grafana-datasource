@@ -300,7 +300,7 @@ export const PromSettings = (props: Props) => {
           </div>
         )}
         <div className="gf-form-group">
-          <div className="gf-form-inline">
+          {/* <div className="gf-form-inline">
             <div className="gf-form">
               <InlineField
                 label="Prometheus type"
@@ -341,7 +341,7 @@ export const PromSettings = (props: Props) => {
                 />
               </InlineField>
             </div>
-          </div>
+          </div> */}
           <div className="gf-form-inline">
             {options.jsonData.prometheusType && (
               <div className="gf-form">
