@@ -2,7 +2,6 @@
 # GreptimeDB DataSource
 
 ## 打包插件 zip 包
-
 1. yarn build
 2. mage
 3. yarn sign 
@@ -20,8 +19,10 @@
 ```
 unzip greptime-ds-1.0.zip -d  /usr/local/var/lib/grafana/plugins
 ```
-解压 zip 包到 grafana plugins 目录。
-可以通过编辑 /opt/homebrew/etc/grafana/grafana.ini （grafana.ini 文件根据安装方式或系统不同，可能位置不一样） 中 plugins = /usr/local/var/lib/grafana/plugins 设置（或查看）安装目录
+解压 zip 包到 grafana plugins 目录即可。  
+可以通过编辑 `/opt/homebrew/etc/grafana/grafana.ini` 中的 `plugins = /usr/local/var/lib/grafana/plugins` 设置（或查看）安装目录    
+grafana.ini 文件根据安装方式或系统不同，可能位置不一样  
+
 需先关闭 grafana，解压后启动后可以看到插件。
 
 ## 本地调试
