@@ -16,14 +16,31 @@
 4. yarn zip // 生成 zip 包
 
 ## 本地安装 plugin
+
+原则上是把 zip 包直接解压到 grafana 插件目录即可
 ```
 unzip greptime-ds-1.0.zip -d  /usr/local/var/lib/grafana/plugins
 ```
-解压 zip 包到 grafana plugins 目录即可。  
-可以通过编辑 `/opt/homebrew/etc/grafana/grafana.ini` 中的 `plugins = /usr/local/var/lib/grafana/plugins` 设置（或查看）安装目录    
-grafana.ini 文件根据安装方式或系统不同，可能位置不一样  
 
-需先关闭 grafana，解压后启动后可以看到插件。
+### docker 下的安装, [参考配置 docker compose](./docker/compose.yml)   
+**将 greptime datasource 插件解压到 docker compose 同级目录** 
+```
+grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - ./greptime-ds:/var/lib/grafana/plugins/greptime-ds
+      - ./grafana.ini:/etc/grafana/grafana.ini:ro
+    networks:
+      - datasource-network
+```
+
+> 
+- 目前 mac 下 brew 安装方式有问题
+- 可以通过编辑 `/opt/homebrew/etc/grafana/grafana.ini` 中的 `plugins = /usr/local/var/lib/grafana/plugins` 设置（或查看）安装目录    
+
 
 ## 本地调试
 
