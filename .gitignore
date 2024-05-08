@@ -35,7 +35,7 @@ ci/
 
 # Editor
 .idea
-
+.DS_Store
 .eslintcache
 greptime-ds
 greptime-ds-*.zip
