@@ -24,7 +24,7 @@
   "panels": [
     {
       "datasource": {
-        "type": "greptimedb",
+        "type": "greptimedb-datasource",
         "uid": "P6A33BD2DBCC29C4B"
       },
       "fieldConfig": {
