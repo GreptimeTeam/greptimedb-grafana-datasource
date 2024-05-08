@@ -19,29 +19,29 @@ import { PromOperationId, PromVisualQuery, PromVisualQueryOperationCategory } fr
 
 export function getOperationDefinitions(): QueryBuilderOperationDef[] {
   const list: QueryBuilderOperationDef[] = [
-    // {
-    //   id: PromOperationId.HistogramQuantile,
-    //   name: 'Histogram quantile',
-    //   params: [{ name: 'Quantile', type: 'number', options: [0.99, 0.95, 0.9, 0.75, 0.5, 0.25] }],
-    //   defaultParams: [0.9],
-    //   category: PromVisualQueryOperationCategory.Functions,
-    //   renderer: functionRendererLeft,
-    //   addOperationHandler: defaultAddOperationHandler,
-    // },
-    // {
-    //   id: PromOperationId.LabelReplace,
-    //   name: 'Label replace',
-    //   params: [
-    //     { name: 'Destination label', type: 'string' },
-    //     { name: 'Replacement', type: 'string' },
-    //     { name: 'Source label', type: 'string' },
-    //     { name: 'Regex', type: 'string' },
-    //   ],
-    //   category: PromVisualQueryOperationCategory.Functions,
-    //   defaultParams: ['', '$1', '', '(.*)'],
-    //   renderer: functionRendererRight,
-    //   addOperationHandler: defaultAddOperationHandler,
-    // },
+    {
+      id: PromOperationId.HistogramQuantile,
+      name: 'Histogram quantile',
+      params: [{ name: 'Quantile', type: 'number', options: [0.99, 0.95, 0.9, 0.75, 0.5, 0.25] }],
+      defaultParams: [0.9],
+      category: PromVisualQueryOperationCategory.Functions,
+      renderer: functionRendererLeft,
+      addOperationHandler: defaultAddOperationHandler,
+    },
+    {
+      id: PromOperationId.LabelReplace,
+      name: 'Label replace',
+      params: [
+        { name: 'Destination label', type: 'string' },
+        { name: 'Replacement', type: 'string' },
+        { name: 'Source label', type: 'string' },
+        { name: 'Regex', type: 'string' },
+      ],
+      category: PromVisualQueryOperationCategory.Functions,
+      defaultParams: ['', '$1', '', '(.*)'],
+      renderer: functionRendererRight,
+      addOperationHandler: defaultAddOperationHandler,
+    },
     {
       id: PromOperationId.Ln,
       name: 'Ln',
@@ -102,7 +102,7 @@ export function getOperationDefinitions(): QueryBuilderOperationDef[] {
       addOperationHandler: addNestedQueryHandler,
     },
     createFunction({ id: PromOperationId.Abs }),
-    // createFunction({ id: PromOperationId.Absent }),
+    createFunction({ id: PromOperationId.Absent }),
     createFunction({
       id: PromOperationId.Acos,
       category: PromVisualQueryOperationCategory.Trigonometric,
@@ -172,7 +172,7 @@ export function getOperationDefinitions(): QueryBuilderOperationDef[] {
       id: PromOperationId.DaysInMonth,
       category: PromVisualQueryOperationCategory.Time,
     }),
-    // createFunction({ id: PromOperationId.Deg }),
+    createFunction({ id: PromOperationId.Deg }),
     createRangeFunction(PromOperationId.Deriv),
     //
     createFunction({ id: PromOperationId.Exp }),
@@ -217,7 +217,7 @@ export function getOperationDefinitions(): QueryBuilderOperationDef[] {
       defaultParams: [1],
       renderer: functionRendererLeft,
     }),
-    // createFunction({ id: PromOperationId.Rad }),
+    createFunction({ id: PromOperationId.Rad }),
     createRangeFunction(PromOperationId.Resets),
     createFunction({
       id: PromOperationId.Round,
@@ -225,15 +225,15 @@ export function getOperationDefinitions(): QueryBuilderOperationDef[] {
       params: [{ name: 'To Nearest', type: 'number' }],
       defaultParams: [1],
     }),
-    // createFunction({ id: PromOperationId.Scalar }),
-    // createFunction({ id: PromOperationId.Sgn }),
+    createFunction({ id: PromOperationId.Scalar }),
+    createFunction({ id: PromOperationId.Sgn }),
     createFunction({ id: PromOperationId.Sin, category: PromVisualQueryOperationCategory.Trigonometric }),
     createFunction({
       id: PromOperationId.Sinh,
       category: PromVisualQueryOperationCategory.Trigonometric,
     }),
-    // createFunction({ id: PromOperationId.Sort }),
-    // createFunction({ id: PromOperationId.SortDesc }),
+    createFunction({ id: PromOperationId.Sort }),
+    createFunction({ id: PromOperationId.SortDesc }),
     createFunction({ id: PromOperationId.Sqrt }),
     createFunction({ id: PromOperationId.Stddev }),
     createFunction({

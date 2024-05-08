@@ -14,19 +14,19 @@ export function getAggregationOperations(): QueryBuilderOperationDef[] {
     ...createAggregationOperation(PromOperationId.Avg),
     ...createAggregationOperation(PromOperationId.Min),
     ...createAggregationOperation(PromOperationId.Max),
-    // ...createAggregationOperation(PromOperationId.Count),
-    // ...createAggregationOperationWithParam(PromOperationId.TopK, {
-    //   params: [{ name: 'K-value', type: 'number' }],
-    //   defaultParams: [5],
-    // }),
-    // ...createAggregationOperationWithParam(PromOperationId.BottomK, {
-    //   params: [{ name: 'K-value', type: 'number' }],
-    //   defaultParams: [5],
-    // }),
-    // ...createAggregationOperationWithParam(PromOperationId.CountValues, {
-    //   params: [{ name: 'Identifier', type: 'string' }],
-    //   defaultParams: ['count'],
-    // }),
+    ...createAggregationOperation(PromOperationId.Count),
+    ...createAggregationOperationWithParam(PromOperationId.TopK, {
+      params: [{ name: 'K-value', type: 'number' }],
+      defaultParams: [5],
+    }),
+    ...createAggregationOperationWithParam(PromOperationId.BottomK, {
+      params: [{ name: 'K-value', type: 'number' }],
+      defaultParams: [5],
+    }),
+    ...createAggregationOperationWithParam(PromOperationId.CountValues, {
+      params: [{ name: 'Identifier', type: 'string' }],
+      defaultParams: ['count'],
+    }),
     createAggregationOverTime(PromOperationId.SumOverTime),
     createAggregationOverTime(PromOperationId.AvgOverTime),
     createAggregationOverTime(PromOperationId.MinOverTime),

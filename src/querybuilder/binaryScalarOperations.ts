@@ -28,11 +28,11 @@ export const binaryScalarDefs = [
     name: 'Modulo by scalar',
     sign: '%',
   },
-  // {
-  //   id: PromOperationId.Exponent,
-  //   name: 'Exponent',
-  //   sign: '^',
-  // },
+  {
+    id: PromOperationId.Exponent,
+    name: 'Exponent',
+    sign: '^',
+  },
   {
     id: PromOperationId.EqualTo,
     name: 'Equal to',
