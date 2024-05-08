@@ -25,6 +25,7 @@ import { EXPLAIN_LABEL_FILTER_CONTENT } from './PromQueryBuilderExplained';
 import { PromQail } from './promQail/PromQail';
 import { QueryAssistantButton } from './promQail/QueryAssistantButton';
 import { isLLMPluginEnabled } from './promQail/state/helpers';
+import { FieldFilter } from './FieldFilter';
 
 export interface Props {
   query: PromVisualQuery;
@@ -71,6 +72,7 @@ export const PromQueryBuilder = React.memo<Props>((props) => {
       )}
       <EditorRow>
         <MetricsLabelsSection query={query} onChange={onChange} datasource={datasource} />
+        <FieldFilter query={query} onChange={onChange} datasource={datasource}></FieldFilter>
       </EditorRow>
       {initHints.length ? (
         <div className="query-row-break">

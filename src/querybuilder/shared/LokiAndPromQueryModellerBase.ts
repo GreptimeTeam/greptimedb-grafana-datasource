@@ -12,6 +12,7 @@ export interface VisualQueryBinary<T> {
 }
 
 export interface PromLokiVisualQuery {
+  field?: string,
   metric?: string;
   labels: QueryBuilderLabelFilter[];
   operations: QueryBuilderOperation[];
@@ -77,8 +78,8 @@ export abstract class LokiAndPromQueryModellerBase implements VisualQueryModelle
     return result + this.renderQuery(binaryQuery.query, true);
   }
 
-  renderLabels(labels: QueryBuilderLabelFilter[]) {
-    if (labels.length === 0) {
+  renderLabels(labels: QueryBuilderLabelFilter[], field?: string) {
+    if (labels.length === 0 && !field) {
       return '';
     }
 
@@ -90,12 +91,15 @@ export abstract class LokiAndPromQueryModellerBase implements VisualQueryModelle
 
       expr += `${filter.label}${filter.op}"${filter.value}"`;
     }
-
+    let prefix = labels.length ? ',' : ''
+    if (field) {
+      expr += `${prefix} __field__="${field}"`
+    }
     return expr + `}`;
   }
 
   renderQuery(query: PromLokiVisualQuery, nested?: boolean) {
-    let queryString = `${query.metric ?? ''}${this.renderLabels(query.labels)}`;
+    let queryString = `${query.metric ?? ''}${this.renderLabels(query.labels, query.field)}`;
     queryString = this.renderOperations(queryString, query.operations);
 
     if (!nested && this.hasBinaryOp(query) && Boolean(query.binaryQueries?.length)) {

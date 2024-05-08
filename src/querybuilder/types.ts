@@ -14,6 +14,7 @@ export interface PromVisualQuery {
   disableTextWrap?: boolean;
   includeNullMetadata?: boolean;
   fullMetaSearch?: boolean;
+  field?: string;
 }
 
 export type PromVisualQueryBinary = VisualQueryBinary<PromVisualQuery>;
