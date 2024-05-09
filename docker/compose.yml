@@ -47,7 +47,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./greptime-ds:/var/lib/grafana/plugins/greptime-ds
+      - ./greptimedb-datasource:/var/lib/grafana/plugins/greptimedb-datasource
       - ./grafana.ini:/etc/grafana/grafana.ini:ro
     networks:
       - datasource-network
