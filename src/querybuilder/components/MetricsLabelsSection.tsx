@@ -12,6 +12,7 @@ import { PromVisualQuery } from '../types';
 
 import { LabelFilters } from './LabelFilters';
 import { MetricSelect } from './MetricSelect';
+import { FieldFilter } from './FieldFilter';
 
 export interface MetricsLabelsSectionProps {
   query: PromVisualQuery;
@@ -217,6 +218,7 @@ export function MetricsLabelsSection({
         onGetLabelValues={(forLabel) => withTemplateVariableOptions(onGetLabelValues(forLabel))}
         variableEditor={variableEditor}
       />
+      <FieldFilter query={query} onChange={onChange} datasource={datasource}></FieldFilter>
     </>
   );
 }

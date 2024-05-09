@@ -307,6 +307,21 @@ export default class PromQlLanguageProvider extends LanguageProvider {
     return values;
   };
 
+
+  fetchFields = async (metric: string): Promise<string[]> => {
+    const range = this.datasource.getAdjustedInterval(this.timeRange);
+    const urlParams = {
+      ...range,
+      'match[]': metric,
+    };
+    const url = `/v1/prometheus/api/v1/series`;
+    return Promise.resolve([
+      'field1',
+      'field2'
+    ])
+    // const data = await this.request(url, [], urlParams, this.getDefaultCacheHeaders());
+  }
+
   /**
    * Fetch labels for a series using /labels endpoint.  This is cached by its args but also by the global timeRange currently selected as
    * they can change over requested time.

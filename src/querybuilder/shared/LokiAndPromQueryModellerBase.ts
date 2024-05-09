@@ -93,7 +93,7 @@ export abstract class LokiAndPromQueryModellerBase implements VisualQueryModelle
     }
     let prefix = labels.length ? ',' : ''
     if (field) {
-      expr += `${prefix} __field__="${field}"`
+      expr += `${prefix}__field__="${field}"`
     }
     return expr + `}`;
   }

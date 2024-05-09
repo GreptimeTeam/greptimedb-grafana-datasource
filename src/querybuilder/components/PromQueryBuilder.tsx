@@ -72,7 +72,7 @@ export const PromQueryBuilder = React.memo<Props>((props) => {
       )}
       <EditorRow>
         <MetricsLabelsSection query={query} onChange={onChange} datasource={datasource} />
-        <FieldFilter query={query} onChange={onChange} datasource={datasource}></FieldFilter>
+        
       </EditorRow>
       {initHints.length ? (
         <div className="query-row-break">
