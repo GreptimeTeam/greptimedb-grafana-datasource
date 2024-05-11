@@ -15,6 +15,7 @@ import {
   Icon,
   InlineField,
   InlineFieldRow,
+  Select,
   useStyles2,
   useTheme2,
 } from '@grafana/ui';
@@ -258,7 +259,7 @@ export function MetricSelect({
 
   const asyncSelect = () => {
     return (
-      <AsyncSelect
+      <Select
         isClearable={variableEditor ? true : false}
         inputId="prometheus-metric-select"
         className={styles.select}
@@ -266,7 +267,6 @@ export function MetricSelect({
         placeholder={'Select metric'}
         allowCustomValue
         formatOptionLabel={formatOptionLabel}
-        filterOption={customFilterOption}
         onOpenMenu={async () => {
           if (metricLookupDisabled) {
             return;
@@ -297,9 +297,9 @@ export function MetricSelect({
             });
           }
         }}
-        loadOptions={metricLookupDisabled ? metricLookupDisabledSearch : debouncedSearch}
         isLoading={state.isLoading}
-        defaultOptions={state.metrics}
+        filterOption={customFilterOption}
+        options={state.metrics}
         onChange={(input) => {
           const value = input?.value;
           if (value) {
