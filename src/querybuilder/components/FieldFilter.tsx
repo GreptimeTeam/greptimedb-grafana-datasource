@@ -55,16 +55,20 @@ export function FieldFilter ({
     <>
       <EditorFieldGroup>
         <EditorField
-          label="Field Select"
+          label="Field Select (for multiple value)"
         >
         <Select
+          isClearable={true}
           className="query-segment-field"
           value={query.field}
           options={fields}
           width="auto"
           placeholder="Select Field"
           onChange={(change) => {
-            if (change.value != null) {
+            if (!change) {
+              onChange({...query, field: ''})
+
+            } else if(change.value != null) {
               onChange({...query, field: change.value})
             }
           }}
