@@ -245,12 +245,14 @@ async function getMetrics(
   }
 
   let metrics: string[];
-  if (query.labels.length > 0) {
-    const expr = promQueryModeller.renderLabels(query.labels);
-    metrics = (await datasource.languageProvider.getSeries(expr, true))['__name__'] ?? [];
-  } else {
-    metrics = (await datasource.languageProvider.getLabelValues('__name__')) ?? [];
-  }
+  // if (query.labels.length > 0) {
+  //   const expr = promQueryModeller.renderLabels(query.labels);
+  //   metrics = (await datasource.languageProvider.getSeries(expr, true))['__name__'] ?? [];
+  // } else {
+  //   metrics = (await datasource.languageProvider.getLabelValues('__name__')) ?? [];
+  // }
+  // no surport name reg
+  metrics = (await datasource.languageProvider.getLabelValues('__name__')) ?? [];
 
   return metrics.map((m) => ({
     value: m,
