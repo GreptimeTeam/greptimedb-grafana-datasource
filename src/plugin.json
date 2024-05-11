@@ -62,14 +62,14 @@
   },
   "executable": "gpx_greptime_db",
   "info": {
-    "description": "Open source time series database & alerting",
+    "description": "Open source time series database",
     "author": {
       "name": "GreptimeDB",
       "url": "https://greptime.com"
     },
     "logos": {
-      "small": "img/prometheus_logo.svg",
-      "large": "img/prometheus_logo.svg"
+      "small": "img/greptimedb_logo.svg",
+      "large": "img/greptimedb_logo.svg"
     },
     "links": [
       {

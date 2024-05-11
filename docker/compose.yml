@@ -11,7 +11,7 @@ version: '3.1'
 
 services:
   greptimedb:
-    image: greptime/greptimedb:v0.4.3
+    image: greptime/greptimedb:nightly-20240510-08945f128
     container_name: greptimedb
     command: standalone start --http-addr=0.0.0.0:4000 --rpc-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
     ports:
