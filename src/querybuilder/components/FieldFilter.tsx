@@ -45,6 +45,10 @@ export function FieldFilter ({
     })
   }, [])
 
+  // useEffect(() => {
+  //   console.log('metric change', query.metric)
+  // }, [query.metric])
+
   const [isLoading, setIsLoading] = useState(false)
   let options = [{label: 'grep_id', value: 'grep_id'}, {label: 'grep_id1', value: 'grep_id1'}]
   return (

@@ -314,12 +314,12 @@ export default class PromQlLanguageProvider extends LanguageProvider {
       ...range,
       'match[]': metric,
     };
-    const url = `/v1/prometheus/api/v1/series`;
-    return Promise.resolve([
-      'field1',
-      'field2'
-    ])
-    // const data = await this.request(url, [], urlParams, this.getDefaultCacheHeaders());
+    const url = `/v1/prometheus/api/v1/label/__field__/values`;
+    // return Promise.resolve([
+    //   'field1',
+    //   'field2'
+    // ])
+    return this.request(url, [], urlParams, this.getDefaultCacheHeaders());
   }
 
   /**

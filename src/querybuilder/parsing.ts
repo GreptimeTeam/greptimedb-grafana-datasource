@@ -149,7 +149,12 @@ export function handleExpression(expr: string, node: SyntaxNode, context: Contex
 
     case LabelMatcher: {
       // Same as MetricIdentifier should be just one per query.
-      visQuery.labels.push(getLabel(expr, node));
+      const labelObj = getLabel(expr, node)
+      if ('__field__' === labelObj.label) {
+        visQuery.field = labelObj.value
+      } else {
+        visQuery.labels.push(labelObj);
+      }
       const err = node.getChild(ErrorId);
       if (err) {
         context.errors.push(makeError(expr, err));

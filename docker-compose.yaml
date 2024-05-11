@@ -22,7 +22,8 @@ services:
       - greptimedb-datasource
 
   greptimedb:
-    image: greptime/greptimedb:latest
+    # image: greptime/greptimedb:latest
+    image: greptime/greptimedb:nightly-20240510-08945f128
     container_name: greptimedb_dev
     command: standalone start --http-addr=0.0.0.0:4000 --rpc-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
     ports:
