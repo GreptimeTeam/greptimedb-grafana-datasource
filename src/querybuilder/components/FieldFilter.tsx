@@ -19,7 +19,7 @@ export function FieldFilter ({
   onChange,
 }: Props) {
   const [fields, setFields] = useState<SelectableValue[]>([])
-  const onGetFields = async (): Promise<SelectableValue[]> => {
+  const onGetFields = useCallback(async function (): Promise<SelectableValue[]>  {
     // If no metric we need to use a different method
     if (!query.metric) {
       return Promise.resolve([])
@@ -38,12 +38,12 @@ export function FieldFilter ({
     // return Object.keys(labelsIndex)
     //   .filter((labelName) => !labelsToConsider.find((filter) => filter.label === labelName))
     //   .map((k) => ({ value: k }));
-  };
+  }, [query, datasource]);
   useEffect(() => {
     onGetFields().then(result => {
       setFields(result)
     })
-  }, [])
+  }, [onGetFields])
 
   // useEffect(() => {
   //   console.log('metric change', query.metric)
@@ -63,7 +63,7 @@ export function FieldFilter ({
           value={query.field}
           options={fields}
           width="auto"
-          placeholder="Select Field"
+          placeholder="Select field"
           onChange={(change) => {
             if (!change) {
               onChange({...query, field: ''})
