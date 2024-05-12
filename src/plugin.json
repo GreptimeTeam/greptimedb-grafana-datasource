@@ -77,7 +77,11 @@
         "url": "https://docs.greptime.com/"
       }
     ],
-    "screenshort": [{"name": "Node Exporter", "path": "img/image.png"}],
+    "screenshort": [
+      {"name": "Node Exporter", "path": "img/image.png"},
+      {"name": "ConfigEditor", "path": "img/connection.png"},
+      {"name": "QueryEditor", "path": "img/query-edit.png"}
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
