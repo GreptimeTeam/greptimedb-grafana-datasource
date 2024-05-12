@@ -77,6 +77,7 @@
         "url": "https://docs.greptime.com/"
       }
     ],
+    "screenshort": [{"name": "Node Exporter", "path": "img/image.png"}],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

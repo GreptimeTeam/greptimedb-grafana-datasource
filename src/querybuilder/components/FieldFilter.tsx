@@ -55,7 +55,7 @@ export function FieldFilter ({
     <>
       <EditorFieldGroup>
         <EditorField
-          label="Field Select (for multiple value)"
+          label="Field Select (for multi-value modal)"
         >
         <Select
           isClearable={true}
