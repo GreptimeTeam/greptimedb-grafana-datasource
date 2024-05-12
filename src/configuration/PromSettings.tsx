@@ -465,7 +465,7 @@ export const PromSettings = (props: Props) => {
                 disabled={options.readOnly}
               >
                 <Switch
-                  value={options.jsonData.disableRecordingRules ?? false}
+                  value={options.jsonData.disableRecordingRules ?? true}
                   onChange={onUpdateDatasourceJsonDataOptionChecked(props, 'disableRecordingRules')}
                 />
               </InlineField>
