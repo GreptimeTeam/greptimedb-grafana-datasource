@@ -77,13 +77,14 @@
         "url": "https://docs.greptime.com/"
       }
     ],
-    "screenshort": [
+    "screenshots": [
       {"name": "Node Exporter", "path": "img/image.png"},
       {"name": "ConfigEditor", "path": "img/connection.png"},
       {"name": "QueryEditor", "path": "img/query-edit.png"}
     ],
     "version": "%VERSION%",
-    "updated": "%TODAY%"
+    "updated": "%TODAY%",
+    "keywords": ["Time-Series", "Database"]
   },
   "dependencies": {
     "grafanaDependency": ">=10.3.3",
