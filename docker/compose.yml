@@ -49,6 +49,7 @@ services:
     volumes:
       - ./greptimedb-datasource:/var/lib/grafana/plugins/greptimedb-datasource
       - ./grafana.ini:/etc/grafana/grafana.ini:ro
+      - ../provisioning:/etc/grafana/provisioning
     networks:
       - datasource-network
 
