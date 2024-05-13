@@ -17,7 +17,7 @@
     "unzip": "unzip greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins"
   },
   "author": "Cs",
-  "license": "Apache-2.0",
+  "license": "Apache-2.0",  
   "devDependencies": {
     "@babel/core": "^7.21.4",
     "@grafana/eslint-config": "^7.0.0",
