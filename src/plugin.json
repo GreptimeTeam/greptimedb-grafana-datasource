@@ -79,8 +79,8 @@
     ],
     "screenshots": [
       {"name": "Node Exporter", "path": "img/image.png"},
-      {"name": "ConfigEditor", "path": "img/connection.png"},
-      {"name": "QueryEditor", "path": "img/query-edit.png"}
+      {"name": "ConfigEditor", "path": "img/connection.jpg"},
+      {"name": "QueryEditor", "path": "img/query-edit.jpg"}
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%",
