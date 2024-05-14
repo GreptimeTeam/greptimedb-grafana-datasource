@@ -58,10 +58,10 @@ services:
 
     environment:
       NODE_ENV: development
-      GF_LOG_FILTERS: plugin.greptimedb-datasource:debug
+      GF_LOG_FILTERS: plugin.info8fcc-greptimedb-datasource:debug
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: greptimedb-datasource
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: info8fcc-greptimedb-datasource
       GOPROXY: https://goproxy.cn,direct
     networks:
       - greptimedb-datasource

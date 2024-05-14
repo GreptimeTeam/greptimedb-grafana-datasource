@@ -1,7 +1,7 @@
 {
   "type": "datasource",
   "name": "GreptimeDB",
-  "id": "greptimedb-datasource",
+  "id": "info8fcc-greptimedb-datasource",
   "metrics": true,
   "backend": true,
   "category": "tsdb",

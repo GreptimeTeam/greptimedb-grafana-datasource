@@ -39,5 +39,5 @@ ci/
 .eslintcache
 greptime-ds
 greptime-ds-*.zip
-greptimedb-datasource
-greptimedb-datasource*.zip
+info8fcc-greptimedb-datasource
+info8fcc-greptimedb-datasource*.zip

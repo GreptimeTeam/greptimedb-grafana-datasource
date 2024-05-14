@@ -47,7 +47,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./greptimedb-datasource:/var/lib/grafana/plugins/greptimedb-datasource
+      - ./info8fcc-greptimedb-datasource:/var/lib/grafana/plugins/info8fcc-greptimedb-datasource
       - ./grafana.ini:/etc/grafana/grafana.ini:ro
       - ../provisioning:/etc/grafana/provisioning
     networks:

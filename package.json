@@ -12,9 +12,9 @@
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test",
     "server": "docker-compose up --build",
-    "sign": "rm -rf greptimedb-datasource && rm -rf greptimedb-datasource*.zip && npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
-    "zip": "mv dist/ greptimedb-datasource && zip greptimedb-datasource.zip greptimedb-datasource  -r",
-    "unzip": "unzip greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins"
+    "sign": "rm -rf info8fcc-greptimedb-datasource && rm -rf info8fcc-greptimedb-datasource*.zip && npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
+    "zip": "mv dist/ info8fcc-greptimedb-datasource && zip info8fcc-greptimedb-datasource.zip info8fcc-greptimedb-datasource  -r",
+    "unzip": "unzip info8fcc-greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins"
   },
   "author": "Cs",
   "license": "Apache-2.0",  
