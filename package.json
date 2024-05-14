@@ -80,5 +80,10 @@
     "react-dom": "18.2.0",
     "semver": "^7.6.0",
     "tslib": "2.5.3"
+  },
+  "overrides": {
+    "@emotion/css": "11.10.6",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   }
 }
