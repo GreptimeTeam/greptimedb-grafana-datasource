@@ -5,6 +5,8 @@
 
 ***use yarn 1.x (There's a little problem with npm)***
 
+Execute theses commands in code root folder
+
 1. Install dependencies
 
    ```bash
