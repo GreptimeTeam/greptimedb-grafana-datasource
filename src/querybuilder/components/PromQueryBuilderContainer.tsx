@@ -56,7 +56,7 @@ export function PromQueryBuilderContainer(props: Props) {
   }, [data?.timeRange, datasource.languageProvider]);
 
   const onVisQueryChange = (visQuery: PromVisualQuery) => {
-    console.log('onVisQueryChange', visQuery)
+    // console.log('onVisQueryChange', visQuery)
     const expr = promQueryModeller.renderQuery(visQuery);
     dispatch(visualQueryChange({ visQuery, expr }));
 
