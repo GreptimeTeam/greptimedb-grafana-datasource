@@ -34,10 +34,6 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 func (c *Client) QueryResource(ctx context.Context, req *backend.CallResourceRequest) (*http.Response, error) {
 	// The way URL is represented in CallResourceRequest and what we need for the fetch function is different
 	// so here we have to do a bit of parsing, so we can then compose it with the base url in correct way.
-	log := backend.NewLoggerWith("************* logger", "greptimedb.promql")
-
-	log.Debug("***************** QueryResource", "req", *req)
-
 	reqUrlParsed, err := url.Parse(req.URL)
 	if err != nil {
 		return nil, err
@@ -47,8 +43,6 @@ func (c *Client) QueryResource(ctx context.Context, req *backend.CallResourceReq
 		return nil, err
 	}
 	u.RawQuery = reqUrlParsed.RawQuery
-
-	log.Debug("***************** QueryResource", "url", u)
 
 	// We use method from the request, as for resources front end may do a fallback to GET if POST does not work
 	// nad we want to respect that.
