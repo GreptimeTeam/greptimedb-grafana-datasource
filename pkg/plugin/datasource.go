@@ -6,7 +6,6 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/greptime/greptimedb/pkg/plugin/instance/promql"
 )
 
@@ -36,8 +35,6 @@ func (d *Datasource) Dispose() {
 }
 
 func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	logger := log.DefaultLogger.FromContext(ctx)
-	logger.Debug("************* QueryData", "request", req)
 	return d.promqlQuerier.QueryData(ctx, req)
 }
 
@@ -46,7 +43,5 @@ func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResource
 }
 
 func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	logger := log.DefaultLogger.FromContext(ctx)
-	logger.Debug("************* CheckHealth", "request", req)
 	return d.promqlQuerier.CheckHealth(ctx, req)
 }

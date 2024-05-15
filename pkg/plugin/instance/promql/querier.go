@@ -29,14 +29,12 @@ type Querier struct {
 }
 
 func NewQuerier(ctx context.Context, settings backend.DataSourceInstanceSettings) (*Querier, error) {
-	log := backend.NewLoggerWith("************* logger", "greptimedb.promql")
+	log := backend.NewLoggerWith("logger", "greptimedb.promql")
 
 	jsonData, err := GetJsonData(settings)
 	if err != nil {
 		return nil, err
 	}
-
-	log.FromContext(ctx).Debug("promql.NewQuerier", "jsonData", jsonData)
 
 	timeInterval, err := maputil.GetStringOptional(jsonData, "timeInterval")
 	if err != nil {
@@ -55,8 +53,6 @@ func NewQuerier(ctx context.Context, settings backend.DataSourceInstanceSettings
 
 	baseUrl := removeUrlEndingSlash(settings.URL) + prefixPath
 	promClient := NewClient(httpClient, http.MethodGet, baseUrl)
-
-	log.FromContext(ctx).Debug("promql.NewQuerier", "baseUrl", baseUrl)
 
 	calculator := NewCalculator()
 
@@ -93,9 +89,6 @@ func (querier *Querier) handleQuery(ctx context.Context, q backend.DataQuery) *b
 			Error: err,
 		}
 	}
-
-	querier.log.FromContext(ctx).Debug("************* handleQuery", "data query", q)
-	querier.log.FromContext(ctx).Debug("************* handleQuery", "query", *query)
 
 	r := querier.fetch(ctx, query)
 	if r == nil {
@@ -197,8 +190,6 @@ func (querier *Querier) CheckHealth(ctx context.Context, req *backend.CheckHealt
 
 	url := removeUrlEndingSlash(querier.URL) + "/health"
 
-	querier.log.Debug("*********** check health url: " + url)
-
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return newHealthCheckErrorf("could not create request"), nil
@@ -225,7 +216,6 @@ func (querier *Querier) CheckHealth(ctx context.Context, req *backend.CheckHealt
 }
 
 func (querier *Querier) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	querier.log.FromContext(ctx).Debug("*********** Sending resource query", "req", *req)
 	resp, err := querier.client.QueryResource(ctx, req)
 	if err != nil {
 		return fmt.Errorf("error querying resource: %v", err)
