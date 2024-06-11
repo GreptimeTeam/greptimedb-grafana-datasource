@@ -4,6 +4,8 @@
 
 ## Install packaged plugin Locally(you can use either)
 
+> we haven't publish this plugin to grafana, you need to install locally currentlly
+
 1. ### use docker compose (Recommend, contains dependency docker image)
   * down load [files in docker dirctory](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/tree/main/docker)
   * `cd` your downloaded diretory, run `docker compose up` 
