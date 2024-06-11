@@ -5,8 +5,8 @@
 ## Install packaged plugin Locally(you can use either)
 
 1. ### use docker compose (Recommend, contains dependency docker image)
-  * down load [compose file](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/tree/main/docker)
-  * run `docker compose up`
+  * down load [files in docker dirctory](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/tree/main/docker)
+  * `cd` your downloaded diretory, run `docker compose up` 
 
 2. ### unzip directly 
 unzip the [plugin zip](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/archive/refs/tags/v1.0.2.zip) to your [grafana plugin directory](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#plugins).
