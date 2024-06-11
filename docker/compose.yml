@@ -46,9 +46,11 @@ services:
     container_name: grafana
     ports:
       - 3000:3000
+    environment:
+     - GF_INSTALL_PLUGINS=https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/download/v1.0.2/info8fcc-greptimedb-datasource.zip;info8fcc
     volumes:
-      - ./info8fcc-greptimedb-datasource:/var/lib/grafana/plugins/info8fcc-greptimedb-datasource
-      - ./grafana.ini:/etc/grafana/grafana.ini:ro
+      # - ./info8fcc-greptimedb-datasource:/var/lib/grafana/plugins/info8fcc-greptimedb-datasource
+      # - ./grafana.ini:/etc/grafana/grafana.ini:ro
       - ../provisioning:/etc/grafana/provisioning
     networks:
       - datasource-network
