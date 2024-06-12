@@ -32,15 +32,8 @@ jobs:
       -
         name: Run Mage
         uses: magefile/mage-action@v3
-        with:
-          version: latest
-          args: build
       - name: zip
         run: yarn zip
-      - name: build artifacts
-        run: make build-linux && make build-windows && make build-darwin
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
