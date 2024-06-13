@@ -12,8 +12,8 @@
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test",
     "server": "docker-compose up --build",
-    "sign": "rm -rf info8fcc-greptimedb-datasource && rm -rf info8fcc-greptimedb-datasource*.zip && npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
-    "zip": "mv dist/ info8fcc-greptimedb-datasource && zip info8fcc-greptimedb-datasource.zip info8fcc-greptimedb-datasource  -r",
+    "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
+    "zip": "rm -rf info8fcc-greptimedb-datasource && rm -rf info8fcc-greptimedb-datasource*.zip && mv dist/ info8fcc-greptimedb-datasource && zip info8fcc-greptimedb-datasource.zip info8fcc-greptimedb-datasource  -r",
     "unzip": "unzip info8fcc-greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins",
     "buildzip": "yarn build && mage && yarn sign && yarn zip"
   },

@@ -32,6 +32,10 @@ jobs:
       -
         name: Run Mage
         uses: magefile/mage-action@v3
+      - name: sign
+        run: yarn sign
+        env:
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.SIGN_TOKEN }}
       - name: zip
         run: yarn zip
       - name: Release
