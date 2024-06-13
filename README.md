@@ -2,23 +2,25 @@
 # GreptimeDB DataSource
 
 
-## Install packaged plugin Locally(you can use either)
+## Install packaged plugin Locally(Use of either method)
 
-> we haven't publish this plugin to grafana, you need to install locally currentlly
+> we haven't publish this plugin to grafana, you can install local currentlly.
 
-1. ### use docker compose (Recommend, contains dependency docker image)
-  * down load [files in docker dirctory](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/tree/main/docker)
+> get plugin zip from  [release page](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases) 
+
+1. ### Use docker compose (Recommend, contains dependency docker image)
+  * download [files in docker dirctory](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/tree/main/docker)
   * `cd` your downloaded diretory, run `docker compose up` 
 
-2. ### unzip directly 
+2. ### Unzip directly 
 unzip the [plugin zip](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/archive/refs/tags/v1.0.2.zip) to your [grafana plugin directory](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#plugins).
 
-3. ### use grafana cli
+3. ### Use grafana cli
 ```
 grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/download/v1.0.2/info8fcc-greptimedb-datasource.zip plugins install info8fcc
 ```
 
-4. ### use docker
+4. ### Use docker
 ```
 docker run -d -p 3000:3000 --name=grafana \
   -e "GF_INSTALL_PLUGINS=https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/download/v1.0.2/info8fcc-greptimedb-datasource.zip;info8fcc" \
@@ -60,11 +62,6 @@ Execute theses commands in code root folder
 
 ## Build Plugin
 
-1. `yarn build`
-2. `mage`
-3. `yarn sign`
-4. `yarn zip`
-
->  export GRAFANA_ACCESS_POLICY_TOKEN before execute yarn sign
+trigger release action by push tags
 
 
