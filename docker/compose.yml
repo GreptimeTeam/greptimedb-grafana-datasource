@@ -11,8 +11,8 @@ version: '3.1'
 
 services:
   greptimedb:
-    image: greptime/greptimedb:nightly-20240510-08945f128
-    container_name: greptimedb
+    image: greptime/greptimedb:latest
+    container_name: greptimedb_info8fcc
     command: standalone start --http-addr=0.0.0.0:4000 --rpc-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
     ports:
       - 4000:4000
@@ -23,7 +23,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
+    container_name: prometheus_info8fcc
     ports:
       - 9090:9090
     networks:
@@ -33,7 +33,7 @@ services:
 
   node_exporter:
     image: quay.io/prometheus/node-exporter:latest
-    container_name: node_exporter
+    container_name: node_exporter_info8fcc
     # ports:
     #   - 9100:9100
     command:
@@ -43,7 +43,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
+    container_name: grafana_info8fcc
     ports:
       - 3000:3000
     environment:
