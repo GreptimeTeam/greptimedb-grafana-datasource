@@ -4,7 +4,7 @@
 
 ## Install packaged plugin Locally(Use of either method)
 
-> We haven't publish this plugin to grafana, you can install local currentlly.
+> We haven't published this plugin to grafana, you can install local currently.
 
 > Get plugin zip from  [release page](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases) 
 
@@ -34,7 +34,7 @@ docker run -d -p 3000:3000 --name=grafana \
 
 ***use yarn 1.x (There's a little problem with npm)***
 
-Execute theses commands in code root folder
+Execute these commands in code root folder
 
 1. Install dependencies
 
@@ -63,6 +63,6 @@ Execute theses commands in code root folder
 
 ## Build Plugin
 
-trigger release action by push tags
+Trigger release action by push tags
 
 
