@@ -1,40 +1,58 @@
+# GreptimeDB DataSource for Grafana
 
-# GreptimeDB DataSource
+![GitHub
+Release](https://img.shields.io/github/v/release/greptimeteam/greptimedb-grafana-datasource)
+![GitHub
+License](https://img.shields.io/github/license/greptimeteam/greptimedb-grafana-datasource)
 
+This is a [Grafana](https://grafana.com/grafana) data source plugin built for
+[GreptimeDB](https://github.com/GreptimeTeam/greptimedb).
 
-## Install packaged plugin Locally(Use of either method)
+![explore](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/1.png)
 
-> We haven't published this plugin to grafana, you can install local currently.
+![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/2.png)
 
-> Get plugin zip from  [release page](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases) 
+## Installation
 
-1. ### Use docker compose (Recommend, contains dependency docker image)
-  * download [files in docker directory](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/tree/main/docker)
-  * `cd` your downloaded directory, run `docker compose up` 
+Grab the latest release from [release
+page](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/),
+Unzip the file to your [grafana plugin
+directory](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#plugins).
 
-2. ### Use grafana cli
+You can also use grafana cli to download and install
+
 ```
-grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/download/v1.0.2/info8fcc-greptimedb-datasource.zip plugins install info8fcc
+grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip plugins install info8fcc
 ```
 
-3. ### Unzip directly 
-unzip the [plugin zip](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/archive/refs/tags/v1.0.2.zip) to your [grafana plugin directory](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#plugins).
+Note that you may need to restart your grafana server after installing the plugin.
 
+## Quick Start using Docker
 
-4. ### Use docker
+You can also try-out this plugin from a Grafana docker image:
+
 ```
-docker run -d -p 3000:3000 --name=grafana \
-  -e "GF_INSTALL_PLUGINS=https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/download/v1.0.2/info8fcc-greptimedb-datasource.zip;info8fcc" \
+docker run -d -p 3000:3000 --name=grafana -rm \
+  -e "GF_INSTALL_PLUGINS=https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip;info8fcc" \
   grafana/grafana-oss
 ```
 
-> after install, restart your grafana server
+## Feature and Roadmap
 
-## Local startup dev mode
+We started this plugin from forking Grafana's built-in Prometheus plugin. The
+goal of this plugin is to provide visualization support for all native types
+of GreptimeDB data.
 
-***use yarn 1.x (There's a little problem with npm)***
+- Time series panels
+  - [x] PromQL
+    - [x] GreptimeDB's additional field selector
+  - [ ] SQL
+- [ ] Event UI
 
-Execute these commands in code root folder
+## Development
+
+
+Yarn 1.x is required for this project. Execute these commands in code root folder
 
 1. Install dependencies
 
@@ -60,9 +78,13 @@ Execute these commands in code root folder
    docker compose up
    ```
 
+## Community
 
-## Build Plugin
+Join our [community slack](https://www.greptime.com/slack) channel #grafana for
+discussion of this plugin.
 
-Trigger release action by push tags
+## License
 
-
+GreptimeDB uses the [Apache License
+2.0](https://apache.org/licenses/LICENSE-2.0.txt) to strike a balance between
+open contributions and allowing you to use the software however you want.
