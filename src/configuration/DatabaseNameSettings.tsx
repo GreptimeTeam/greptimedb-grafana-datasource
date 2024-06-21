@@ -6,8 +6,7 @@ export default function DatabaseNameSettings ({config, onChange}) {
   function onInputChange (e) {
     const value = e.target.value
     setName(value)
-    const { jsonData, secureJsonData, secureJsonFields } = config
-    console.log(jsonData, secureJsonData)
+    const { jsonData, secureJsonData } = config
     const newJsonData = Object.assign({}, jsonData)
     newJsonData.httpHeaderName1 = 'x-greptime-db-name'
     const newSecureJsonData = Object.assign({}, secureJsonData)
@@ -23,7 +22,7 @@ export default function DatabaseNameSettings ({config, onChange}) {
 
   function onReset () {
     setName('')
-    const { jsonData, secureJsonData, secureJsonFields } = config
+    const { secureJsonFields } = config
     const newSecureJsonFields = Object.assign({}, secureJsonFields)
     newSecureJsonFields.httpHeaderValue1 = false
     onChange({
