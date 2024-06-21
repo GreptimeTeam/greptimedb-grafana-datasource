@@ -9,7 +9,7 @@ import { PromOptions } from '../types';
 
 import { docsTip, overhaulStyles } from './ConfigEditor';
 import { CustomMethod } from './overhaul/types';
-
+import DatabaseNameSettings from './DatabaseNameSettings';
 type Props = {
   options: DataSourceSettings<PromOptions, {}>;
   onOptionsChange: (options: DataSourceSettings<PromOptions, {}>) => void;
@@ -126,6 +126,11 @@ export const DataSourcehttpSettingsOverhaul = (props: Props) => {
         urlTooltip={urlTooltip}
       />
       <hr className={`${styles.hrTopSpace} ${styles.hrBottomSpace}`} />
+      <DatabaseNameSettings 
+        config={options}
+        onChange={onOptionsChange}>
+      </DatabaseNameSettings>
+      <hr></hr>
       <Auth
         {...newAuthProps}
         customMethods={customMethods}
