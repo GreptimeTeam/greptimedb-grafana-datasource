@@ -6,15 +6,19 @@ Release](https://img.shields.io/github/v/release/greptimeteam/greptimedb-grafana
 License](https://img.shields.io/github/license/greptimeteam/greptimedb-grafana-datasource)
 
 This is a [Grafana](https://grafana.com/grafana) data source plugin built for
-[GreptimeDB](https://github.com/GreptimeTeam/greptimedb).
+[GreptimeDB](https://github.com/GreptimeTeam/greptimedb). This plugin is built
+on top of original Grafana Prometheus data source and enhanced for GreptimeDB's
+additional features.
 
 ## Screenshots
 
+PromQL query builder with additional field selector.
+
 ![explore](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/1.png)
 
-![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/2.png)
+Time-series data rendered with GreptimeDB data source.
 
-![setup](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/3.png)
+![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/2.png)
 
 ## Installation
 
