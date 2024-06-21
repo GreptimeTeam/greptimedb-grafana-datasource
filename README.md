@@ -8,9 +8,13 @@ License](https://img.shields.io/github/license/greptimeteam/greptimedb-grafana-d
 This is a [Grafana](https://grafana.com/grafana) data source plugin built for
 [GreptimeDB](https://github.com/GreptimeTeam/greptimedb).
 
-![explore](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/1.png)
+## Screenshots
 
-![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/2.png)
+![explore](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/1.png)
+
+![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/2.png)
+
+![setup](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/3.png)
 
 ## Installation
 
@@ -29,15 +33,19 @@ Note that you may need to restart your grafana server after installing the plugi
 
 ## Quick Start using Docker
 
-You can also try-out this plugin from a Grafana docker image:
+You can also try out this plugin from a Grafana docker image:
 
 ```
-docker run -d -p 3000:3000 --name=grafana -rm \
+docker run -d -p 3000:3000 --name=grafana --rm \
   -e "GF_INSTALL_PLUGINS=https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip;info8fcc" \
   grafana/grafana-oss
 ```
 
-## Feature and Roadmap
+## Docs
+
+See our setup guide from our [docs](https://docs.greptime.com/user-guide/clients/grafana).
+
+## Features and Roadmap
 
 We started this plugin from forking Grafana's built-in Prometheus plugin. The
 goal of this plugin is to provide visualization support for all native types
@@ -47,7 +55,12 @@ of GreptimeDB data.
   - [x] PromQL
     - [x] GreptimeDB's additional field selector
   - [ ] SQL
-- [ ] Event UI
+    - [ ] Time macro
+- Event UI
+  - [ ] Event
+- Settings UI
+  - [ ] DB name input
+  - [ ] Authentication
 
 ## Development
 
