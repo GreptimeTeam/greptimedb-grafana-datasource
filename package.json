@@ -1,6 +1,6 @@
 {
   "name": "db2",
-  "version": "1.0.0",
+  "version": "1.0.36",
   "description": "",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -18,7 +18,7 @@
     "buildzip": "yarn build && mage && yarn sign && yarn zip"
   },
   "author": "Cs",
-  "license": "Apache-2.0",  
+  "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7.21.4",
     "@grafana/eslint-config": "^7.0.0",
