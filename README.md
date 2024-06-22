@@ -14,11 +14,11 @@ additional features.
 
 PromQL query builder with additional field selector.
 
-![explore](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/1.png)
+![explore](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/1.png)
 
 Time-series data rendered with GreptimeDB data source.
 
-![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/doc/README/screenshots/2.png)
+![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/2.png)
 
 ## Installation
 
