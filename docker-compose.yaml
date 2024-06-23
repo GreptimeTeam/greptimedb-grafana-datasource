@@ -35,13 +35,13 @@ services:
 
   grafana:
     user: root
-    container_name: 'greptimedb-datasource'
+    container_name: 'info8fcc-greptimedb-datasource'
 
     platform: 'linux/amd64'
     build:
       context: ./.config
       args:
-        grafana_image: ${GRAFANA_IMAGE:-grafana-oss}
+        grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
         grafana_version: ${GRAFANA_VERSION:-10.3.3}
     ports:
       - 3000:3000/tcp
@@ -52,9 +52,9 @@ services:
     cap_add:
       - SYS_PTRACE
     volumes:
-      - ./dist:/var/lib/grafana/plugins/greptimedb-datasource
+      - ./dist:/var/lib/grafana/plugins/info8fcc-greptimedb-datasource
       - ./provisioning:/etc/grafana/provisioning
-      - .:/root/greptimedb-datasource
+      - .:/root/info8fcc-greptimedb-datasource
 
     environment:
       NODE_ENV: development
