@@ -63,8 +63,8 @@ of GreptimeDB data.
 - Event UI
   - [ ] Event
 - Settings UI
-  - [ ] DB name input
-  - [ ] Authentication
+  - [x] DB name input
+  - [x] Authentication
 
 ## Development
 
