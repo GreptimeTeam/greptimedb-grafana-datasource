@@ -129,8 +129,7 @@ export const DataSourcehttpSettingsOverhaul = (props: Props) => {
       <hr/>
       <DatabaseNameSettings 
         config={options}
-        onChange={onOptionsChange}>
-      </DatabaseNameSettings>
+        onChange={onOptionsChange}/>
       <hr></hr>
       <Auth
         {...newAuthProps}
