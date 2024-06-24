@@ -35,7 +35,16 @@ grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datas
 
 Note that you may need to restart your grafana server after installing the plugin.
 
-## Quick Start using Docker
+## Quick Preview using Docker
+
+We built a docker compose file that integrated GreptimeDB, Prometheus,
+Prometheus Node Exporter, Grafana and this plugin together.
+
+```bash
+git clone https://github.com/GreptimeTeam/greptimedb-grafana-datasource.git
+cd docker
+docker compose up
+```
 
 You can also try out this plugin from a Grafana docker image:
 
