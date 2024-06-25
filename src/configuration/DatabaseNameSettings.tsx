@@ -34,7 +34,7 @@ export default function DatabaseNameSettings ({config, onChange}) {
   return (
     <ConfigSection title="Database Name">
       <Field >
-        <SecretInput width={30} value={name} onChange={onInputChange} isConfigured={config.secureJsonFields.httpHeaderValue1} onReset={onReset} />
+        <SecretInput autoComplete="new-password" width={30} value={name} onChange={onInputChange} isConfigured={config.secureJsonFields.httpHeaderValue1} onReset={onReset} />
       </Field>
     </ConfigSection>
   )

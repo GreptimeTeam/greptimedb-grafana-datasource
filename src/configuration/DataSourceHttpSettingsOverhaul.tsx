@@ -120,7 +120,7 @@ export const DataSourcehttpSettingsOverhaul = (props: Props) => {
   return (
     <>
       <ConnectionSettings
-        urlPlaceholder="http://localhost:9090"
+        urlPlaceholder="http://greptimedb:4000"
         config={options}
         onChange={onOptionsChange}
         urlLabel="GreptimeDB server URL"
