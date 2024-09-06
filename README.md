@@ -56,7 +56,7 @@ docker run -d -p 3000:3000 --name=grafana --rm \
 
 ## Docs
 
-See our setup guide from our [docs](https://docs.greptime.com/user-guide/clients/grafana).
+See our setup guide from our [docs](https://docs.greptime.com/user-guide/integrations/grafana).
 
 ## Features and Roadmap
 
