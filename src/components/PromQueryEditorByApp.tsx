@@ -6,6 +6,8 @@ import { PromQueryEditorSelector } from '../querybuilder/components/PromQueryEdi
 
 import { PromQueryEditorForAlerting } from './PromQueryEditorForAlerting';
 import { PromQueryEditorProps } from './types';
+import QueryWrapper from '../querybuilder/QueryWrapper';
+
 
 export function PromQueryEditorByApp(props: PromQueryEditorProps) {
   const { app } = props;
@@ -14,7 +16,7 @@ export function PromQueryEditorByApp(props: PromQueryEditorProps) {
     case CoreApp.CloudAlerting:
       return <PromQueryEditorForAlerting {...props} />;
     default:
-      return <PromQueryEditorSelector {...props} />;
+      return <QueryWrapper {...props} />;
   }
 }
 

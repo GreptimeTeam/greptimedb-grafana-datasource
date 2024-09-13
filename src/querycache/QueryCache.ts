@@ -13,6 +13,7 @@ import { config, reportInteraction } from '@grafana/runtime';
 import { amendTable, Table, trimTable } from 'app/features/live/data/amendTimeSeries';
 
 import { PromQuery } from '../types';
+import { SQLQuery } from 'querybuilder/mysql/sql';
 
 // dashboardUID + panelId + refId
 // (must be stable across query changes, time range changes / interval changes / panel resizes / template variable changes)
@@ -26,7 +27,7 @@ type TargetSig = string;
 
 type TimestampMs = number;
 
-type SupportedQueryTypes = PromQuery;
+type SupportedQueryTypes = PromQuery | SQLQuery;
 
 // string matching requirements defined in durationutil.ts
 export const defaultPrometheusQueryOverlapWindow = '10m';
