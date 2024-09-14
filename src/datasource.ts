@@ -75,9 +75,8 @@ const GET_AND_POST_METADATA_ENDPOINTS = ['v1/prometheus/api/v1/query', 'v1/prome
 export const InstantQueryRefIdIndex = '-Instant';
 
 
-
 export class PrometheusDatasource
-  extends DataSourceWithBackend
+  extends DataSourceWithBackend<PromQuery, PromOptions>
   implements DataSourceWithQueryImportSupport<PromQuery>, DataSourceWithQueryExportSupport<PromQuery>
 {
   type: string;
@@ -146,8 +145,6 @@ export class PrometheusDatasource
     this.annotations = {
       QueryEditor: AnnotationQueryEditor,
     };
-    console.log('contructor in pm', this)
-    this.clientRequest = this.clientRequest
   }
 
   init = async () => {
@@ -230,7 +227,7 @@ export class PrometheusDatasource
    * request. Any processing done here needs to be also copied on the backend as this goes through data source proxy
    * but not through the same code as alerting.
    */
-  clientRequest<T = unknown>(
+  _request<T = unknown>(
     url: string,
     data: Record<string, string> | null,
     overrides: Partial<BackendSrvRequest> = {}
@@ -297,7 +294,7 @@ export class PrometheusDatasource
     if (GET_AND_POST_METADATA_ENDPOINTS.some((endpoint) => url.includes(endpoint))) {
       try {
         return await lastValueFrom(
-          this.clientRequest<T>(`${url}`, params, {
+          this._request<T>(`${url}`, params, {
             method: this.httpMethod,
             hideFromInspector: true,
             showErrorAlert: false,
@@ -315,7 +312,7 @@ export class PrometheusDatasource
     }
 
     return await lastValueFrom(
-      this.clientRequest<T>(`${url}`, params, {
+      this._request<T>(`${url}`, params, {
         method: 'GET',
         hideFromInspector: true,
         ...options,
@@ -393,50 +390,39 @@ export class PrometheusDatasource
     return processedTargets;
   }
 
-  public promQuery(request: DataQueryRequest<PromQuery>): Observable<DataQueryResponse> {
+  query(request: DataQueryRequest<PromQuery>): Observable<DataQueryResponse> {
     if (this.access === 'direct') {
       return this.directAccessError();
     }
-    
-    // lastValueFrom(this.clientRequest('/v1/sql', {sql: 'show tables'}))
-    // const tableData = await lastValueFrom(this.clientRequest('/v1/sql', {sql: 'show tables'}))
-    // console.log(tableData)
-
-    
-    const startTime = new Date();
 
     let fullOrPartialRequest: DataQueryRequest<PromQuery>;
     let requestInfo: CacheRequestInfo<PromQuery> | undefined = undefined;
-    let hasInstantQuery = false
-    hasInstantQuery = request.targets.some((target) => (target as PromQuery).instant);
+    const hasInstantQuery = request.targets.some((target) => target.instant);
 
     // Don't cache instant queries
     if (this.hasIncrementalQuery && !hasInstantQuery) {
-      requestInfo = this.cache.requestInfo(request as DataQueryRequest<PromQuery>);
-      fullOrPartialRequest = requestInfo.requests[0] as DataQueryRequest<PromQuery> ;
+      requestInfo = this.cache.requestInfo(request);
+      fullOrPartialRequest = requestInfo.requests[0];
     } else {
-      fullOrPartialRequest = request as DataQueryRequest<PromQuery>;
+      fullOrPartialRequest = request;
     }
-    const targets  = fullOrPartialRequest.targets.map((target) => this.processTargetV2(target as PromQuery, fullOrPartialRequest));
-    // return transformSqlResponse(this.clientRequest('/v1/sql', {sql: 'select * from go_gc_duration_seconds'}))
+
+    const targets = fullOrPartialRequest.targets.map((target) => this.processTargetV2(target, fullOrPartialRequest));
+    const startTime = new Date();
     return super.query({ ...fullOrPartialRequest, targets: targets.flat() }).pipe(
       map((response) => {
         const amendedResponse = {
           ...response,
-          data: this.cache.procFrames(request as DataQueryRequest<PromQuery>, requestInfo, response.data),
+          data: this.cache.procFrames(request, requestInfo, response.data),
         };
-        return transformV2(amendedResponse, request as DataQueryRequest<PromQuery>, {
+        return transformV2(amendedResponse, request, {
           exemplarTraceIdDestinations: this.exemplarTraceIdDestinations,
         });
       }),
-      map(v => {
-        return v
-      }),
       tap((response: DataQueryResponse) => {
-        trackQuery(response, request as DataQueryRequest<PromQuery>, startTime);
+        trackQuery(response, request, startTime);
       })
     );
-    
   }
 
   createQuery(target: PromQuery, options: DataQueryRequest<PromQuery>, start: number, end: number) {
@@ -1016,15 +1002,16 @@ export class GreptimeDBDatasource extends DataSourceWithBackend {
     mixin(this, promInstance)
     
   }
-  query(request: DataQueryRequest<PromQuery | SQLQuery>): Observable<DataQueryResponse> | Promise<DataQueryResponse> {
+  query(request: DataQueryRequest<PromQuery | SQLQuery>): Observable<DataQueryResponse> {
     if (!isPromQuery(request.targets[0])) {
       const promises = (request.targets as SQLQuery[]).map(async (target) => {
         // console.log(target)
-        return lastValueFrom(transformSqlResponse(this.clientRequest('/v1/sql', {sql: target.rawSql as string})))
+        return lastValueFrom(transformSqlResponse((this as any).clientRequest('/v1/sql', {sql: target.rawSql as string})))
       });
-      return Promise.all(promises).then((data) => ({ data }))
+      // TODO fix ts
+      return Promise.all(promises).then((data) => ({ data })) as unknown as Observable<DataQueryResponse>
     } else {
-      return this.promQuery(request)
+      return (this as any).promQuery(request)
     }
   }
 }
