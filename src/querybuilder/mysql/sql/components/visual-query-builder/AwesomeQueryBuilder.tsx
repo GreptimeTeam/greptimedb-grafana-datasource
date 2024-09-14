@@ -268,7 +268,7 @@ function getCustomOperators(config: BasicConfig) {
       valueSrc,
       valueType,
       opDef,
-      operatorOptions,
+      operatorOptions as any,
       fieldDef
     );
   };
@@ -298,7 +298,7 @@ function getCustomOperators(config: BasicConfig) {
       valueSrc,
       valueType,
       opDef,
-      operatorOptions,
+      operatorOptions as any,
       fieldDef
     );
   };

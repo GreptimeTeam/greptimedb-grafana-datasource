@@ -262,7 +262,7 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
 
   private runMetaQuery(request: Partial<SQLQuery>, range: TimeRange): Promise<DataFrame> {
     const refId = request.refId || 'meta';
-    const queries: DataQuery[] = [{ ...request, datasource: request.datasource || this.getRef(), refId }];
+    const queries: SQLQuery[] = [{ ...request, datasource: request.datasource || this.getRef(), refId }];
 
     return lastValueFrom(
       getBackendSrv()

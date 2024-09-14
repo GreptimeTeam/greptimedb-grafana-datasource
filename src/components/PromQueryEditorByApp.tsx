@@ -5,11 +5,11 @@ import { CoreApp } from '@grafana/data';
 import { PromQueryEditorSelector } from '../querybuilder/components/PromQueryEditorSelector';
 
 import { PromQueryEditorForAlerting } from './PromQueryEditorForAlerting';
-import { PromQueryEditorProps } from './types';
+import { PromQueryEditorProps, SqlQueryEditorProps } from './types';
 import QueryWrapper from '../querybuilder/QueryWrapper';
 
 
-export function PromQueryEditorByApp(props: PromQueryEditorProps) {
+export function PromQueryEditorByApp(props: PromQueryEditorProps & SqlQueryEditorProps) {
   const { app } = props;
 
   switch (app) {

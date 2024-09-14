@@ -4,7 +4,9 @@
     "esModuleInterop": true,
     "jsx": "react",
     "noImplicitAny": false,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    "target": "ES2021",
+    "lib": ["ES2021", "DOM"]
   },
   "exclude": ["**/*.test.tsx", "**/*.test.ts", "**/mocks.ts"]
 }

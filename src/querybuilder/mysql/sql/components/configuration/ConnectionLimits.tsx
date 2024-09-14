@@ -67,8 +67,8 @@ export const ConnectionLimits = <T extends SQLConnectionLimits>(props: Props<T>)
   // and set minimum idle connections if automatic
   // is selected
   const onConnectionIdleAutoChanged = () => {
-    let idleConns = undefined;
-    let maxConns = undefined;
+    let idleConns;
+    let maxConns;
 
     // If the maximum number of open connections is undefined
     // and we're setting auto idle then set the default amount

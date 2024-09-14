@@ -71,7 +71,7 @@ function getFieldType(values: any[]) {
 
 export function transformSqlResponse(response: Observable<FetchResponse>) {
   return response.pipe(switchMap((raw) => {
-    console.log(raw)
+    // console.log(raw)
     
     // const rsp = toDataQueryResponse(raw, queries as DataQuery[]);
     // // Check if any response should subscribe to a live stream
@@ -80,11 +80,11 @@ export function transformSqlResponse(response: Observable<FetchResponse>) {
     // }
     return of(raw);
   })).pipe(map(data => {
-    console.log(data)
+    // console.log(data)
     return data.data
   })).pipe(map(
     response => {
-      console.log(response)
+      // console.log(response)
       const columnSchemas = response.output[0].records.schema.column_schemas;
       const dataRows = response.output[0].records.rows;
 
@@ -107,7 +107,6 @@ export function transformSqlResponse(response: Observable<FetchResponse>) {
       //   state: 'Done'
       // }
       // console.log(result, 'result')
-      console.log(frame)
       return frame
     }
   ))
