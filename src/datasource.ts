@@ -67,31 +67,18 @@ import { PrometheusVariableSupport } from './variables';
 
 import { transformSqlResponse } from './greptimedb'
 import {MySqlDatasource} from './querybuilder/mysql/MySqlDatasource'
-import { SQLExpression, SQLQuery } from 'querybuilder/mysql/sql/types';
-
-// const BaseClass = Object.assign(MySqlDatasource, DataSourceWithBackend)
-type Constructor<T = {}> = new (...args: any[]) => T;
-function mixin<T extends Constructor, U extends Constructor>(Base1: T, Base2: U) {
-  return class extends (Base1 as any) {
-      constructor(...args: any[]) {
-          super(...args);
-          Object.assign(this, new Base2(...args));
-      }
-  };
-}
+import { SQLExpression, SQLOptions, SQLQuery } from 'querybuilder/mysql/sql/types';
 
 const ANNOTATION_QUERY_STEP_DEFAULT = '60s';
 const GET_AND_POST_METADATA_ENDPOINTS = ['v1/prometheus/api/v1/query', 'v1/prometheus/api/v1/query_range', 'v1/prometheus/api/v1/series', 'v1/prometheus/api/v1/labels'];
 
 export const InstantQueryRefIdIndex = '-Instant';
 
-function isPromQuery(query: PromQuery | SQLQuery): query is PromQuery {
-  return query.sqltype === 'promql' || !query.sqltype
-}
+
 
 export class PrometheusDatasource
-  extends mixin(MySqlDatasource, DataSourceWithBackend)
-  implements DataSourceWithQueryImportSupport<PromQuery | SQLQuery>, DataSourceWithQueryExportSupport<PromQuery | SQLQuery>
+  extends DataSourceWithBackend
+  implements DataSourceWithQueryImportSupport<PromQuery>, DataSourceWithQueryExportSupport<PromQuery>
 {
   type: string;
   ruleMappings: { [index: string]: string };
@@ -159,6 +146,8 @@ export class PrometheusDatasource
     this.annotations = {
       QueryEditor: AnnotationQueryEditor,
     };
+    console.log('contructor in pm', this)
+    this.clientRequest = this.clientRequest
   }
 
   init = async () => {
@@ -241,7 +230,7 @@ export class PrometheusDatasource
    * request. Any processing done here needs to be also copied on the backend as this goes through data source proxy
    * but not through the same code as alerting.
    */
-  _request<T = unknown>(
+  clientRequest<T = unknown>(
     url: string,
     data: Record<string, string> | null,
     overrides: Partial<BackendSrvRequest> = {}
@@ -308,7 +297,7 @@ export class PrometheusDatasource
     if (GET_AND_POST_METADATA_ENDPOINTS.some((endpoint) => url.includes(endpoint))) {
       try {
         return await lastValueFrom(
-          this._request<T>(`${url}`, params, {
+          this.clientRequest<T>(`${url}`, params, {
             method: this.httpMethod,
             hideFromInspector: true,
             showErrorAlert: false,
@@ -326,7 +315,7 @@ export class PrometheusDatasource
     }
 
     return await lastValueFrom(
-      this._request<T>(`${url}`, params, {
+      this.clientRequest<T>(`${url}`, params, {
         method: 'GET',
         hideFromInspector: true,
         ...options,
@@ -404,58 +393,49 @@ export class PrometheusDatasource
     return processedTargets;
   }
 
-  query(request: DataQueryRequest<PromQuery | SQLQuery>): Observable<DataQueryResponse> | Promise<DataQueryResponse> {
+  public promQuery(request: DataQueryRequest<PromQuery>): Observable<DataQueryResponse> {
     if (this.access === 'direct') {
       return this.directAccessError();
     }
     
-    // lastValueFrom(this._request('/v1/sql', {sql: 'show tables'}))
-    // const tableData = await lastValueFrom(this._request('/v1/sql', {sql: 'show tables'}))
+    // lastValueFrom(this.clientRequest('/v1/sql', {sql: 'show tables'}))
+    // const tableData = await lastValueFrom(this.clientRequest('/v1/sql', {sql: 'show tables'}))
     // console.log(tableData)
 
     
     const startTime = new Date();
 
-    if (!isPromQuery(request.targets[0])) {
-      const promises = (request.targets as SQLQuery[]).map(async (target) => {
-        console.log(target)
-        return lastValueFrom(transformSqlResponse(this._request('/v1/sql', {sql: target.rawSql as string})))
-      });
-      return Promise.all(promises).then((data) => ({ data }))
-    } else {
-      let fullOrPartialRequest: DataQueryRequest<PromQuery>;
-      let requestInfo: CacheRequestInfo<PromQuery> | undefined = undefined;
-      let hasInstantQuery = false
-      hasInstantQuery = request.targets.some((target) => (target as PromQuery).instant);
+    let fullOrPartialRequest: DataQueryRequest<PromQuery>;
+    let requestInfo: CacheRequestInfo<PromQuery> | undefined = undefined;
+    let hasInstantQuery = false
+    hasInstantQuery = request.targets.some((target) => (target as PromQuery).instant);
 
-      // Don't cache instant queries
-      if (this.hasIncrementalQuery && !hasInstantQuery) {
-        requestInfo = this.cache.requestInfo(request as DataQueryRequest<PromQuery>);
-        fullOrPartialRequest = requestInfo.requests[0] as DataQueryRequest<PromQuery> ;
-      } else {
-        fullOrPartialRequest = request as DataQueryRequest<PromQuery>;
-      }
-      const targets  = fullOrPartialRequest.targets.map((target) => this.processTargetV2(target as PromQuery, fullOrPartialRequest));
-      // return transformSqlResponse(this._request('/v1/sql', {sql: 'select * from go_gc_duration_seconds'}))
-      return super.query({ ...fullOrPartialRequest, targets: targets.flat() }).pipe(
-        map((response) => {
-          const amendedResponse = {
-            ...response,
-            data: this.cache.procFrames(request as DataQueryRequest<PromQuery>, requestInfo, response.data),
-          };
-          return transformV2(amendedResponse, request as DataQueryRequest<PromQuery>, {
-            exemplarTraceIdDestinations: this.exemplarTraceIdDestinations,
-          });
-        }),
-        map(v => {
-          console.log(v)
-          return v
-        }),
-        tap((response: DataQueryResponse) => {
-          trackQuery(response, request as DataQueryRequest<PromQuery>, startTime);
-        })
-      );
+    // Don't cache instant queries
+    if (this.hasIncrementalQuery && !hasInstantQuery) {
+      requestInfo = this.cache.requestInfo(request as DataQueryRequest<PromQuery>);
+      fullOrPartialRequest = requestInfo.requests[0] as DataQueryRequest<PromQuery> ;
+    } else {
+      fullOrPartialRequest = request as DataQueryRequest<PromQuery>;
     }
+    const targets  = fullOrPartialRequest.targets.map((target) => this.processTargetV2(target as PromQuery, fullOrPartialRequest));
+    // return transformSqlResponse(this.clientRequest('/v1/sql', {sql: 'select * from go_gc_duration_seconds'}))
+    return super.query({ ...fullOrPartialRequest, targets: targets.flat() }).pipe(
+      map((response) => {
+        const amendedResponse = {
+          ...response,
+          data: this.cache.procFrames(request as DataQueryRequest<PromQuery>, requestInfo, response.data),
+        };
+        return transformV2(amendedResponse, request as DataQueryRequest<PromQuery>, {
+          exemplarTraceIdDestinations: this.exemplarTraceIdDestinations,
+        });
+      }),
+      map(v => {
+        return v
+      }),
+      tap((response: DataQueryResponse) => {
+        trackQuery(response, request as DataQueryRequest<PromQuery>, startTime);
+      })
+    );
     
   }
 
@@ -1004,6 +984,48 @@ export class PrometheusDatasource
     }
 
     return defaults;
+  }
+}
+
+function isPromQuery(query: PromQuery | SQLQuery): query is PromQuery {
+  return query.sqltype === 'promql' || !query.sqltype
+}
+
+function mixin (thisObj, instance) {
+  Object.assign(thisObj, instance)
+  const proto = Object.getPrototypeOf(instance);
+  const parentProto = Object.getPrototypeOf(proto)
+
+  // Get all property names (including methods) of the prototype
+  const methods = [...Object.getOwnPropertyNames(parentProto), ...Object.getOwnPropertyNames(proto)].filter(prop => typeof proto[prop] === 'function' && prop !== 'query' && prop !== 'contructor')
+  console.log(methods)
+  for (const method of methods) {
+    thisObj[method] = instance[method]
+  }
+}
+export class GreptimeDBDatasource extends DataSourceWithBackend {
+  constructor(
+    instanceSettings: DataSourceInstanceSettings<PromOptions>,
+    private readonly templateSrv: TemplateSrv = getTemplateSrv(),
+    languageProvider?: PrometheusLanguageProvider
+  ) {
+    super(instanceSettings)
+    const promInstance = new PrometheusDatasource(instanceSettings, templateSrv, languageProvider)
+    const mysqlInstance = new MySqlDatasource(instanceSettings as DataSourceInstanceSettings<SQLOptions>)
+    mixin(this, mysqlInstance)
+    mixin(this, promInstance)
+    
+  }
+  query(request: DataQueryRequest<PromQuery | SQLQuery>): Observable<DataQueryResponse> | Promise<DataQueryResponse> {
+    if (!isPromQuery(request.targets[0])) {
+      const promises = (request.targets as SQLQuery[]).map(async (target) => {
+        // console.log(target)
+        return lastValueFrom(transformSqlResponse(this.clientRequest('/v1/sql', {sql: target.rawSql as string})))
+      });
+      return Promise.all(promises).then((data) => ({ data }))
+    } else {
+      return this.promQuery(request)
+    }
   }
 }
 
