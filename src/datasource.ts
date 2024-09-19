@@ -390,7 +390,7 @@ export class PrometheusDatasource
     return processedTargets;
   }
 
-  query(request: DataQueryRequest<PromQuery>): Observable<DataQueryResponse> {
+  executePromQuery(request: DataQueryRequest<PromQuery>): Observable<DataQueryResponse> {
     if (this.access === 'direct') {
       return this.directAccessError();
     }
@@ -1006,12 +1006,12 @@ export class GreptimeDBDatasource extends DataSourceWithBackend {
     if (!isPromQuery(request.targets[0])) {
       const promises = (request.targets as SQLQuery[]).map(async (target) => {
         // console.log(target)
-        return lastValueFrom(transformSqlResponse((this as any).clientRequest('/v1/sql', {sql: target.rawSql as string})))
+        return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: target.rawSql as string})))
       });
       // TODO fix ts
       return Promise.all(promises).then((data) => ({ data })) as unknown as Observable<DataQueryResponse>
     } else {
-      return (this as any).promQuery(request)
+      return (this as any).executePromQuery(request)
     }
   }
 }
