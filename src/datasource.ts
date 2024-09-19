@@ -2,6 +2,7 @@ import { cloneDeep, defaults, extend } from 'lodash';
 import { lastValueFrom, Observable, throwError, of } from 'rxjs';
 import { map, tap, switchMap } from 'rxjs/operators';
 import semver from 'semver';
+import store from 'app/core/store';
 
 import {
   AbstractQuery,
@@ -974,7 +975,18 @@ export class PrometheusDatasource
 }
 
 function isPromQuery(query: PromQuery | SQLQuery): query is PromQuery {
-  return query.sqltype === 'promql' || !query.sqltype
+  console.log(query, query.sqltype, store.get('sqltype'))
+  if (query.sqltype && query.sqltype === 'promql') {
+    return true
+  }
+  if (store.get('sqltype') === 'promql') {
+    return true
+  }
+  if (!query.sqltype && !store.get('sqltype')) {
+    return true
+  }
+  return false
+  // return store.get('sqltype') === 'promql' || query.sqltype === 'promql' || !query.sqltype
 }
 
 function mixin (thisObj, instance) {
