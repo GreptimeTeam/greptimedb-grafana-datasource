@@ -1016,8 +1016,12 @@ export class GreptimeDBDatasource extends DataSourceWithBackend {
   }
   query(request: DataQueryRequest<PromQuery | SQLQuery>): Observable<DataQueryResponse> {
     if (!isPromQuery(request.targets[0])) {
+      if (!request.targets[0].rawSql) {
+        return Promise.resolve({data: []})
+      }
       const promises = (request.targets as SQLQuery[]).map(async (target) => {
         // console.log(target)
+        
         return this.fetchFields({dataset: target.dataset, table: target.table}).then(columns => {
           return columns.filter(column => column.type.indexOf('timestamp') > -1)[0]
           
