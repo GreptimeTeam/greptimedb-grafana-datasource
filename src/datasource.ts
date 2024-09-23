@@ -66,7 +66,7 @@ import {
 } from './types';
 import { PrometheusVariableSupport } from './variables';
 
-import { transformSqlResponse } from './greptimedb'
+import { transformSqlResponse, addTsCondition } from './greptimedb'
 import {MySqlDatasource} from './querybuilder/mysql/MySqlDatasource'
 import { SQLExpression, SQLOptions, SQLQuery } from 'querybuilder/mysql/sql/types';
 
@@ -975,7 +975,6 @@ export class PrometheusDatasource
 }
 
 function isPromQuery(query: PromQuery | SQLQuery): query is PromQuery {
-  console.log(query, query.sqltype, store.get('sqltype'))
   if (query.sqltype && query.sqltype === 'promql') {
     return true
   }
@@ -996,11 +995,12 @@ function mixin (thisObj, instance) {
 
   // Get all property names (including methods) of the prototype
   const methods = [...Object.getOwnPropertyNames(parentProto), ...Object.getOwnPropertyNames(proto)].filter(prop => typeof proto[prop] === 'function' && prop !== 'query' && prop !== 'contructor')
-  console.log(methods)
   for (const method of methods) {
     thisObj[method] = instance[method]
   }
 }
+
+
 export class GreptimeDBDatasource extends DataSourceWithBackend {
   constructor(
     instanceSettings: DataSourceInstanceSettings<PromOptions>,
@@ -1018,8 +1018,19 @@ export class GreptimeDBDatasource extends DataSourceWithBackend {
     if (!isPromQuery(request.targets[0])) {
       const promises = (request.targets as SQLQuery[]).map(async (target) => {
         // console.log(target)
-        return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: target.rawSql as string})))
-      });
+        return this.fetchFields({dataset: target.dataset, table: target.table}).then(columns => {
+          return columns.filter(column => column.type.indexOf('timestamp') > -1)[0]
+          
+        }).then((tsColumn) => {
+          let sql = target.rawSql
+          if (tsColumn) {
+            sql = addTsCondition(target.rawSql, tsColumn.name,  request.range.from.toISOString(), request.range.to.toISOString())
+          }
+          return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: sql})))
+        })
+        // const sql = addTsCondition(target.rawSql, request.range.from.toISOString(), request.range.to.toISOString())
+        
+      })
       // TODO fix ts
       return Promise.all(promises).then((data) => ({ data })) as unknown as Observable<DataQueryResponse>
     } else {

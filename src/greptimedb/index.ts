@@ -111,3 +111,42 @@ export function transformSqlResponse(response: Observable<FetchResponse>) {
     }
   ))
 }
+
+export function addTsCondition (sql, column, start, end) {
+  const upperSql = sql.toUpperCase();
+  const whereIndex = upperSql.indexOf('WHERE')
+  if (whereIndex > -1) {
+    return sql.slice(0, whereIndex + 5) + ` ${column} >= '${start}' and ${column} < '${end}' and ` + sql.slice(whereIndex + 5)
+  } else {
+    const whereIndex = findWhereClausePosition(sql);
+    return sql.slice(0, whereIndex) + ` where ${column} >= '${start}' and ${column} < '${end}' ` + sql.slice(whereIndex)
+  }
+}
+
+function findWhereClausePosition(sql) {
+  // Normalize case for easier comparison
+  const upperSql = sql.toUpperCase();
+
+  // Find the first keyword after FROM where WHERE should go before
+  const groupByIndex = upperSql.indexOf('GROUP BY');
+  const orderByIndex = upperSql.indexOf('ORDER BY');
+  const limitIndex = upperSql.indexOf('LIMIT');
+
+  // Find the position to insert WHERE clause: 
+  // Insert before GROUP BY, ORDER BY, or LIMIT, whichever comes first
+  let insertPosition = upperSql.length; // Default to end of the query if no keywords
+
+  if (groupByIndex !== -1 && groupByIndex < insertPosition) {
+    insertPosition = groupByIndex;
+  }
+
+  if (orderByIndex !== -1 && orderByIndex < insertPosition) {
+    insertPosition = orderByIndex;
+  }
+
+  if (limitIndex !== -1 && limitIndex < insertPosition) {
+    insertPosition = limitIndex;
+  }
+
+  return insertPosition;
+}
