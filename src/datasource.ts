@@ -1000,7 +1000,7 @@ function mixin (thisObj, instance) {
   }
 }
 
-
+const TableNameReg = /(?<=from|join)(\s+\w+\b)/
 export class GreptimeDBDatasource extends DataSourceWithBackend {
   constructor(
     instanceSettings: DataSourceInstanceSettings<PromOptions>,
@@ -1021,8 +1021,13 @@ export class GreptimeDBDatasource extends DataSourceWithBackend {
       }
       const promises = (request.targets as SQLQuery[]).map(async (target) => {
         // console.log(target)
-        
-        return this.fetchFields({dataset: target.dataset, table: target.table}).then(columns => {
+        let table = target.table
+        let dataset = target.dataset
+        if (!table) {
+          table = target.rawSql?.toLocaleLowerCase().match(TableNameReg)[0]?.trim()
+          dataset = undefined
+        }
+        return this.fetchFields({dataset: dataset, table: table}).then(columns => {
           return columns.filter(column => column.type.indexOf('timestamp') > -1)[0]
           
         }).then((tsColumn) => {

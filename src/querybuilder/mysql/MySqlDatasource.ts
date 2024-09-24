@@ -50,7 +50,7 @@ export class MySqlDatasource extends SqlDatasource {
   }
 
   async fetchFields(query: Partial<SQLQuery>) {
-    if (!query.dataset || !query.table) {
+    if (!query.table) {
       return [];
     }
     const queryString = buildColumnQuery(query.table, query.dataset);
