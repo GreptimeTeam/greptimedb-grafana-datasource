@@ -1000,7 +1000,7 @@ function mixin (thisObj, instance) {
   }
 }
 
-const TableNameReg = /(?<=from|join)(\s+\w+\b)/
+const TableNameReg = /(?<=from|FROM)\s+([^\s;]+)/
 export class GreptimeDBDatasource extends DataSourceWithBackend {
   constructor(
     instanceSettings: DataSourceInstanceSettings<PromOptions>,
@@ -1024,8 +1024,11 @@ export class GreptimeDBDatasource extends DataSourceWithBackend {
         let table = target.table
         let dataset = target.dataset
         if (!table) {
-          table = target.rawSql?.toLocaleLowerCase().match(TableNameReg)[0]?.trim()
-          dataset = undefined
+          const result = target.rawSql?.match(TableNameReg)
+          if (result && result.length) {
+            table = result[1].trim()
+            dataset = undefined
+          }
         }
         return this.fetchFields({dataset: dataset, table: table}).then(columns => {
           return columns.filter(column => column.type.indexOf('timestamp') > -1)[0]

@@ -13,7 +13,7 @@ import { config, reportInteraction } from '@grafana/runtime';
 import { amendTable, Table, trimTable } from 'app/features/live/data/amendTimeSeries';
 
 import { PromQuery } from '../types';
-import { SQLQuery } from 'querybuilder/mysql/sql';
+import { SQLQuery } from '../querybuilder/mysql/sql';
 
 // dashboardUID + panelId + refId
 // (must be stable across query changes, time range changes / interval changes / panel resizes / template variable changes)
