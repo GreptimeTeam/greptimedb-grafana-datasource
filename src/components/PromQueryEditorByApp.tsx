@@ -5,7 +5,10 @@ import { CoreApp } from '@grafana/data';
 import { PromQueryEditorSelector } from '../querybuilder/components/PromQueryEditorSelector';
 
 import { PromQueryEditorForAlerting } from './PromQueryEditorForAlerting';
-import { PromQueryEditorProps } from './types';
+import { PromQueryEditorProps, SqlQueryEditorProps } from './types';
+import QueryWrapper from '../querybuilder/QueryWrapper';
+import { QueryEditorProperty } from 'querybuilder/mysql/sql/expressions';
+
 
 export function PromQueryEditorByApp(props: PromQueryEditorProps) {
   const { app } = props;
@@ -14,7 +17,7 @@ export function PromQueryEditorByApp(props: PromQueryEditorProps) {
     case CoreApp.CloudAlerting:
       return <PromQueryEditorForAlerting {...props} />;
     default:
-      return <PromQueryEditorSelector {...props} />;
+      return <QueryWrapper {...(props as PromQueryEditorProps & SqlQueryEditorProps)} />;
   }
 }
 

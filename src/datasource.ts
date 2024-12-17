@@ -1,7 +1,8 @@
-import { cloneDeep, defaults } from 'lodash';
-import { lastValueFrom, Observable, throwError } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { cloneDeep, defaults, extend } from 'lodash';
+import { lastValueFrom, Observable, throwError, of } from 'rxjs';
+import { map, tap, switchMap } from 'rxjs/operators';
 import semver from 'semver';
+import store from 'app/core/store';
 
 import {
   AbstractQuery,
@@ -65,10 +66,15 @@ import {
 } from './types';
 import { PrometheusVariableSupport } from './variables';
 
+import { transformSqlResponse, addTsCondition } from './greptimedb'
+import {MySqlDatasource} from './querybuilder/mysql/MySqlDatasource'
+import { SQLExpression, SQLOptions, SQLQuery } from 'querybuilder/mysql/sql/types';
+
 const ANNOTATION_QUERY_STEP_DEFAULT = '60s';
 const GET_AND_POST_METADATA_ENDPOINTS = ['v1/prometheus/api/v1/query', 'v1/prometheus/api/v1/query_range', 'v1/prometheus/api/v1/series', 'v1/prometheus/api/v1/labels'];
 
 export const InstantQueryRefIdIndex = '-Instant';
+
 
 export class PrometheusDatasource
   extends DataSourceWithBackend<PromQuery, PromOptions>
@@ -385,7 +391,7 @@ export class PrometheusDatasource
     return processedTargets;
   }
 
-  query(request: DataQueryRequest<PromQuery>): Observable<DataQueryResponse> {
+  executePromQuery(request: DataQueryRequest<PromQuery>): Observable<DataQueryResponse> {
     if (this.access === 'direct') {
       return this.directAccessError();
     }
@@ -965,6 +971,77 @@ export class PrometheusDatasource
     }
 
     return defaults;
+  }
+}
+
+function isPromQuery(query: PromQuery | SQLQuery): query is PromQuery {
+  if (query.sqltype === 'sql') {
+    return false
+  }
+  return true
+  // return store.get('sqltype') === 'promql' || query.sqltype === 'promql' || !query.sqltype
+}
+
+function mixin (thisObj, instance) {
+  Object.assign(thisObj, instance)
+  const proto = Object.getPrototypeOf(instance);
+  const parentProto = Object.getPrototypeOf(proto)
+
+  // Get all property names (including methods) of the prototype
+  const methods = [...Object.getOwnPropertyNames(parentProto), ...Object.getOwnPropertyNames(proto)].filter(prop => typeof proto[prop] === 'function' && prop !== 'query' && prop !== 'contructor')
+  for (const method of methods) {
+    thisObj[method] = instance[method]
+  }
+}
+
+const TableNameReg = /(?<=from|FROM)\s+([^\s;]+)/
+export class GreptimeDBDatasource extends DataSourceWithBackend {
+  constructor(
+    instanceSettings: DataSourceInstanceSettings<PromOptions>,
+    private readonly templateSrv: TemplateSrv = getTemplateSrv(),
+    languageProvider?: PrometheusLanguageProvider
+  ) {
+    super(instanceSettings)
+    const promInstance = new PrometheusDatasource(instanceSettings, templateSrv, languageProvider)
+    const mysqlInstance = new MySqlDatasource(instanceSettings as DataSourceInstanceSettings<SQLOptions>)
+    mixin(this, mysqlInstance)
+    mixin(this, promInstance)
+    
+  }
+  query(request: DataQueryRequest<PromQuery | SQLQuery>): Observable<DataQueryResponse> {
+    if (!isPromQuery(request.targets[0])) {
+      if (!request.targets[0].rawSql) {
+        return Promise.resolve({data: []})
+      }
+      const promises = (request.targets as SQLQuery[]).map(async (target) => {
+        // console.log(target)
+        let table = target.table
+        let dataset = target.dataset
+        if (!table) {
+          const result = target.rawSql?.match(TableNameReg)
+          if (result && result.length) {
+            table = result[1].trim()
+            dataset = undefined
+          }
+        }
+        return this.fetchFields({dataset: dataset, table: table}).then(columns => {
+          return columns.filter(column => column.type.indexOf('timestamp') > -1)[0]
+          
+        }).then((tsColumn) => {
+          let sql = target.rawSql
+          if (tsColumn) {
+            sql = addTsCondition(target.rawSql, tsColumn.name,  request.range.from.toISOString(), request.range.to.toISOString())
+          }
+          return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: sql})))
+        })
+        // const sql = addTsCondition(target.rawSql, request.range.from.toISOString(), request.range.to.toISOString())
+        
+      })
+      // TODO fix ts
+      return Promise.all(promises).then((data) => ({ data })) as unknown as Observable<DataQueryResponse>
+    } else {
+      return (this as any).executePromQuery(request)
+    }
   }
 }
 
