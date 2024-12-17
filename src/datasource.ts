@@ -978,9 +978,9 @@ function isPromQuery(query: PromQuery | SQLQuery): query is PromQuery {
   if (query.sqltype && query.sqltype === 'promql') {
     return true
   }
-  if (store.get('sqltype') === 'promql') {
-    return true
-  }
+  // if (store.get('sqltype') === 'promql') {
+  //   return true
+  // }
   if (!query.sqltype && !store.get('sqltype')) {
     return true
   }

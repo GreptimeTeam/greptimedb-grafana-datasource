@@ -18,7 +18,7 @@ import { SQLQuery } from './mysql/sql';
 
 export function PromQueryEditorByApp(props: PromQueryEditorProps & SqlQueryEditorProps) {
   const { app } = props;
-  const [mode, setMode] = useState(props.query.sqltype || store.get('sqltype') || 'promql')
+  const [mode, setMode] = useState(props.query.sqltype || 'promql')
   const theme = useTheme2()
 
   // add default sqltype
