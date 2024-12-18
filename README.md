@@ -33,25 +33,17 @@ You can also use grafana cli to download and install
 grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip plugins install info8fcc
 ```
 
-Note that you may need to restart your grafana server after installing the plugin.
+Note that you may need to restart your grafana server after installing the
+plugin.
 
-## Quick Preview using Docker
+### Docker image
 
-We built a docker compose file that integrated GreptimeDB, Prometheus,
-Prometheus Node Exporter, Grafana and this plugin together.
-
-```bash
-git clone https://github.com/GreptimeTeam/greptimedb-grafana-datasource.git
-cd docker
-docker compose up
-```
-
-You can also try out this plugin from a Grafana docker image:
+We also build Grafana docker image that ships GreptimeDB data source by
+default. To get the docker image, run
 
 ```
-docker run -d -p 3000:3000 --name=grafana --rm \
-  -e "GF_INSTALL_PLUGINS=https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip;info8fcc" \
-  grafana/grafana-oss
+docker pull greptime/grafana-greptimedb:latest
+docker run -p 3000:3000 greptime/grafana-greptimedb:latest
 ```
 
 ## Docs
