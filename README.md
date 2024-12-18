@@ -67,8 +67,8 @@ of GreptimeDB data.
 - Time series panels
   - [x] PromQL
     - [x] GreptimeDB's additional field selector
-  - [ ] SQL
-    - [ ] Time macro
+  - [x] SQL
+    - [x] Time macro
 - Event UI
   - [ ] Event
 - Settings UI
