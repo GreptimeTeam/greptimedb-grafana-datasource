@@ -67,6 +67,8 @@ export function SqlQueryEditor({
   const onQueryChange = (q: SQLQuery, process = true) => {
     setQueryToValidate(q);
     onChange(q);
+    q.expr = 'greptimedb_expr_placeholder'
+    onChange(q);
 
     if (haveColumns(q.sql?.columns) && q.sql?.columns.some((c) => c.name) && !queryRowFilter.group) {
       setQueryRowFilter({ ...queryRowFilter, group: true });

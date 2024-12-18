@@ -30,7 +30,7 @@ export function PromQueryEditorByApp(props: PromQueryEditorProps & SqlQueryEdito
 
   const onChangeMode = (mode) => {
     setMode(mode)
-    store.set('sqltype', mode)
+    // store.set('sqltype', mode)
     props.onChange({...props.query, sqltype: mode} as PromQuery & SQLQuery)
     // props.onChange()
   }
