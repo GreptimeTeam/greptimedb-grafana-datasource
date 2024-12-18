@@ -60,7 +60,7 @@ of GreptimeDB data.
   - [x] PromQL
     - [x] GreptimeDB's additional field selector
   - [x] SQL
-    - [] Time macro
+    - [ ] Time macro
 - Event UI
   - [ ] Event
 - Settings UI
