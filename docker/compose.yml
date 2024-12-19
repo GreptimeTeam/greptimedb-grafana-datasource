@@ -1,17 +1,8 @@
-#########################################################################################
-#
-# - start jarvis developing dependencies only
-#   docker compose -f local/compose.yml up greptimedb postgres redis -d
-#
-# - start grafana and prometheus with node_exporter
-#   docker compose -f local/compose.yml up node_exporter prometheus grafana -d
-#
-#########################################################################################
 version: '3.1'
 
 services:
   greptimedb:
-    image: greptime/greptimedb:latest
+    image: docker.io/greptime/greptimedb:v0.11.0
     container_name: greptimedb_info8fcc
     command: standalone start --http-addr=0.0.0.0:4000 --rpc-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
     ports:
@@ -22,7 +13,7 @@ services:
       - datasource-network
 
   prometheus:
-    image: prom/prometheus:latest
+    image: docker.io/prom/prometheus:latest
     container_name: prometheus_info8fcc
     ports:
       - 9090:9090
@@ -42,15 +33,11 @@ services:
       - datasource-network
 
   grafana:
-    image: grafana/grafana:latest
+    image: docker.io/greptime/grafana-greptimedb:latest
     container_name: grafana_info8fcc
     ports:
       - 3000:3000
-    environment:
-     - GF_INSTALL_PLUGINS=https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip;info8fcc
     volumes:
-      # - ./info8fcc-greptimedb-datasource:/var/lib/grafana/plugins/info8fcc-greptimedb-datasource
-      # - ./grafana.ini:/etc/grafana/grafana.ini:ro
       - ../provisioning:/etc/grafana/provisioning
     networks:
       - datasource-network
