@@ -13,7 +13,7 @@
     "e2e": "playwright test",
     "server": "docker-compose up --build",
     "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
-    "zipunsigned": "rm -rf info8fcc-greptimedb-datasource*.zip && mv dist/ info8fcc-greptimedb-datasource-unsigned && zip info8fcc-greptimedb-datasource-unsigned.zip info8fcc-greptimedb-datasource-unsigned  -r && mv info8fcc-greptimedb-datasource-unsigned/ dist",
+    "zipunsigned": "rm -f info8fcc-greptimedb-datasource-unsigned.zip && mv dist/ info8fcc-greptimedb-datasource && zip -r info8fcc-greptimedb-datasource-unsigned.zip info8fcc-greptimedb-datasource && mv info8fcc-greptimedb-datasource/ dist",
     "zip": "mv dist/ info8fcc-greptimedb-datasource && zip info8fcc-greptimedb-datasource.zip info8fcc-greptimedb-datasource  -r && mv info8fcc-greptimedb-datasource/ dist",
     "unzip": "unzip info8fcc-greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins",
     "buildzip": "yarn build && mage && yarn sign && yarn zip"
