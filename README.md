@@ -29,7 +29,7 @@ directory](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafa
 
 ### Use grafana cli to download and install
 
-#### install signed version
+#### Install signed version
 
 ```
 grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip plugins install info8fcc
