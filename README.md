@@ -37,8 +37,11 @@ grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datas
 
 #### Install unsigned version
 
-> If there is [some error](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#why-do-i-get-a-field-is-required-rooturls-error-for-my-private-plugin) when installing signed version, use unsigned version, you need to set grafana ini file to use unsiged plugin.
->`allow_loading_unsigned_plugins = info8fcc-greptimedb-datasource`
+If there is [some error](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#why-do-i-get-a-field-is-required-rooturls-error-for-my-private-plugin) when installing signed version, use unsigned version
+> you need to set grafana ini file to use unsiged plugin.
+>  ```
+> allow_loading_unsigned_plugins = info8fcc-greptimedb-datasource
+>  ```
 
 
 ```
