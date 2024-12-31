@@ -26,13 +26,11 @@ jobs:
           cmd: install # will run `yarn install` command
       - name: build
         run: yarn build
-      -
-        name: Set up Go
+      - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.21
-      -
-        name: Run Mage
+      - name: Run Mage
         uses: magefile/mage-action@v3
       - name: zipunsigned
         run: yarn zipunsigned
