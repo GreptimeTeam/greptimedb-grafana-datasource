@@ -1,6 +1,6 @@
 {
   "name": "greptimedb-datasource",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "description": "",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -13,8 +13,8 @@
     "e2e": "playwright test",
     "server": "docker-compose up --build",
     "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
-    "zipunsigned": "rm -rf info8fcc-greptimedb-datasource*.zip && zip -rj info8fcc-greptimedb-datasource-unsigned.zip dist/*",
-    "zip": "zip -rj info8fcc-greptimedb-datasource.zip dist/*",
+    "zipunsigned": "rm -rf info8fcc-greptimedb-datasource*.zip && mv dist/ info8fcc-greptimedb-datasource-unsigned && zip info8fcc-greptimedb-datasource-unsigned.zip info8fcc-greptimedb-datasource-unsigned  -r && mv info8fcc-greptimedb-datasource-unsigned/ dist",
+    "zip": "mv dist/ info8fcc-greptimedb-datasource && zip info8fcc-greptimedb-datasource.zip info8fcc-greptimedb-datasource  -r && mv info8fcc-greptimedb-datasource/ dist",
     "unzip": "unzip info8fcc-greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins",
     "buildzip": "yarn build && mage && yarn sign && yarn zip"
   },
