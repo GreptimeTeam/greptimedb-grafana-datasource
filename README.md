@@ -27,10 +27,25 @@ page](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/lat
 Unzip the file to your [grafana plugin
 directory](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#plugins).
 
-You can also use grafana cli to download and install
+### Use grafana cli to download and install
+
+#### Install signed version
 
 ```
 grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip plugins install info8fcc
+```
+
+#### Install unsigned version
+
+If there is [some error](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#why-do-i-get-a-field-is-required-rooturls-error-for-my-private-plugin) when installing signed version, use unsigned version
+> you need to set grafana ini file to use unsiged plugin.
+>  ```
+> allow_loading_unsigned_plugins = info8fcc-greptimedb-datasource
+>  ```
+
+
+```
+grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource-unsigned.zip plugins install info8fcc
 ```
 
 Note that you may need to restart your grafana server after installing the
@@ -106,3 +121,4 @@ discussion of this plugin.
 GreptimeDB uses the [Apache License
 2.0](https://apache.org/licenses/LICENSE-2.0.txt) to strike a balance between
 open contributions and allowing you to use the software however you want.
+
