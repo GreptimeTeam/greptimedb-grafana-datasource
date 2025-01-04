@@ -41,3 +41,7 @@ greptime-ds
 greptime-ds-*.zip
 info8fcc-greptimedb-datasource
 info8fcc-greptimedb-datasource*.zip
+
+# direnv
+.direnv
+.envrc
