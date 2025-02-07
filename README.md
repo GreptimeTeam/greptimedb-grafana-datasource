@@ -38,9 +38,14 @@ grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datas
 #### Install unsigned version
 
 If there is [some error](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#why-do-i-get-a-field-is-required-rooturls-error-for-my-private-plugin) when installing signed version, use unsigned version
-> you need to set grafana ini file to use unsiged plugin.
+> you need to set grafana ini file to use unsigned plugin.
 >  ```
 > allow_loading_unsigned_plugins = info8fcc-greptimedb-datasource
+>  ```
+
+If you are using Grafana inside Docker, you need to export the variable:
+>  ```
+> GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=info8fcc-greptimedb-datasource
 >  ```
 
 
