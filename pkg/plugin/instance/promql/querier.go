@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -71,13 +72,33 @@ func (querier *Querier) QueryData(ctx context.Context, req *backend.QueryDataReq
 		Responses: backend.Responses{},
 	}
 
+	var (
+		m  sync.Mutex
+		wg sync.WaitGroup
+
+		// The default number of parallel queries is 10.
+		querierLimit = make(chan struct{}, 10)
+	)
+
 	for _, q := range req.Queries {
-		r := querier.handleQuery(ctx, q)
-		if r == nil {
-			continue
-		}
-		result.Responses[q.RefID] = *r
+		wg.Add(1)
+		querierLimit <- struct{}{}
+
+		go func(q backend.DataQuery) {
+			defer wg.Done()
+			defer func() {
+				<-querierLimit
+			}()
+			r := querier.handleQuery(ctx, q)
+			if r == nil {
+				return
+			}
+			m.Lock()
+			defer m.Unlock()
+			result.Responses[q.RefID] = *r
+		}(q)
 	}
+	wg.Wait()
 
 	return &result, nil
 }
