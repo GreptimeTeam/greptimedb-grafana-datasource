@@ -22,10 +22,9 @@ services:
       - greptimedb-datasource
 
   greptimedb:
-    # image: greptime/greptimedb:latest
-    image: greptime/greptimedb:nightly-20240510-08945f128
+    image: greptime/greptimedb:v0.12.0
     container_name: greptimedb_dev
-    command: standalone start --http-addr=0.0.0.0:4000 --rpc-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
+    command: standalone start --http-addr=0.0.0.0:4000 --rpc-bind-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
     ports:
       - 4000:4000
       - 4001:4001
@@ -42,7 +41,7 @@ services:
       context: ./.config
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
-        grafana_version: ${GRAFANA_VERSION:-10.3.3}
+        grafana_version: ${GRAFANA_VERSION:-11.2.5}
     ports:
       - 3000:3000/tcp
       - 2345:2345/tcp # delve

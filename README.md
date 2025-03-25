@@ -56,15 +56,17 @@ grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datas
 Note that you may need to restart your grafana server after installing the
 plugin.
 
-### Docker image
+### Docker Image
 
-We also build Grafana docker image that ships GreptimeDB data source by
-default. To get the docker image, run
+We also build Grafana docker image that includes GreptimeDB datasource by
+default. To run the docker image:
 
 ```
 docker pull greptime/grafana-greptimedb:latest
 docker run -p 3000:3000 greptime/grafana-greptimedb:latest
 ```
+
+You can log in Grafana by visiting http://localhost:3000. The default username and password are both set to admin.
 
 ## Docs
 
