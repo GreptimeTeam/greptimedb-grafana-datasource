@@ -18,8 +18,8 @@ import {
   SupplementaryQueryType,
   TypedVariableModel,
 } from '@grafana/data';
-import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
-import { Observable, map, firstValueFrom } from 'rxjs';
+import { BackendSrvRequest, DataSourceWithBackend, FetchResponse, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { Observable, map, firstValueFrom, lastValueFrom } from 'rxjs';
 import { CHConfig } from 'types/config';
 import { EditorType, CHQuery } from 'types/sql';
 import {
@@ -37,7 +37,7 @@ import {
   SelectedColumn,
 } from 'types/queryBuilder';
 import { AdHocFilter } from './adHocFilter';
-import { cloneDeep, isEmpty, isString } from 'lodash';
+import { cloneDeep, isEmpty, isString, defaults } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
   getIntervalInfo,
@@ -52,6 +52,7 @@ import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
+import { transformGreptimeResponseToGrafana, transformSqlResponse } from 'greptimedb';
 
 export class Datasource
   extends DataSourceWithBackend<CHQuery, CHConfig>
@@ -71,7 +72,59 @@ export class Datasource
     this.settings = instanceSettings;
     this.adHocFilter = new AdHocFilter();
   }
+  
+  _request<T = unknown>(
+    url: string,
+    data: Record<string, string> | null,
+    overrides: Partial<BackendSrvRequest> = {}
+  ): Observable<FetchResponse<T>> {
 
+
+    data = data || {};
+
+    let queryUrl = 'http://localhost:4000' + url;
+    if (url.startsWith(`/api/datasources/uid/${this.uid}`)) {
+      // This url is meant to be a replacement for the whole URL. Replace the entire URL
+      queryUrl = url;
+    }
+
+    const options: BackendSrvRequest = defaults(overrides, {
+      url: queryUrl,
+      method: 'POST',
+      headers: {},
+    });
+
+    if (options.method === 'GET') {
+      if (data && Object.keys(data).length) {
+        options.url =
+          options.url +
+          (options.url.search(/\?/) >= 0 ? '&' : '?') +
+          Object.entries(data)
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            .join('&');
+      }
+    } else {
+      options.headers!['Content-Type'] = 'application/x-www-form-urlencoded';
+      options.data = data;
+    }
+
+    console.log(options, '--------options----------------')
+    return getBackendSrv().fetch<T>(options);
+  }
+  // Add GreptimeDB specific methods
+  async testDatasource(): Promise<any> {
+    const response = await this._request('/v1/sql',{ sql: 'SELECT 1' }).toPromise()
+    .then((response) => {
+      console.log('Request completed with response:', response);
+      // Do something with the response
+      return response
+    })
+    console.log(response, '--------response----------------')
+    return {
+      status: response.ok ? 'success' : 'error',
+      message: response.ok ? 'Database Connection OK' : response.error,
+    };
+  }
   getDataProvider(
     type: SupplementaryQueryType,
     request: DataQueryRequest<CHQuery>
@@ -673,6 +726,8 @@ export class Datasource
   }
 
   query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
+    const jsonData = this.settings.jsonData
+    
     const targets = request.targets
       // filters out queries disabled in UI
       .filter((t) => t.hide !== true)
@@ -686,11 +741,20 @@ export class Datasource
           },
         };
       });
-
-    return super.query({
-      ...request,
-      targets,
-    }).pipe(map((res: DataQueryResponse) => transformQueryResponseWithTraceAndLogLinks(this, request, res)));
+    const promises = targets.map(async (target) => {
+       const response = await this._request('/v1/sql', {sql: target.rawSql}).toPromise();
+       console.log('request resonse ---', response)
+       const result = transformGreptimeResponseToGrafana(response.data, target.refId)
+       console.log(result)
+       return result[0]
+      // return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: target.rawSql})))
+    })
+    
+    return Promise.all(promises).then((data) => ({ data })) as unknown as Observable<DataQueryResponse>
+    // return super.query({
+    //   ...request,
+    //   targets,
+    // }).pipe(map((res: DataQueryResponse) => transformQueryResponseWithTraceAndLogLinks(this, request, res)));
   }
 
   private runQuery(request: Partial<CHQuery>, options?: any): Promise<DataFrame> {
@@ -699,7 +763,8 @@ export class Datasource
         targets: [{ ...request, refId: String(Math.random()) }],
         range: options ? options.range : (getTemplateSrv() as any).timeRange,
       } as DataQueryRequest<CHQuery>;
-      this.query(req).subscribe((res: DataQueryResponse) => {
+      this.query(req).then((res: DataQueryResponse) => {
+        console.log('runQuery', res)
         resolve(res.data[0] || { fields: [] });
       });
     });

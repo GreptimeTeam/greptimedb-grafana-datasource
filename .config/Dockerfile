@@ -1,7 +1,7 @@
 ARG grafana_version=latest
 ARG grafana_image=grafana-enterprise
 
-FROM grafana/${grafana_image}:${grafana_version}
+FROM grafana/grafana:${grafana_version}
 
 ARG development=false
 ARG TARGETARCH
