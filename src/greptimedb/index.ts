@@ -76,11 +76,11 @@ export function transformGreptimeResponseToGrafana(
   // Basic validation and error handling
   if (!response || !response.output || !Array.isArray(response.output)) {
     if (response?.error) {
-       console.error(`GreptimeDB query failed: ${response.error} (Code: ${response.code})`);
-       // Consider throwing an error or returning a specific error frame if needed
-       // Example: throw new Error(`GreptimeDB Error: ${response.error}`);
+      console.error(`GreptimeDB query failed: ${response.error} (Code: ${response.code})`);
+      // Consider throwing an error or returning a specific error frame if needed
+      // Example: throw new Error(`GreptimeDB Error: ${response.error}`);
     } else {
-       console.error('Invalid or missing "output" array in GreptimeDB response.');
+      console.error('Invalid or missing "output" array in GreptimeDB response.');
     }
     return dataFrames; // Return empty array if response structure is invalid
   }
@@ -118,15 +118,15 @@ export function transformGreptimeResponseToGrafana(
       if (!Array.isArray(row) || row.length !== numCols) {
         console.error(`Row ${rowIndex} in result set ${index} has incorrect length (${row?.length ?? 'undefined'}), expected ${numCols}. Filling with undefined.`);
         // Fill this row's values with undefined in all columns
-         for (let colIndex = 0; colIndex < numCols; colIndex++) {
-           columnValueArrays[colIndex][rowIndex] = undefined;
-         }
+        for (let colIndex = 0; colIndex < numCols; colIndex++) {
+          columnValueArrays[colIndex][rowIndex] = undefined;
+        }
         continue; // Move to the next row
       }
 
       // Populate the column arrays with data from the current row
       for (let colIndex = 0; colIndex < numCols; colIndex++) {
-        // GreptimeDB JSON null becomes JS null. Grafana's ArrayVector handles null.
+        // GreptimeDB JSON null becomes JS null. Grafana's Array<T> handles null.
         // Map to undefined if strict undefined is preferred, though null is usually fine.
         columnValueArrays[colIndex][rowIndex] = row[colIndex];
       }
@@ -138,7 +138,7 @@ export function transformGreptimeResponseToGrafana(
     const fields: Field[] = columnSchemas.map((colSchema, i) => {
       const fieldName = colSchema.name || `column_${i + 1}`; // Fallback name
       const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
-      const values: Vector<any> = new ArrayVector(columnValueArrays[i]); // Create Vector
+      const values: Vector<any> = columnValueArrays[i]; // Use simple Array<T>
 
       // Basic field configuration (can be expanded)
       const config: FieldConfig = {
@@ -150,7 +150,7 @@ export function transformGreptimeResponseToGrafana(
         name: fieldName,
         type: fieldType,
         config: config,
-        values: values, // The vector containing column data
+        values: values, // The array containing column data
       };
     });
 
