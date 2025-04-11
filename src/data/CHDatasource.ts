@@ -12,14 +12,15 @@ import {
   LogRowContextQueryDirection,
   LogRowModel,
   MetricFindValue,
+  MutableDataFrame,
   QueryFixAction,
   ScopedVars,
   SupplementaryQueryOptions,
   SupplementaryQueryType,
   TypedVariableModel,
 } from '@grafana/data';
-import { BackendSrvRequest, DataSourceWithBackend, FetchResponse, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
-import { Observable, map, firstValueFrom, lastValueFrom } from 'rxjs';
+import {  BackendSrvRequest, DataSourceWithBackend, FetchResponse, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { Observable, map, firstValueFrom, catchError, of, forkJoin } from 'rxjs';
 import { CHConfig } from 'types/config';
 import { EditorType, CHQuery } from 'types/sql';
 import {
@@ -53,6 +54,7 @@ import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLink
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
 import { transformGreptimeResponseToGrafana, transformSqlResponse } from 'greptimedb';
+import { GreptimeResponse } from 'greptimedb/types';
 
 export class Datasource
   extends DataSourceWithBackend<CHQuery, CHConfig>
@@ -108,7 +110,6 @@ export class Datasource
       options.data = data;
     }
 
-    console.log(options, '--------options----------------')
     return getBackendSrv().fetch<T>(options);
   }
   // Add GreptimeDB specific methods
@@ -119,10 +120,9 @@ export class Datasource
       // Do something with the response
       return response
     })
-    console.log(response, '--------response----------------')
     return {
-      status: response.ok ? 'success' : 'error',
-      message: response.ok ? 'Database Connection OK' : response.error,
+      status: response?.ok ? 'success' : 'error',
+      message: response?.ok ? 'Database Connection OK' : response?.error,
     };
   }
   getDataProvider(
@@ -741,16 +741,85 @@ export class Datasource
           },
         };
       });
-    const promises = targets.map(async (target) => {
-       const response = await this._request('/v1/sql', {sql: target.rawSql}).toPromise();
-       console.log('request resonse ---', response)
-       const result = transformGreptimeResponseToGrafana(response.data, target.refId)
-       console.log(result)
-       return result[0]
-      // return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: target.rawSql})))
+    // Create an array of Observables, one for each active target request + transformation
+  const targetObservables: Array<Observable<DataFrame[]>> = targets.map(target => {
+    return this._request('/v1/sql', { sql: target.rawSql }) // This returns Observable<BackendDataSourceResponse>
+      .pipe(
+        // Map 1: Extract the data from the response
+        map((response: FetchResponse) => {
+            // --- Optional: Add response validation here ---
+            if (!response.data /* || check response.data.code etc. */) {
+                console.error('Invalid response data received:', response);
+                // Throw an error to be caught by catchError
+                throw new Error(`Invalid response structure received for target ${target.refId}`);
+            }
+            return response.data as GreptimeResponse; // Assert or validate type
+        }),
+        // Map 2: Transform the GreptimeDB response data into Grafana DataFrames
+        map((greptimeData: GreptimeResponse) => {
+          // Pass the appropriate format hint if needed by your transformer
+          // const formatHint = target.formatHint || GrafanaDataFormat.TimeSeries;
+          return transformGreptimeResponseToGrafana(greptimeData, target.refId /*, formatHint */);
+        }),
+        // --- Error Handling Per Target ---
+        // Catch errors specifically for this target's request/transformation
+        catchError(error => {
+          console.error(`Error processing target ${target.refId}:`, error);
+          // Return an Observable emitting an empty array or a specific error frame
+          // This prevents one failed target from failing the entire query if desired
+          const errorFrame = new MutableDataFrame({
+            refId: target.refId,
+            fields: [
+                { name: 'Error', values: [`Failed to process query for ${target.refId}: ${error?.message || 'Unknown error'}`] }
+            ],
+            meta: { preferredVisualisationType: 'table' }
+          });
+          return of([errorFrame]); // Return Observable<DataFrame[]> with error frame
+          // Or return of([]) to just ignore the failed target's results
+        })
+      ); // End pipe for this target
     })
+    // --- Combine results using forkJoin and map to final DataQueryResponse ---
+  return forkJoin(targetObservables).pipe(
+    // forkJoin emits Observable<DataFrame[][]>
+    map((results: DataFrame[][]) => {
+      // Flatten the array of DataFrame arrays into a single DataFrame array
+      const flattenedData: DataFrame[] = results.flat();
+
+      // Apply the final transformation function.
+      // This function should now directly return the DataQueryResponse object.
+      const finalResponse: DataQueryResponse = transformQueryResponseWithTraceAndLogLinks(
+        this,     // Pass the datasource instance context
+        request,  // Pass the original query request
+        { data: flattenedData } // Pass the combined data frames
+      );
+
+      // Return the final structure Grafana expects
+      return finalResponse; // { data: DataFrame[] }
+    }),
+    // Catch errors from forkJoin or the final map transformation
+    catchError(error => {
+      console.error('Error combining results or in final transformation:', error);
+      // Create an error frame for the overall failure
+      const errorFrame = new MutableDataFrame({
+        // No specific refId here, or use request.requestId if available
+        fields: [{ name: 'Error', values: [`Failed to execute query: ${error?.message || 'Unknown error'}`] }],
+        meta: { preferredVisualisationType: 'table' }
+      });
+      // Return an Observable emitting a DataQueryResponse containing the error frame
+      return of({ data: [errorFrame] });
+    })
+  ); 
+  // The final result is Observable<DataQueryResponse> - no .toPromise() needed
+    // const promises = targets.map(async (target) => {
+    //    const response = await this._request('/v1/sql', {sql: target.rawSql}).toPromise();
+    //    const result = transformGreptimeResponseToGrafana(response.data, target.refId)
+    //    return result
+       
+    //   // return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: target.rawSql})))
+    // })
     
-    return Promise.all(promises).then((data) => ({ data })) as unknown as Observable<DataQueryResponse>
+    // return Promise.all(promises).then((data) => ( transformQueryResponseWithTraceAndLogLinks(this, request, {data: data[0]})))
     // return super.query({
     //   ...request,
     //   targets,
