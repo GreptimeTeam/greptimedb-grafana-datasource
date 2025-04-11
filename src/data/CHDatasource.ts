@@ -53,7 +53,7 @@ import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
-import { transformGreptimeResponseToGrafana, transformSqlResponse } from 'greptimedb';
+import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs } from '../greptimedb';
 import { GreptimeResponse } from 'greptimedb/types';
 
 export class Datasource
@@ -759,7 +759,14 @@ export class Datasource
         map((greptimeData: GreptimeResponse) => {
           // Pass the appropriate format hint if needed by your transformer
           // const formatHint = target.formatHint || GrafanaDataFormat.TimeSeries;
-          return transformGreptimeResponseToGrafana(greptimeData, target.refId /*, formatHint */);
+          if (target.queryType === QueryType.Logs) {
+            const logFrame = transformGreptimeDBLogs(greptimeData, target.refId) as DataFrame
+            return logFrame? [logFrame] : []
+          } else {
+            return transformGreptimeResponseToGrafana(greptimeData, target.refId);
+          }
+          
+          
         }),
         // --- Error Handling Per Target ---
         // Catch errors specifically for this target's request/transformation
@@ -832,7 +839,7 @@ export class Datasource
         targets: [{ ...request, refId: String(Math.random()) }],
         range: options ? options.range : (getTemplateSrv() as any).timeRange,
       } as DataQueryRequest<CHQuery>;
-      this.query(req).then((res: DataQueryResponse) => {
+      this.query(req).subscribe((res: DataQueryResponse) => {
         console.log('runQuery', res)
         resolve(res.data[0] || { fields: [] });
       });

@@ -3,7 +3,9 @@ import {  MutableDataFrame, DataFrame,
   FieldType, // Imported for mapGreptimeTypeToGrafana
   Vector,
   ArrayVector, // Useful for creating Field values from arrays
-  FieldConfig, } from '@grafana/data';
+  FieldConfig,
+  createDataFrame,
+  DataFrameType, } from '@grafana/data';
 import { lastValueFrom, Observable, throwError, of } from 'rxjs';
 import { map, tap, switchMap } from 'rxjs/operators';
 import {
@@ -224,6 +226,120 @@ export const greptimeTypeToGrafana: Record<GreptimeDataTypes, FieldType> = {
 
   [GreptimeDataTypes.List]: FieldType.other,
 };
+
+
+type GreptimeTimeType = GreptimeDataTypes.TimestampSecond | GreptimeDataTypes.TimestampMillisecond | GreptimeDataTypes.TimestampMicrosecond | GreptimeDataTypes.TimestampNanosecond
+export function toMs(time: number, columnType: GreptimeTimeType) {
+  switch(columnType) {
+    case GreptimeDataTypes.TimestampSecond:
+      return time * 1000
+    case GreptimeDataTypes.TimestampMillisecond:
+      return time
+    case GreptimeDataTypes.TimestampMicrosecond:
+      return time / 1000
+    case GreptimeDataTypes.TimestampNanosecond:
+      return time / 1000000
+    default:  // Handle unexpected types
+      console.warn(`Unexpected column type: ${columnType}. Defaulting to milliseconds.`);
+      return time; // Default to milliseconds
+  }
+}
+
+
+export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: string) {
+  if (!sqlResponse.output || sqlResponse.output.length === 0) {
+    console.error('GreptimeDB query failed or returned no data:', sqlResponse.error);
+    return null; // Or handle the error as needed
+  }
+
+  const records = sqlResponse.output[0]?.records;
+  if (!records || !records.schema || !records.rows) {
+    console.error('Invalid GreptimeDB records format:', records);
+    return null;
+  }
+
+  const columnSchemas = records.schema.column_schemas;
+  const rows = records.rows;
+
+  let timestampColumnIndex = -1;
+  let bodyColumnIndex = -1;
+  let severityColumnIndex = -1;
+  let idColumnIndex = -1;
+  const labelColumnIndices: Record<string, number> = {};
+
+  columnSchemas.forEach((schema, index) => {
+    const lowerCaseName = schema.name.toLowerCase();
+    if (lowerCaseName === 'ts' || lowerCaseName === 'timestamp') {
+      timestampColumnIndex = index;
+    } else if (lowerCaseName === 'body' || lowerCaseName === 'message') {
+      bodyColumnIndex = index;
+    } else if (lowerCaseName === 'severity' || lowerCaseName === 'level') {
+      severityColumnIndex = index;
+    } else if (lowerCaseName === 'id') {
+      idColumnIndex = index;
+    } else {
+      // Consider other columns as potential labels
+      labelColumnIndices[schema.name] = index;
+    }
+  });
+
+  if (timestampColumnIndex === -1 || bodyColumnIndex === -1) {
+    console.error('Timestamp or body column not found in GreptimeDB response.');
+    return null;
+  }
+
+  const timestamps: number[] = [];
+  const bodies: string[] = [];
+  const severities: string[] = [];
+  const ids: string[] = [];
+  const labelsArray: Array<Record<string, any>> = [];
+
+  rows.forEach((row) => {
+    const timestampValue = toMs(row[timestampColumnIndex], columnSchemas[timestampColumnIndex].data_type as GreptimeTimeType);
+    
+    timestamps.push(
+      typeof timestampValue === 'string' || typeof timestampValue === 'number'
+        ? new Date(timestampValue).getTime()
+        : timestampValue
+    );
+    bodies.push(String(row[bodyColumnIndex]));
+    severities.push(severityColumnIndex !== -1 ? String(row[severityColumnIndex]) : '');
+    ids.push(idColumnIndex !== -1 ? String(row[idColumnIndex]) : '');
+
+    const labels: Record<string, any> = {};
+    for (const labelName in labelColumnIndices) {
+      if (Object.prototype.hasOwnProperty.call(labelColumnIndices, labelName)) {
+        labels[labelName] = row[labelColumnIndices[labelName]];
+      }
+    }
+    labelsArray.push(labels);
+  });
+
+  const fields = [
+    { name: 'timestamp', type: FieldType.time, values: timestamps },
+    { name: 'body', type: FieldType.string, values: bodies },
+  ];
+
+  if (severityColumnIndex !== -1) {
+    fields.push({ name: 'severity', type: FieldType.string, values: severities });
+  }
+
+  if (idColumnIndex !== -1) {
+    fields.push({ name: 'id', type: FieldType.string, values: ids });
+  }
+
+  fields.push({ name: 'labels', type: FieldType.other, values: labelsArray });
+
+  const result = createDataFrame({
+    refId: refId,
+    fields: fields,
+    meta: {
+      type: DataFrameType.LogLines,
+    },
+  });
+
+  return result;
+}
 
 function buildDataFrame(columns, rows) {
   const frame = new MutableDataFrame();
