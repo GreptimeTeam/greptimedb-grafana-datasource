@@ -453,3 +453,83 @@ function findWhereClausePosition(sql) {
 
   return insertPosition;
 }
+
+interface GrafanaTraceSpan {
+  traceId: string;
+  spanId: string;
+  parentSpanId?: string;
+  operationName: string;
+  serviceName: string;
+  startTime: number; // Unix timestamp in milliseconds
+  duration: number;  // Duration in milliseconds
+  tags?: Record<string, any>;
+  logs?: Array<{ timestamp: number; fields: Record<string, any> }>;
+  // Add other relevant fields as needed (kind, status, etc.)
+}
+
+export function transformGreptimeDBTraceDetails(response: GreptimeResponse): DataFrame[] {
+  if (!response?.output?.[0]?.records?.rows) {
+    return [];
+  }
+
+  const records = response.output[0].records;
+  const columnSchemas = records.schema.column_schemas;
+  const rows = records.rows;
+
+  const spans: GrafanaTraceSpan[] = rows.map(row => {
+    const data: Record<string, any> = {};
+    columnSchemas.forEach((schema, index) => {
+      data[schema.name] = row[index];
+    });
+    console.log(data)
+
+    return {
+      traceId: data.trace_id,
+      spanId: data.span_id,
+      parentSpanId: data.parent_span_id || undefined,
+      operationName: data.span_name || 'unknown',
+      serviceName: data.service_name || 'unknown',
+      startTime: new Date(data.timestamp).getTime(),
+      duration: data.duration_nano ? Math.floor(data.duration_nano / 1000000) : 0,
+      tags: data.span_attributes ? JSON.parse(data.span_attributes) : {},
+      logs: data.span_events ? transformGreptimeDBEvents(JSON.parse(data.span_events)) : [],
+      // Map other relevant fields like span_kind, span_status_code, etc.
+    };
+  });
+
+  const fields = [
+    { name: 'traceId', type: FieldType.string, values: spans.map(s => s.traceId) },
+    { name: 'spanId', type: FieldType.string, values: spans.map(s => s.spanId) },
+    { name: 'parentSpanId', type: FieldType.string, values: spans.map(s => s.parentSpanId) },
+    { name: 'operationName', type: FieldType.string, values: spans.map(s => s.operationName) },
+    { name: 'serviceName', type: FieldType.string, values: spans.map(s => s.serviceName) },
+    { name: 'startTime', type: FieldType.time, values: spans.map(s => s.startTime) },
+    { name: 'duration', type: FieldType.number, values: spans.map(s => s.duration) },
+    { name: 'tags', type: FieldType.other, values: spans.map(s => s.tags) },
+    { name: 'logs', type: FieldType.other, values: spans.map(s => s.logs) },
+    // Add fields for other relevant span properties
+  ];
+
+  const frame = createDataFrame({
+    refId: 'Trace ID',
+    name: 'Trace Details',
+    fields: fields,
+    length: spans.length,
+    meta: {
+      type: 'trace', // Or a custom type your Grafana plugin recognizes
+      spans: spans, // Include the structured spans for the Trace panel to consume
+    },
+  });
+
+  return [frame];
+}
+
+function transformGreptimeDBEvents(events: any[]): Array<{ timestamp: number; fields: Record<string, any> }> {
+  if (!Array.isArray(events)) {
+    return [];
+  }
+  return events.map(event => ({
+    timestamp: new Date(event.time).getTime(), // Assuming 'time' field in your events
+    fields: event.attributes || {},
+  }));
+}

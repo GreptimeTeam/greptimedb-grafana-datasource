@@ -53,7 +53,7 @@ import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
-import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs } from '../greptimedb';
+import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
 import { GreptimeResponse } from 'greptimedb/types';
 
 export class Datasource
@@ -743,6 +743,7 @@ export class Datasource
       });
     // Create an array of Observables, one for each active target request + transformation
   const targetObservables: Array<Observable<DataFrame[]>> = targets.map(target => {
+    console.log(target)
     return this._request('/v1/sql', { sql: target.rawSql }) // This returns Observable<BackendDataSourceResponse>
       .pipe(
         // Map 1: Extract the data from the response
@@ -762,6 +763,11 @@ export class Datasource
           if (target.queryType === QueryType.Logs) {
             const logFrame = transformGreptimeDBLogs(greptimeData, target.refId) as DataFrame
             return logFrame? [logFrame] : []
+          } else if (target.queryType === QueryType.Traces && target?.builderOptions?.meta?.isTraceIdMode) {
+            const frames = transformGreptimeDBTraceDetails(greptimeData, target.refId)
+            console.log(frames)
+            
+            return frames;
           } else {
             return transformGreptimeResponseToGrafana(greptimeData, target.refId);
           }
@@ -800,7 +806,6 @@ export class Datasource
         request,  // Pass the original query request
         { data: flattenedData } // Pass the combined data frames
       );
-
       // Return the final structure Grafana expects
       return finalResponse; // { data: DataFrame[] }
     }),
