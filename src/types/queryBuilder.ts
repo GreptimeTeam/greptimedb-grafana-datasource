@@ -155,6 +155,7 @@ export interface SelectedColumn {
   alias?: string;
   custom?: boolean;
   hint?: ColumnHint;
+  columnName?: string;
 }
 
 export enum OrderByDirection {

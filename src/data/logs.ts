@@ -202,26 +202,44 @@ export function getIntervalInfo(scopedVars: ScopedVars): { interval: string; int
   }
 }
 
+// export function getTimeFieldRoundingClause(scopedVars: ScopedVars, timeField: string): string {
+//   // NB: slight discrepancy with getIntervalInfo here
+//   // it returns { interval: '$__interval' } when the interval from the ScopedVars is undefined,
+//   // but we fall back to DAY here
+//   let interval = 'DAY';
+//   if (scopedVars.__interval_ms) {
+//     let intervalMs: number = scopedVars.__interval_ms.value;
+//     if (intervalMs > HOUR) {
+//       interval = 'DAY';
+//     } else if (intervalMs > MINUTE) {
+//       interval = 'HOUR';
+//     } else if (intervalMs > SECOND) {
+//       interval = 'MINUTE';
+//     } else {
+//       interval = 'SECOND';
+//     }
+//   }
+//   return `toStartOfInterval("${timeField}", INTERVAL 1 ${interval})`;
+// }
+
+
+
 export function getTimeFieldRoundingClause(scopedVars: ScopedVars, timeField: string): string {
-  // NB: slight discrepancy with getIntervalInfo here
-  // it returns { interval: '$__interval' } when the interval from the ScopedVars is undefined,
-  // but we fall back to DAY here
-  let interval = 'DAY';
+  let intervalString = '1d'; // Default to DAY
   if (scopedVars.__interval_ms) {
-    let intervalMs: number = scopedVars.__interval_ms.value;
+    const intervalMs: number = scopedVars.__interval_ms.value;
     if (intervalMs > HOUR) {
-      interval = 'DAY';
+      intervalString = '1d';
     } else if (intervalMs > MINUTE) {
-      interval = 'HOUR';
+      intervalString = '1h';
     } else if (intervalMs > SECOND) {
-      interval = 'MINUTE';
+      intervalString = '1m';
     } else {
-      interval = 'SECOND';
+      intervalString = '1s';
     }
   }
-  return `toStartOfInterval("${timeField}", INTERVAL 1 ${interval})`;
+  return `date_bin('${intervalString}', "${timeField}")`;
 }
-
 export const TIME_FIELD_ALIAS = 'time';
 export const DEFAULT_LOGS_ALIAS = 'logs';
 

@@ -53,8 +53,20 @@ import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
-import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
+import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails, Column } from '../greptimedb';
 import { GreptimeResponse } from 'greptimedb/types';
+
+function createMultiSearchAnyEquivalent(llfColumn: string, searchTermsString: string, alias: string): { aggregateType: AggregateType; column: string; alias: string } {
+  const searchTerms = searchTermsString.split(','); // Split the comma-separated string into an array of terms
+  const orConditions = searchTerms.map(term => `INSTR(${llfColumn}, ${term.trim()}) > 0`).join(' OR ');
+  const greptimeEquivalent = `CAST(${orConditions} AS INTEGER)`;
+
+  return {
+    aggregateType: AggregateType.Sum,
+    column: greptimeEquivalent,
+    alias: alias,
+  };
+}
 
 export class Datasource
   extends DataSourceWithBackend<CHQuery, CHConfig>
@@ -81,10 +93,10 @@ export class Datasource
     overrides: Partial<BackendSrvRequest> = {}
   ): Observable<FetchResponse<T>> {
 
-
+    const jsonData = this.settings.jsonData
     data = data || {};
 
-    let queryUrl = 'http://localhost:4000' + url;
+    let queryUrl = `${jsonData.host}:${jsonData.port}` + url;
     if (url.startsWith(`/api/datasources/uid/${this.uid}`)) {
       // This url is meant to be a replacement for the whole URL. Replace the entire URL
       queryUrl = url;
@@ -122,7 +134,7 @@ export class Datasource
     })
     return {
       status: response?.ok ? 'success' : 'error',
-      message: response?.ok ? 'Database Connection OK' : response?.error,
+      message: response?.ok ? 'Database Connection OK' : response?.status,
     };
   }
   getDataProvider(
@@ -200,17 +212,19 @@ export class Datasource
     columns.push({
       name: getTimeFieldRoundingClause(logsVolumeRequest.scopedVars, timeColumn.name),
       alias: TIME_FIELD_ALIAS,
-      hint: ColumnHint.Time
+      hint: ColumnHint.Time,
+      columnName: timeColumn.name
     });
 
     const logLevelColumn = getColumnByHint(query.builderOptions, ColumnHint.LogLevel);
     if (logLevelColumn) {
       // Generates aggregates like
       // sum(toString("log_level") IN ('dbug', 'debug', 'DBUG', 'DEBUG', 'Dbug', 'Debug')) AS debug
-      const llf = `toString("${logLevelColumn.name}")`;
+      const llf = `("${logLevelColumn.name}")`;
       let level: keyof typeof LOG_LEVEL_TO_IN_CLAUSE;
+      
       for (level in LOG_LEVEL_TO_IN_CLAUSE) {
-        aggregates.push({ aggregateType: AggregateType.Sum, column: `multiSearchAny(${llf}, [${LOG_LEVEL_TO_IN_CLAUSE[level]}])`, alias: level });
+        aggregates.push(createMultiSearchAnyEquivalent(llf, LOG_LEVEL_TO_IN_CLAUSE[level], level));
       }
     } else {
       // Count all logs if level column isn't selected
@@ -726,8 +740,8 @@ export class Datasource
   }
 
   query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
-    const jsonData = this.settings.jsonData
     
+    console.log(request, 'request')
     const targets = request.targets
       // filters out queries disabled in UI
       .filter((t) => t.hide !== true)
@@ -741,10 +755,25 @@ export class Datasource
           },
         };
       });
+    const range = request.range
+
+    const getInterpolatedSql = (rawSql: string): string => {
+      const fromTimeISO = range?.from.toISOString();
+      const toTimeISO = range?.to.toISOString();
+  
+      let interpolated = getTemplateSrv().replace(rawSql); // Replace standard variables
+      interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
+      interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
+      return interpolated;
+    };
     // Create an array of Observables, one for each active target request + transformation
-  const targetObservables: Array<Observable<DataFrame[]>> = targets.map(target => {
+  const targetObservables: Array<Observable<DataFrame[]>> = targets.map((target: CHQuery) => {
+    
     console.log(target)
-    return this._request('/v1/sql', { sql: target.rawSql }) // This returns Observable<BackendDataSourceResponse>
+    
+    const sql = getInterpolatedSql(target.rawSql)
+    console.log('sql', sql)
+    return this._request('/v1/sql', { sql: sql }) // This returns Observable<BackendDataSourceResponse>
       .pipe(
         // Map 1: Extract the data from the response
         map((response: FetchResponse) => {
@@ -760,11 +789,22 @@ export class Datasource
         map((greptimeData: GreptimeResponse) => {
           // Pass the appropriate format hint if needed by your transformer
           // const formatHint = target.formatHint || GrafanaDataFormat.TimeSeries;
-          if (target.queryType === QueryType.Logs) {
+          const editorType = target.editorType
+          let builderOptions
+          if (editorType === EditorType.SQL) {
+            builderOptions = target.meta?.builderOptions as QueryBuilderOptions
+          } else {
+            builderOptions = target.builderOptions || {}
+          }
+          const queryType = target.refId === 'Trace ID' ? 'Trace' : target.queryType || builderOptions.queryType
+          console.log('queryType', queryType)
+          if (queryType === QueryType.Logs) {
             const logFrame = transformGreptimeDBLogs(greptimeData, target.refId) as DataFrame
+            console.log(logFrame)
             return logFrame? [logFrame] : []
-          } else if (target.queryType === QueryType.Traces && target?.builderOptions?.meta?.isTraceIdMode) {
-            const frames = transformGreptimeDBTraceDetails(greptimeData, target.refId)
+          } else if (queryType === 'Trace') {
+            const columns = builderOptions.columns
+            const frames = transformGreptimeDBTraceDetails(greptimeData, columns as Column[])
             console.log(frames)
             
             return frames;
