@@ -65,5 +65,11 @@
   "dependencies": {
     "grafanaDependency": ">=9.5.0",
     "plugins": []
-  }
+  },
+  "routes": [
+	{
+	  "path": "greptime",
+	  "url": "{{ .JsonData.host }}"
+	}
+]
 }

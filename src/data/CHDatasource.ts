@@ -94,35 +94,19 @@ export class Datasource
   ): Observable<FetchResponse<T>> {
 
     const jsonData = this.settings.jsonData
-    data = data || {};
+    
 
-    let queryUrl = `${jsonData.host}:${jsonData.port}` + url;
-    if (url.startsWith(`/api/datasources/uid/${this.uid}`)) {
-      // This url is meant to be a replacement for the whole URL. Replace the entire URL
-      queryUrl = url;
-    }
-
-    const options: BackendSrvRequest = defaults(overrides, {
-      url: queryUrl,
+    return getBackendSrv().fetch({
+      url: `api/datasources/proxy/uid/${this.uid}/greptime/v1/sql`,
       method: 'POST',
-      headers: {},
-    });
-
-    if (options.method === 'GET') {
-      if (data && Object.keys(data).length) {
-        options.url =
-          options.url +
-          (options.url.search(/\?/) >= 0 ? '&' : '?') +
-          Object.entries(data)
-            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-            .join('&');
+      data: {
+        ...data
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        
       }
-    } else {
-      options.headers!['Content-Type'] = 'application/x-www-form-urlencoded';
-      options.data = data;
-    }
-
-    return getBackendSrv().fetch<T>(options);
+    });
   }
   // Add GreptimeDB specific methods
   async testDatasource(): Promise<any> {
