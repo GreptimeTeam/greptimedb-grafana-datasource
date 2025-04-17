@@ -1,15 +1,15 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "ClickHouse",
-  "id": "grafana-clickhouse-datasource",
+  "name": "GreptimeDB_SQL",
+  "id": "grafana-greptime2-datasource",
   "metrics": true,
   "backend": true,
   "logs": true,
   "tracing": true,
   "alerting": true,
   "annotations": true,
-  "executable": "gpx_clickhouse",
+  "executable": "gpx_greptime2",
   "includes": [
     {
       "type": "dashboard",
@@ -26,7 +26,7 @@
       "name": "Cluster Analysis",
       "path": "dashboards/cluster-analysis.json"
     },
-    {
+  {
       "type": "dashboard",
       "name": "ClickHouse OTel Dashboard",
       "path": "dashboards/opentelemetry-clickhouse.json"
@@ -39,14 +39,14 @@
   ],
   "category": "sql",
   "info": {
-    "description": "ClickHouse datasource plugin for Grafana",
+    "description": "Greptime datasource plugin for Grafana",
     "author": {
       "name": "Grafana Labs"
     },
     "keywords": ["Simple"],
     "logos": {
-      "small": "img/logo.svg",
-      "large": "img/logo.svg"
+      "small": "img/greptimedb_logo.svg",
+      "large": "img/greptimedb_logo.svg"
     },
     "links": [
       {

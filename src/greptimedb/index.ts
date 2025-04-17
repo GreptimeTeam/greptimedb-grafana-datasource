@@ -3,6 +3,7 @@ import { DataFrame,
   FieldType, // Imported for mapGreptimeTypeToGrafana
   FieldConfig,
   createDataFrame,
+  DataFrameType,
 } from '@grafana/data';
 
 import { GreptimeDataTypes } from './types';
@@ -334,7 +335,8 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: s
     refId: refId,
     fields: fields,
     meta: {
-      preferredVisualisationType: 'logs'
+      preferredVisualisationType: 'logs',
+      type: DataFrameType.LogLines,
     },
   });
 
