@@ -85,7 +85,7 @@ const generateTraceSearchQuery = (options: QueryBuilderOptions): string => {
 
   return concatQueryParts(queryParts);
 }
-
+ 
 /**
  * Generates trace query with columns that fit Grafana's Trace panel
  * Column aliases follow this structure:
@@ -604,9 +604,9 @@ const getTraceDurationSelectSqlGreptimeDB = (columnIdentifier: string, timeUnit?
     case TimeUnit.Milliseconds:
       return `${columnIdentifier} AS ${alias}`;
     case TimeUnit.Microseconds:
-      return `${columnIdentifier} * 0.001 AS ${alias}`;
+      return `FLOOR(${columnIdentifier}) * 0.001 AS ${alias}`;
     case TimeUnit.Nanoseconds:
-      return `${columnIdentifier} * 0.000001 AS ${alias}`;
+      return `FLOOR(${columnIdentifier} * 0.000001) AS ${alias}`;
     default:
       return `${columnIdentifier} AS ${alias}`;
   }

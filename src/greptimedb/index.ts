@@ -404,7 +404,7 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, buil
       operationName: data.span_name || 'unknown',
       serviceName: data.service_name || 'unknown',
       startTime: new Date(data.timestamp).getTime(),
-      duration: data.duration_nano ? Math.floor(data.duration_nano / 1000000) : 0,
+      duration: data.duration_nano,
       tags: data.span_attributes,
       serviceTags: data.service_attributes,
       logs: data.span_events ? transformGreptimeDBEvents(JSON.parse(data.span_events)) : [],
