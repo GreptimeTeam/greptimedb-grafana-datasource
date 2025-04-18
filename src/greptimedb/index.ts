@@ -7,6 +7,8 @@ import { DataFrame,
 } from '@grafana/data';
 
 import { GreptimeDataTypes } from './types';
+import { getColumnsByHint } from 'data/sqlGenerator';
+import { ColumnHint, QueryBuilderOptions } from 'types/queryBuilder';
 
 
 /**
@@ -353,7 +355,8 @@ interface GrafanaTraceSpan {
   serviceName: string;
   startTime: number; // Unix timestamp in milliseconds
   duration: number;  // Duration in milliseconds
-  tags?: Record<string, any>;
+  tags?: Array<Record<string, any>>;
+  serviceTags?: Array<Record<string, any>>;
   logs?: Array<{ timestamp: number; fields: Record<string, any> }>;
   // Add other relevant fields as needed (kind, status, etc.)
 }
@@ -363,21 +366,36 @@ export type Column = {
   alias: string
 }
 
-export function transformGreptimeDBTraceDetails(response: GreptimeResponse, columns: Column[]): DataFrame[] {
+export function transformGreptimeDBTraceDetails(response: GreptimeResponse, builderOptions: QueryBuilderOptions): DataFrame[] {
   if (!response?.output?.[0]?.records?.rows) {
     return [];
   }
-
+  const columns = builderOptions.columns || []
   const records = response.output[0].records;
   // const columnSchemas = records.schema.column_schemas;
   const rows = records.rows;
 
   const spans: GrafanaTraceSpan[] = rows.map(row => {
-    const data: Record<string, any> = {};
+    const data: Record<string, any> = {span_attributes: [], service_attributes: []};
+    const tagColumnNames = getColumnsByHint(builderOptions, ColumnHint.TraceTags)?.map((v) => v.name) || []
+    const serticeTagColumnNames = getColumnsByHint(builderOptions, ColumnHint.TraceServiceTags)?.map((v) => v.name) || []
     columns.forEach((schema, index) => {
-      data[schema.name] = row[index];
+      if (tagColumnNames?.indexOf(schema.name) > -1) {
+        data['span_attributes'].push({
+          key: schema.name,
+          value: row[index]
+        })
+      } else if (serticeTagColumnNames?.indexOf(schema.name) > -1) {
+        data['service_attributes'].push({
+          key: schema.name,
+          value: row[index]
+        })
+      } else {
+        data[schema.name] = row[index];
+      }
+      
     });
-    console.log(data)
+
 
     return {
       traceId: data.trace_id,
@@ -387,7 +405,8 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, colu
       serviceName: data.service_name || 'unknown',
       startTime: new Date(data.timestamp).getTime(),
       duration: data.duration_nano ? Math.floor(data.duration_nano / 1000000) : 0,
-      tags: data.span_attributes ? JSON.parse(data.span_attributes) : {},
+      tags: data.span_attributes,
+      serviceTags: data.service_attributes,
       logs: data.span_events ? transformGreptimeDBEvents(JSON.parse(data.span_events)) : [],
       // Map other relevant fields like span_kind, span_status_code, etc.
     };
@@ -406,7 +425,8 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, colu
   // ],
   // "config": { "unit": "ms" }, },
   { name: 'duration', type: FieldType.number, values: spans.map(s => s.duration), "config": { "unit": "ms" }, },
-    // { name: 'tags', type: FieldType.other, values: spans.map(s => s.tags) },
+    { name: 'tags', type: FieldType.other, values: spans.map(s => s.tags) },
+    { name: 'serviceTags', type: FieldType.other, values: spans.map(s => s.serviceTags) },
     // { name: 'logs', type: FieldType.other, values: spans.map(s => s.logs) },
     // Add fields for other relevant span properties
   ];

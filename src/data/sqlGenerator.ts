@@ -136,14 +136,18 @@ const generateTraceIdQuery = (options: QueryBuilderOptions): string => {
   }
 
   // TODO: for tags and serviceTags, consider the column type. They might not require mapping, they could already be JSON.
-  const traceTags = getColumnByHint(options, ColumnHint.TraceTags);
+  const traceTags = getColumnsByHint(options, ColumnHint.TraceTags);
+ 
   if (traceTags !== undefined) {
-    selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceTags.name)}[key]), mapKeys(${escapeIdentifier(traceTags.name)})) as tags`);
+    // selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceTags.name)}[key]), mapKeys(${escapeIdentifier(traceTags.name)})) as tags`);
+    traceTags.map((v) => selectParts.push(`"${v.name}"`))
   }
 
-  const traceServiceTags = getColumnByHint(options, ColumnHint.TraceServiceTags);
+ 
+  const traceServiceTags = getColumnsByHint(options, ColumnHint.TraceServiceTags);
   if (traceServiceTags !== undefined) {
-    selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceServiceTags.name)}[key]), mapKeys(${escapeIdentifier(traceServiceTags.name)})) as serviceTags`);
+    traceServiceTags.map((v) => selectParts.push(`"${v.name}"`))
+    // selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceServiceTags.name)}[key]), mapKeys(${escapeIdentifier(traceServiceTags.name)})) as serviceTags`);
   }
 
   const traceStatusCode = getColumnByHint(options, ColumnHint.TraceStatusCode);
@@ -523,6 +527,7 @@ const generateTableQuery = (options: QueryBuilderOptions): string => {
 
 export const isAggregateQuery = (builder: QueryBuilderOptions): boolean => (builder.aggregates?.length || 0) > 0;
 export const getColumnByHint = (options: QueryBuilderOptions, hint: ColumnHint): SelectedColumn | undefined => options.columns?.find(c => c.hint === hint);
+export const getColumnsByHint = (options: QueryBuilderOptions, hint: ColumnHint): SelectedColumn[] | undefined => options.columns?.filter(c => c.hint === hint);
 export const getColumnIndexByHint = (options: QueryBuilderOptions, hint: ColumnHint): number => (options.columns || []).findIndex(c => c.hint === hint);
 export const getColumnsByHints = (options: QueryBuilderOptions, hints: readonly ColumnHint[]): readonly SelectedColumn[] => {
   const columns = [];

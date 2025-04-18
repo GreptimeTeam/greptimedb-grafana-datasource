@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Filter, QueryBuilderOptions, SelectedColumn, ColumnHint, TimeUnit, OrderBy } from 'types/queryBuilder';
-import { ColumnSelect } from '../ColumnSelect';
+import { ColumnSelect, ColumnSelectMulti } from '../ColumnSelect';
 import { FiltersEditor } from '../FilterEditor';
 import allLabels from 'labels';
 import { ModeSwitch } from '../ModeSwitch';
-import { getColumnByHint } from 'data/sqlGenerator';
+import { getColumnByHint, getColumnsByHint } from 'data/sqlGenerator';
 import { Alert, Collapse, VerticalGroup } from '@grafana/ui';
 import { DurationUnitSelect } from 'components/queryBuilder/DurationUnitSelect';
 import { Datasource } from 'data/CHDatasource';
@@ -37,8 +37,8 @@ interface TraceQueryBuilderState {
   startTimeColumn?: SelectedColumn;
   durationTimeColumn?: SelectedColumn;
   durationUnit: TimeUnit;
-  tagsColumn?: SelectedColumn;
-  serviceTagsColumn?: SelectedColumn;
+  tagsColumn: SelectedColumn[];
+  serviceTagsColumn?: SelectedColumn[];
   eventsColumnPrefix?: SelectedColumn;
   traceId: string;
   orderBy: OrderBy[];
@@ -66,8 +66,8 @@ export const TraceQueryBuilder = (props: TraceQueryBuilderProps) => {
     startTimeColumn: getColumnByHint(builderOptions, ColumnHint.Time),
     durationTimeColumn: getColumnByHint(builderOptions, ColumnHint.TraceDurationTime),
     durationUnit: builderOptions.meta?.traceDurationUnit || TimeUnit.Nanoseconds,
-    tagsColumn: getColumnByHint(builderOptions, ColumnHint.TraceTags),
-    serviceTagsColumn: getColumnByHint(builderOptions, ColumnHint.TraceServiceTags),
+    tagsColumn: getColumnsByHint(builderOptions, ColumnHint.TraceTags) || [],
+    serviceTagsColumn: getColumnsByHint(builderOptions, ColumnHint.TraceServiceTags)  || [],
     eventsColumnPrefix: getColumnByHint(builderOptions, ColumnHint.TraceEventsPrefix),
     traceId: builderOptions.meta?.traceId || '',
     orderBy: builderOptions.orderBy || [],
@@ -84,8 +84,8 @@ export const TraceQueryBuilder = (props: TraceQueryBuilderProps) => {
       next.operationNameColumn,
       next.startTimeColumn,
       next.durationTimeColumn,
-      next.tagsColumn,
-      next.serviceTagsColumn,
+      ...(next.tagsColumn ?? []),
+      ...(next.serviceTagsColumn ?? []),
       next.eventsColumnPrefix
     ].filter(c => c !== undefined) as SelectedColumn[];
 
@@ -236,10 +236,10 @@ export const TraceQueryBuilder = (props: TraceQueryBuilderProps) => {
           />
         </div>
         <div className="gf-form">
-          <ColumnSelect
+          <ColumnSelectMulti
             disabled={builderState.otelEnabled}
             allColumns={allColumns}
-            selectedColumn={builderState.tagsColumn}
+            selectedColumns={builderState.tagsColumn || []}
             invalid={!builderState.tagsColumn}
             onColumnChange={onOptionChange('tagsColumn')}
             columnHint={ColumnHint.TraceTags}
@@ -247,17 +247,16 @@ export const TraceQueryBuilder = (props: TraceQueryBuilderProps) => {
             tooltip={labels.columns.tags.tooltip}
             wide
           />
-          <ColumnSelect
+          <ColumnSelectMulti
             disabled={builderState.otelEnabled}
             allColumns={allColumns}
-            selectedColumn={builderState.serviceTagsColumn}
+            selectedColumns={builderState.serviceTagsColumn || []}
             invalid={!builderState.serviceTagsColumn}
             onColumnChange={onOptionChange('serviceTagsColumn')}
             columnHint={ColumnHint.TraceServiceTags}
             label={labels.columns.serviceTags.label}
             tooltip={labels.columns.serviceTags.tooltip}
             wide
-            inline
           />
         </div>
         <div className="gf-form">

@@ -787,8 +787,7 @@ export class Datasource
             console.log(logFrame)
             return logFrame? [logFrame] : []
           } else if (queryType === 'Trace') {
-            const columns = builderOptions.columns
-            const frames = transformGreptimeDBTraceDetails(greptimeData, columns as Column[])
+            const frames = transformGreptimeDBTraceDetails(greptimeData, builderOptions)
             console.log(frames)
             
             return frames;
