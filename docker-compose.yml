@@ -4,16 +4,15 @@ services:
     build:
       context: ./.config
       args:
-        grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
-        grafana_version: ${GRAFANA_VERSION:-11.1.0}
-        # remove the following line when developing to have backend debugger
+        grafana_image: grafana/grafana # Assuming you're using the OSS image
+        grafana_version: latest
         development: false
     ports:
       - 3000:3000
     volumes:
-      - ./dist:/var/lib/grafana/plugins/grafana-clickhouse-datasource
+      - ./dist:/var/lib/grafana/plugins/grafana-greptime2-datasource # Mount your GreptimeDB plugin
       - ./provisioning:/etc/grafana/provisioning
-      - .:/root/grafana-clickhouse-datasource
+      - .:/root/grafana-greptime2-datasource # Mount your GreptimeDB plugin source
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:3000/login"]
       interval: 1m30s
@@ -22,7 +21,9 @@ services:
       start_period: 30s
     environment:
       - GF_LOG_LEVEL=debug
-      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=true
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=true # Allow your local plugin
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource # Install the ClickHouse plugin
+      - GF_DEFAULT_APP_MODE=development # Recommended for local plugin development
     networks:
       - grafana
 
