@@ -280,19 +280,20 @@ export class Datasource
   }
 
   applyTemplateVariables(query: CHQuery, scoped: ScopedVars): CHQuery {
+    console.log('applyTemplateVariables')
     let rawQuery = query.rawSql || '';
     // we want to skip applying ad hoc filters when we are getting values for ad hoc filters
-    const templateSrv = getTemplateSrv();
-    if (!this.skipAdHocFilter) {
-      const adHocFilters = (templateSrv as any)?.getAdhocFilters(this.name);
-      if (this.adHocFiltersStatus === AdHocFilterStatus.disabled && adHocFilters?.length > 0) {
-        throw new Error(
-          `Unable to apply ad hoc filters. Upgrade ClickHouse to >=${this.adHocCHVerReq.major}.${this.adHocCHVerReq.minor} or remove ad hoc filters for the dashboard.`
-        );
-      }
-      rawQuery = this.adHocFilter.apply(rawQuery, adHocFilters);
-    }
-    this.skipAdHocFilter = false;
+    // const templateSrv = getTemplateSrv();
+    // if (!this.skipAdHocFilter) {
+    //   const adHocFilters = (templateSrv as any)?.getAdhocFilters(this.name);
+    //   if (this.adHocFiltersStatus === AdHocFilterStatus.disabled && adHocFilters?.length > 0) {
+    //     throw new Error(
+    //       `Unable to apply ad hoc filters. Upgrade ClickHouse to >=${this.adHocCHVerReq.major}.${this.adHocCHVerReq.minor} or remove ad hoc filters for the dashboard.`
+    //     );
+    //   }
+    //   rawQuery = this.adHocFilter.apply(rawQuery, adHocFilters);
+    // }
+    // this.skipAdHocFilter = false;
     rawQuery = this.applyConditionalAll(rawQuery, getTemplateSrv().getVariables());
     return {
       ...query,
@@ -776,7 +777,7 @@ export class Datasource
           const editorType = target.editorType
           let builderOptions
           if (editorType === EditorType.SQL) {
-            builderOptions = target.meta?.builderOptions as QueryBuilderOptions
+            builderOptions = target.meta?.builderOptions || {}
           } else {
             builderOptions = target.builderOptions || {}
           }
@@ -787,7 +788,7 @@ export class Datasource
             console.log(logFrame)
             return logFrame? [logFrame] : []
           } else if (queryType === 'Trace') {
-            const frames = transformGreptimeDBTraceDetails(greptimeData, builderOptions)
+            const frames = transformGreptimeDBTraceDetails(greptimeData, builderOptions as QueryBuilderOptions)
             console.log(frames)
             
             return frames;
@@ -830,6 +831,7 @@ export class Datasource
         { data: flattenedData } // Pass the combined data frames
       );
       // Return the final structure Grafana expects
+      console.log('finalResponse', finalResponse)
       return finalResponse; // { data: DataFrame[] }
     }),
     // Catch errors from forkJoin or the final map transformation
@@ -982,18 +984,19 @@ export class Datasource
   // 22.7 added 'settings additional_table_filters' which is used for ad hoc filters
   private async canUseAdhocFilters(): Promise<AdHocFilterStatus> {
     this.skipAdHocFilter = true;
-    const data = await this.fetchData(`SELECT version()`);
-    try {
-      const verString = (data[0] as unknown as string).split('.');
-      const ver = { major: Number.parseInt(verString[0], 10), minor: Number.parseInt(verString[1], 10) };
-      return ver.major > this.adHocCHVerReq.major ||
-        (ver.major === this.adHocCHVerReq.major && ver.minor >= this.adHocCHVerReq.minor)
-        ? AdHocFilterStatus.enabled
-        : AdHocFilterStatus.disabled;
-    } catch (err) {
-      console.error(`Unable to parse ClickHouse version: ${err}`);
-      throw err;
-    }
+    return Promise.resolve(AdHocFilterStatus.disabled);
+    // const data = await this.fetchData(`SELECT version()`);
+    // try {
+    //   const verString = (data[0] as unknown as string).split('.');
+    //   const ver = { major: Number.parseInt(verString[0], 10), minor: Number.parseInt(verString[1], 10) };
+    //   return ver.major > this.adHocCHVerReq.major ||
+    //     (ver.major === this.adHocCHVerReq.major && ver.minor >= this.adHocCHVerReq.minor)
+    //     ? AdHocFilterStatus.enabled
+    //     : AdHocFilterStatus.disabled;
+    // } catch (err) {
+    //   console.error(`Unable to parse ClickHouse version: ${err}`);
+    //   throw err;
+    // }
   }
 
   // interface DataSourceWithLogsContextSupport
