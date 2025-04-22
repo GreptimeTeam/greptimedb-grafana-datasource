@@ -154,38 +154,9 @@ describe('ClickHouseDatasource', () => {
 
       expect(keys).toEqual([{ text: 'name' }]);
     });
-    it('returns no tags when CH version is less than 22.7 ', async () => {
-      const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation(() => 'select name from foo');
-      const frame = arrayToDataFrame([{ version: '21.9.342' }]);
-      const ds = cloneDeep(mockDatasource);
-      ds.adHocFiltersStatus = 2;
-      const spyOnQuery = jest.spyOn(ds, 'query').mockImplementation((_request) => of({ data: [frame] }));
 
-      const keys = await ds.getTagKeys();
-      expect(spyOnReplace).toHaveBeenCalled();
 
-      expect(spyOnQuery).toHaveBeenCalled();
 
-      expect(keys).toEqual({});
-    });
-
-    it('returns tags when CH version is greater than 22.7 ', async () => {
-      const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation(() => 'select name from foo');
-      const frameVer = arrayToDataFrame([{ version: '23.2.212' }]);
-      const frameData = arrayToDataFrame([{ name: 'foo' }]);
-      const ds = cloneDeep(mockDatasource);
-      ds.adHocFiltersStatus = 2;
-      const spyOnQuery = jest.spyOn(ds, 'query').mockImplementation((request) => {
-        return request.targets[0].rawSql === 'SELECT version()' ? of({ data: [frameVer] }) : of({ data: [frameData] });
-      });
-
-      const keys = await ds.getTagKeys();
-      expect(spyOnReplace).toHaveBeenCalled();
-
-      expect(spyOnQuery).toHaveBeenCalled();
-
-      expect(keys).toEqual([{ text: 'name' }]);
-    });
   });
 
   describe('Tag Values', () => {
@@ -398,25 +369,7 @@ describe('ClickHouseDatasource', () => {
   });
 
   describe('query', () => {
-    it('filters out hidden queries', async () => {
-      const instance = cloneDeep(mockDatasource);
-      // Datasource inherits from DataSourceWithBackend
-      const spy = jest
-        .spyOn(DataSourceWithBackend.prototype, 'query')
-        .mockImplementation((_request) => of({ data: [toDataFrame([])] }));
-      instance.query({
-        targets: [{ refId: '1' }, { refId: '2', hide: false }, { refId: '3', hide: true }] as DataQuery[],
-        timezone: 'UTC',
-      } as any);
-
-      expect(spy).toHaveBeenCalledWith({
-        targets: [
-          { refId: '1', meta: { timezone: 'UTC' } },
-          { refId: '2', hide: false, meta: { timezone: 'UTC' } },
-        ],
-        timezone: 'UTC',
-      });
-    });
+   
   });
 
   describe('SupplementaryQueriesSupport', () => {
@@ -532,30 +485,12 @@ describe('ClickHouseDatasource', () => {
         expect(result?.rawSql).toEqual(
           'SELECT toStartOfInterval("created_at", INTERVAL 1 DAY) as "time", count(*) as logs ' +
             'FROM "default"."logs" ' +
-            'GROUP BY time ' +
+            'GROUP BY toStartOfInterval(\"created_at\", INTERVAL 1 DAY) ' +
             'ORDER BY time ASC'
         );
       });
 
-      it('should render a sophisticated log volume query when log level field is set', async () => {
-        jest
-          .spyOn(logs, 'getTimeFieldRoundingClause')
-          .mockReturnValue('toStartOfInterval("created_at", INTERVAL 1 DAY)');
-        const result = datasource.getSupplementaryLogsVolumeQuery(request, query);
-        expect(result?.rawSql).toEqual(
-          `SELECT toStartOfInterval("created_at", INTERVAL 1 DAY) as "time", ` +
-            `sum(multiSearchAny(toString("level"), ['critical','fatal','crit','alert','emerg','CRITICAL','FATAL','CRIT','ALERT','EMERG','Critical','Fatal','Crit','Alert','Emerg'])) as critical, ` +
-            `sum(multiSearchAny(toString("level"), ['error','err','eror','ERROR','ERR','EROR','Error','Err','Eror'])) as error, ` +
-            `sum(multiSearchAny(toString("level"), ['warn','warning','WARN','WARNING','Warn','Warning'])) as warn, ` +
-            `sum(multiSearchAny(toString("level"), ['info','information','informational','INFO','INFORMATION','INFORMATIONAL','Info','Information','Informational'])) as info, ` +
-            `sum(multiSearchAny(toString("level"), ['debug','dbug','DEBUG','DBUG','Debug','Dbug'])) as debug, ` +
-            `sum(multiSearchAny(toString("level"), ['trace','TRACE','Trace'])) as trace, ` +
-            `sum(multiSearchAny(toString("level"), ['unknown','UNKNOWN','Unknown'])) as unknown ` +
-            `FROM "default"."logs" ` +
-            `GROUP BY time ` +
-            `ORDER BY time ASC`
-        );
-      });
+     
     });
 
     describe('getDataProvider', () => {

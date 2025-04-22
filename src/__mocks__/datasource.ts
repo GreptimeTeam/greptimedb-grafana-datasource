@@ -8,9 +8,9 @@ import { pluginVersion } from 'utils/version';
 export const newMockDatasource = (): Datasource => {
   const mockDatasource = new Datasource({
     id: 1,
-    uid: 'clickhouse_ds',
+    uid: 'greptimedb_ds',
     type: 'info8fcc-greptimedb-datasource',
-    name: 'ClickHouse',
+    name: 'GrepTimeDB',
     jsonData: {
       version: pluginVersion,
       host: 'foo.com',
@@ -23,10 +23,10 @@ export const newMockDatasource = (): Datasource => {
       protocol: Protocol.Native,
     },
     readOnly: true,
-    access: 'direct',
+    access: 'proxy',
     meta: {
       id: 'info8fcc-greptimedb-datasource',
-      name: 'ClickHouse',
+      name: 'GrepTimeDB',
       type: PluginType.datasource,
       module: '',
       baseUrl: '',
