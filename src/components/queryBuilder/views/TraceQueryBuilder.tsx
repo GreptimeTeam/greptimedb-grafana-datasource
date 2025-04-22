@@ -111,7 +111,7 @@ export const TraceQueryBuilder = (props: TraceQueryBuilderProps) => {
       <VerticalGroup>
         <div>
           {'To speed up your query building, enter your default trace configuration in your '}
-          <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasource.uid)}#traces-config`}>ClickHouse Data Source settings</a>
+          <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasource.uid)}#traces-config`}>GreptimeDB Data Source settings</a>
         </div>
       </VerticalGroup>
     </Alert>

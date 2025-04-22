@@ -99,7 +99,7 @@ interface TableColumnPickListItem {
 }
 
 /**
- * Represents a column retrieved from ClickHouse
+ * Represents a column retrieved from GreptimeDB
  */
 export interface TableColumn {
   name: string;

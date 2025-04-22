@@ -47,11 +47,11 @@ export const Components = {
       },
       DATABASE: {
         label: 'Database',
-        tooltip: 'Clickhouse database to query from',
+        tooltip: 'GreptimeDB database to query from',
       },
       FROM: {
         label: 'Table',
-        tooltip: 'Clickhouse table to query from',
+        tooltip: 'GreptimeDB table to query from',
       },
       SELECT: {
         label: 'Fields',

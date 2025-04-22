@@ -282,18 +282,6 @@ export class Datasource
   applyTemplateVariables(query: CHQuery, scoped: ScopedVars): CHQuery {
     console.log('applyTemplateVariables')
     let rawQuery = query.rawSql || '';
-    // we want to skip applying ad hoc filters when we are getting values for ad hoc filters
-    // const templateSrv = getTemplateSrv();
-    // if (!this.skipAdHocFilter) {
-    //   const adHocFilters = (templateSrv as any)?.getAdhocFilters(this.name);
-    //   if (this.adHocFiltersStatus === AdHocFilterStatus.disabled && adHocFilters?.length > 0) {
-    //     throw new Error(
-    //       `Unable to apply ad hoc filters. Upgrade ClickHouse to >=${this.adHocCHVerReq.major}.${this.adHocCHVerReq.minor} or remove ad hoc filters for the dashboard.`
-    //     );
-    //   }
-    //   rawQuery = this.adHocFilter.apply(rawQuery, adHocFilters);
-    // }
-    // this.skipAdHocFilter = false;
     rawQuery = this.applyConditionalAll(rawQuery, getTemplateSrv().getVariables());
     return {
       ...query,

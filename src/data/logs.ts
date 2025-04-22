@@ -19,12 +19,6 @@ import { config } from '@grafana/runtime';
 import { colors } from '@grafana/ui';
 import { partition } from 'lodash';
 
-/**
- * Partially copy-pasted and adjusted to ClickHouse server-side aggregations
- * from `public/app/core/logsModel.ts` (release-9.4.3 branch)
- *
- * See https://github.com/grafana/grafana/blob/release-9.4.3/public/app/core/logsModel.ts
- */
 
 type LogsVolumeQueryOptions<T extends DataQuery> = {
   targets: T[];
@@ -122,7 +116,7 @@ export function queryLogsVolume<TQuery extends DataQuery, TOptions extends DataS
  */
 export function aggregateRawLogsVolume(rawLogsVolume: DataFrame[]): DataFrame[] {
   if (rawLogsVolume.length !== 1) {
-    return []; // we always expect a single DataFrame with all the aggregations from ClickHouse
+    return []; // we always expect a single DataFrame with all the aggregations from GreptimeDB
   }
 
   const [[timeField], levelFields] = partition(rawLogsVolume[0].fields, (f) => f.name === TIME_FIELD_ALIAS);

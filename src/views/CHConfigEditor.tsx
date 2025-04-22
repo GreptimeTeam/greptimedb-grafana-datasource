@@ -267,7 +267,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
       <Divider />
       <ConfigSection
         title="Additional settings"
-        description="Additional settings are optional settings that can be configured for more control over your data source. This includes the default database, dial and query timeouts, SQL validation, and custom ClickHouse settings."
+        description="Additional settings are optional settings that can be configured for more control over your data source. This includes the default database, dial and query timeouts, SQL validation, and custom GreptimeDB settings."
         isCollapsible
         isInitiallyOpen={hasAdditionalSettings}
       >
