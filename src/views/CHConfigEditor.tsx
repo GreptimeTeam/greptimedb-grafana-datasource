@@ -184,10 +184,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     options.jsonData.traces
   );
 
-  const defaultPort = jsonData.secure ?
-  (jsonData.protocol === Protocol.Native ? labels.serverPort.secureNativePort : labels.serverPort.secureHttpPort) :
-  (jsonData.protocol === Protocol.Native ? labels.serverPort.insecureNativePort : labels.serverPort.insecureHttpPort);
-  const portDescription = `${labels.serverPort.tooltip} (default for ${jsonData.secure ? 'secure' : ''} ${jsonData.protocol}: ${defaultPort})`
 
   const uidWarning = (!options.uid) && (
     <Alert title="" severity="warning" buttonContent="Close">
@@ -211,12 +207,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   return (
     <>
       {uidWarning}
-      <DataSourceDescription
-        dataSourceName="Clickhouse"
-        docsLink="https://grafana.com/grafana/plugins/grafana-clickhouse-datasource/"
-        hasRequiredFields
-      />
-      <Divider />
+
       <ConfigSection title="Server">
         <Field
           required
@@ -235,127 +226,12 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
             placeholder={labels.serverAddress.placeholder}
           />
         </Field>
-        <Field
-          required
-          label={labels.serverPort.label}
-          description={portDescription}
-          invalid={!jsonData.port}
-          error={labels.serverPort.error}
-        >
-          <Input
-            name="port"
-            width={40}
-            type="number"
-            value={jsonData.port || ''}
-            onChange={e => onPortChange(e.currentTarget.value)}
-            label={labels.serverPort.label}
-            aria-label={labels.serverPort.label}
-            placeholder={defaultPort}
-          />
-        </Field>
 
-        <Field label={labels.protocol.label} description={labels.protocol.tooltip}>
-          <RadioButtonGroup<Protocol>
-            options={protocolOptions}
-            disabledOptions={[]}
-            value={jsonData.protocol || Protocol.Native}
-            onChange={(e) => onProtocolToggle(e!)}
-          />
-        </Field>
-        <Field label={labels.secure.label} description={labels.secure.tooltip}>
-          <Switch
-            id="secure"
-            className="gf-form"
-            value={jsonData.secure || false}
-            onChange={(e) => onSwitchToggle('secure', e.currentTarget.checked)}
-          />
-        </Field>
-
-        { jsonData.protocol === Protocol.Http &&
-          <Field label={labels.path.label} description={labels.path.tooltip}>
-            <Input
-              value={jsonData.path || ''}
-              name="path"
-              width={80}
-              onChange={onUpdateDatasourceJsonDataOption(props, 'path')}
-              label={labels.path.label}
-              aria-label={labels.path.label}
-              placeholder={labels.path.placeholder}
-            />
-          </Field>
-        }
+       
       </ConfigSection>
 
-      { jsonData.protocol === Protocol.Http &&
-        <HttpHeadersConfig
-          headers={options.jsonData.httpHeaders}
-          forwardGrafanaHeaders={options.jsonData.forwardGrafanaHeaders}
-          secureFields={options.secureJsonFields}
-          onHttpHeadersChange={headers => onHttpHeadersChange(headers, options, onOptionsChange)}
-          onForwardGrafanaHeadersChange={forwardGrafanaHeaders => onSwitchToggle('forwardGrafanaHeaders', forwardGrafanaHeaders)}
-        />
-      }
 
-      <Divider />
-      <ConfigSection title="TLS / SSL Settings">
-        <Field
-          label={labels.tlsSkipVerify.label}
-          description={labels.tlsSkipVerify.tooltip}
-        >
-          <Switch
-            className="gf-form"
-            value={jsonData.tlsSkipVerify || false}
-            onChange={(e) => onTLSSettingsChange('tlsSkipVerify', e.currentTarget.checked)}
-          />
-        </Field>
-        <Field
-          label={labels.tlsClientAuth.label}
-          description={labels.tlsClientAuth.tooltip}
-        >
-          <Switch
-            className="gf-form"
-            value={jsonData.tlsAuth || false}
-            onChange={(e) => onTLSSettingsChange('tlsAuth', e.currentTarget.checked)}
-          />
-        </Field>
-        <Field
-          label={labels.tlsAuthWithCACert.label}
-          description={labels.tlsAuthWithCACert.tooltip}
-        >
-          <Switch
-            className="gf-form"
-            value={jsonData.tlsAuthWithCACert || false}
-            onChange={(e) => onTLSSettingsChange('tlsAuthWithCACert', e.currentTarget.checked)}
-          />
-        </Field>
-        {jsonData.tlsAuthWithCACert && (
-          <CertificationKey
-            hasCert={!!hasTLSCACert}
-            onChange={(e) => onCertificateChangeFactory('tlsCACert', e.currentTarget.value)}
-            placeholder={labels.tlsCACert.placeholder}
-            label={labels.tlsCACert.label}
-            onClick={() => onResetClickFactory('tlsCACert')}
-          />
-        )}
-        {jsonData.tlsAuth && (
-          <>
-            <CertificationKey
-              hasCert={!!hasTLSClientCert}
-              onChange={(e) => onCertificateChangeFactory('tlsClientCert', e.currentTarget.value)}
-              placeholder={labels.tlsClientCert.placeholder}
-              label={labels.tlsClientCert.label}
-              onClick={() => onResetClickFactory('tlsClientCert')}
-            />
-            <CertificationKey
-              hasCert={!!hasTLSClientKey}
-              placeholder={labels.tlsClientKey.placeholder}
-              label={labels.tlsClientKey.label}
-              onChange={(e) => onCertificateChangeFactory('tlsClientKey', e.currentTarget.value)}
-              onClick={() => onResetClickFactory('tlsClientKey')}
-            />
-          </>
-        )}
-      </ConfigSection>
+      
 
       <Divider />
       <ConfigSection title="Credentials">
@@ -403,21 +279,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
           onDefaultTableChange={onUpdateDatasourceJsonDataOption(props, 'defaultTable')}
         />
         
-        <Divider />
-        <QuerySettingsConfig
-          connMaxLifetime={jsonData.connMaxLifetime}
-          dialTimeout={jsonData.dialTimeout}
-          maxIdleConns={jsonData.maxIdleConns}
-          maxOpenConns={jsonData.maxOpenConns}
-          queryTimeout={jsonData.queryTimeout}
-          validateSql={jsonData.validateSql}
-          onConnMaxIdleConnsChange={onUpdateDatasourceJsonDataOption(props, 'maxIdleConns')}
-          onConnMaxLifetimeChange={onUpdateDatasourceJsonDataOption(props, 'connMaxLifetime')}
-          onConnMaxOpenConnsChange={onUpdateDatasourceJsonDataOption(props, 'maxOpenConns')}
-          onDialTimeoutChange={onUpdateDatasourceJsonDataOption(props, 'dialTimeout')}
-          onQueryTimeoutChange={onUpdateDatasourceJsonDataOption(props, 'queryTimeout')}
-          onValidateSqlChange={e => onSwitchToggle('validateSql', e.currentTarget.checked)}
-        />
 
         <Divider />
         <LogsConfig

@@ -85,13 +85,13 @@ export const LogsConfig = (props: LogsConfigProps) => {
         title={labels.columns.title}
         description={labels.columns.description}
       >
-        <OtelVersionSelect
+        {/* <OtelVersionSelect
           enabled={otelEnabled || false}
           selectedVersion={otelVersion || ''}
           onEnabledChange={onOtelEnabledChange}
           onVersionChange={onOtelVersionChange}
           wide
-        />
+        /> */}
         <LabeledInput
           disabled={otelEnabled}
           label={labels.columns.time.label}

@@ -6,37 +6,20 @@ export default {
       ConfigEditor: {
         serverAddress: {
           label: 'Server address',
-          placeholder: 'Server address',
-          tooltip: 'ClickHouse host address',
+          placeholder: 'http://localhost:4000',
+          tooltip: 'GreptimeDB url',
           error: 'Server address required'
         },
-        serverPort: {
-          label: 'Server port',
-          insecureNativePort: '9000',
-          insecureHttpPort: '8123',
-          secureNativePort: '9440',
-          secureHttpPort: '8443',
-          tooltip: 'ClickHouse server port',
-          error: 'Port is required'
-        },
-        path: {
-          label: 'HTTP URL Path',
-          tooltip: 'Additional URL path for HTTP requests',
-          placeholder: 'additional-path'
-        },
-        protocol: {
-          label: 'Protocol',
-          tooltip: 'Native or HTTP for server protocol',
-        },
+
         username: {
           label: 'Username',
           placeholder: 'default',
-          tooltip: 'ClickHouse username',
+          tooltip: 'GreptimeDB username',
         },
         password: {
           label: 'Password',
           placeholder: 'password',
-          tooltip: 'ClickHouse password',
+          tooltip: 'GreptimeDB password',
         },
         tlsSkipVerify: {
           label: 'Skip TLS Verify',
@@ -104,7 +87,7 @@ export default {
           label: 'Default database',
           description: 'the default database used by the query builder',
           name: 'defaultDatabase',
-          placeholder: 'default'
+          placeholder: 'public'
         },
         table: {
           label: 'Default table',
@@ -157,7 +140,7 @@ export default {
           label: 'Default trace database',
           description: 'the default database used by the trace query builder',
           name: 'defaultDatabase',
-          placeholder: 'default'
+          placeholder: 'public'
         },
         defaultTable: {
           label: 'Default trace table',
@@ -217,7 +200,7 @@ export default {
           label: 'Default log database',
           description: 'the default database used by the logs query builder',
           name: 'defaultDatabase',
-          placeholder: 'default'
+          placeholder: 'public'
         },
         defaultTable: {
           label: 'Default log table',
@@ -283,12 +266,12 @@ export default {
     },
     DatabaseSelect: {
       label: 'Database',
-      tooltip: 'ClickHouse database to query from',
+      tooltip: 'GreptimeDB database to query from',
       empty: '<select database>',
     },
     TableSelect: {
       label: 'Table',
-      tooltip: 'ClickHouse table to query from',
+      tooltip: 'GreptimeDB table to query from',
       empty: '<select table>',
     },
     ColumnsEditor: {

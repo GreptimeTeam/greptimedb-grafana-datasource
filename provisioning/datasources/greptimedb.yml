@@ -15,8 +15,7 @@ datasources:
     jsonData:
       host: http://localhost:4000
       database: "public"
-      username: "default"
-      port: 9000
-      protocol: native
+      username: ""
+
     secureJsonData:
       # password: ""
