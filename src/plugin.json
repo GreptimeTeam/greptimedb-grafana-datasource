@@ -1,18 +1,18 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "GreptimeDB_SQL",
-  "id": "grafana-greptime-datasource",
+  "name": "GreptimeDB",
+  "id": "grafana-greptimedb-datasource",
   "metrics": true,
   "backend": true,
   "logs": true,
   "tracing": true,
   "alerting": true,
   "annotations": true,
-  "executable": "gpx_greptime2",
+  "executable": "gpx_greptimedb",
   "includes": [
   ],
-  "category": "sql",
+  "category": "tsdb",
   "info": {
     "description": "Greptime datasource plugin for Grafana",
     "author": {

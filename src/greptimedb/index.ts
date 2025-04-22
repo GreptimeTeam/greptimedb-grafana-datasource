@@ -321,7 +321,7 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: s
   const fields = [
     { name: 'timestamp', type: FieldType.time, values: timestamps },
     { name: 'body', type: FieldType.string, values: bodies },
-  ];
+  ] as any;
 
   if (severityColumnIndex !== -1) {
     fields.push({ name: 'severity', type: FieldType.string, values: severities });

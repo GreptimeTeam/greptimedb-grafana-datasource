@@ -10,9 +10,9 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./dist:/var/lib/grafana/plugins/grafana-greptime-datasource # Mount your GreptimeDB plugin
+      - ./dist:/var/lib/grafana/plugins/grafana-greptimedb-datasource # Mount your GreptimeDB plugin
       - ./provisioning:/etc/grafana/provisioning
-      - .:/root/grafana-greptime-datasource # Mount your GreptimeDB plugin source
+      - .:/root/grafana-greptimedb-datasource # Mount your GreptimeDB plugin source
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:3000/login"]
       interval: 1m30s

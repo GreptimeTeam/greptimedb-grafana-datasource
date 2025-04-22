@@ -20,10 +20,8 @@ describe('ConfigEditor', () => {
   it('new editor', () => {
     render(<ConfigEditor {...mockConfigEditorProps()} />);
     expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.serverPort.insecureHttpPort)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(labels.username.placeholder)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(labels.password.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.path.placeholder)).toBeInTheDocument();
   });
   it('with password', async () => {
     render(
@@ -37,7 +35,6 @@ describe('ConfigEditor', () => {
       />
     );
     expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.serverPort.insecureHttpPort)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(labels.username.placeholder)).toBeInTheDocument();
     const a = screen.getByText('Reset');
     expect(a).toBeInTheDocument();
@@ -53,7 +50,6 @@ describe('ConfigEditor', () => {
         }}
       />
     );
-    expect(screen.queryByPlaceholderText(labels.path.placeholder)).toHaveValue(path);
   });
   it('with secure connection', async () => {
     render(
@@ -65,7 +61,6 @@ describe('ConfigEditor', () => {
         }}
       />
     );
-    expect(screen.queryByPlaceholderText(labels.serverPort.secureHttpPort)).toBeInTheDocument();
   });
   it('with protocol', async () => {
     render(

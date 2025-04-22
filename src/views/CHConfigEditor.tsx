@@ -4,29 +4,26 @@ import {
   onUpdateDatasourceJsonDataOption,
   onUpdateDatasourceSecureJsonDataOption,
 } from '@grafana/data';
-import { RadioButtonGroup, Switch, Input, SecretInput, Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
-import { CertificationKey } from '../components/ui/CertificationKey';
+import {  Switch, Input, SecretInput, Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
+
 import {
   CHConfig,
   CHCustomSetting,
   CHSecureConfig,
   CHLogsConfig,
-  Protocol,
   CHTracesConfig,
   AliasTableEntry
 } from 'types/config';
 import { gte as versionGte } from 'semver';
-import { ConfigSection, ConfigSubSection, DataSourceDescription } from 'components/experimental/ConfigSection';
+import { ConfigSection, ConfigSubSection } from 'components/experimental/ConfigSection';
 import { config } from '@grafana/runtime';
 import { Divider } from 'components/Divider';
 import { TimeUnit } from 'types/queryBuilder';
 import { DefaultDatabaseTableConfig } from 'components/configEditor/DefaultDatabaseTableConfig';
-import { QuerySettingsConfig } from 'components/configEditor/QuerySettingsConfig';
 import { LogsConfig } from 'components/configEditor/LogsConfig';
 import { TracesConfig } from 'components/configEditor/TracesConfig';
-import { HttpHeadersConfig } from 'components/configEditor/HttpHeadersConfig';
 import allLabels from 'labels';
-import { onHttpHeadersChange, useConfigDefaults } from './CHConfigEditorHooks';
+import {  useConfigDefaults } from './CHConfigEditorHooks';
 import {AliasTableConfig} from "../components/configEditor/AliasTableConfig";
 
 export interface ConfigEditorProps extends DataSourcePluginOptionsEditorProps<CHConfig, CHSecureConfig> {}
@@ -36,37 +33,8 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   const { jsonData, secureJsonFields } = options;
   const labels = allLabels.components.Config.ConfigEditor;
   const secureJsonData = (options.secureJsonData || {}) as CHSecureConfig;
-  const hasTLSCACert = secureJsonFields && secureJsonFields.tlsCACert;
-  const hasTLSClientCert = secureJsonFields && secureJsonFields.tlsClientCert;
-  const hasTLSClientKey = secureJsonFields && secureJsonFields.tlsClientKey;
-  const protocolOptions = [
-    { label: 'Native', value: Protocol.Native },
-    { label: 'HTTP', value: Protocol.Http },
-  ];
 
   useConfigDefaults(options, onOptionsChange);
-
-  const onPortChange = (port: string) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        port: +port,
-      },
-    });
-  };
-  const onTLSSettingsChange = (
-    key: keyof Pick<CHConfig, 'tlsSkipVerify' | 'tlsAuth' | 'tlsAuthWithCACert'>,
-    value: boolean
-  ) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        [key]: value,
-      },
-    });
-  };
   const onSwitchToggle = (
     key: keyof Pick<CHConfig, 'secure' | 'validateSql' | 'enableSecureSocksProxy' | 'forwardGrafanaHeaders'>,
     value: boolean
@@ -80,38 +48,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     });
   };
 
-  const onProtocolToggle = (protocol: Protocol) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        protocol: protocol,
-      },
-    });
-  };
 
-  const onCertificateChangeFactory = (key: keyof Omit<CHSecureConfig, 'password'>, value: string) => {
-    onOptionsChange({
-      ...options,
-      secureJsonData: {
-        ...secureJsonData,
-        [key]: value,
-      },
-    });
-  };
-  const onResetClickFactory = (key: keyof Omit<CHSecureConfig, 'password'>) => {
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...secureJsonFields,
-        [key]: false,
-      },
-      secureJsonData: {
-        ...secureJsonData,
-        [key]: '',
-      },
-    });
-  };
   const onResetPassword = () => {
     onOptionsChange({
       ...options,
