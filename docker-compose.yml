@@ -10,9 +10,9 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./dist:/var/lib/grafana/plugins/grafana-greptimedb-datasource # Mount your GreptimeDB plugin
+      - ./dist:/var/lib/grafana/plugins/info8fcc-greptimedb-datasource # Mount your GreptimeDB plugin
       - ./provisioning:/etc/grafana/provisioning
-      - .:/root/grafana-greptimedb-datasource # Mount your GreptimeDB plugin source
+      - .:/root/info8fcc-greptimedb-datasource # Mount your GreptimeDB plugin source
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:3000/login"]
       interval: 1m30s
@@ -27,37 +27,6 @@ services:
     networks:
       - grafana
 
-  clickhouse-server:
-    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-24.7-alpine}
-    container_name: clickhouse-server
-    ports:
-      - 8123:8123
-      - 9000:9000
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
-    healthcheck:
-      test: ["CMD", "clickhouse-client", "--host", "clickhouse-server", "--query", "SELECT 1"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    networks:
-      - grafana
-
-  test-data-loader:
-    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-24.7-alpine}
-    container_name: test-data-loader
-    entrypoint: ["clickhouse-client", "--host", "clickhouse-server", "--queries-file", "/dev/shm/property-prices.sql"]
-    depends_on:
-      clickhouse-server:
-        condition: service_healthy
-    restart: on-failure
-    volumes:
-      - ./tests/fixtures/property-prices.sql:/dev/shm/property-prices.sql
-    networks:
-      - grafana
 
 networks:
   grafana: 

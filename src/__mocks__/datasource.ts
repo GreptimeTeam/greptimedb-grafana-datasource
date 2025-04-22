@@ -9,7 +9,7 @@ export const newMockDatasource = (): Datasource => {
   const mockDatasource = new Datasource({
     id: 1,
     uid: 'clickhouse_ds',
-    type: 'grafana-clickhouse-datasource',
+    type: 'info8fcc-greptimedb-datasource',
     name: 'ClickHouse',
     jsonData: {
       version: pluginVersion,
@@ -25,7 +25,7 @@ export const newMockDatasource = (): Datasource => {
     readOnly: true,
     access: 'direct',
     meta: {
-      id: 'grafana-clickhouse-datasource',
+      id: 'info8fcc-greptimedb-datasource',
       name: 'ClickHouse',
       type: PluginType.datasource,
       module: '',
