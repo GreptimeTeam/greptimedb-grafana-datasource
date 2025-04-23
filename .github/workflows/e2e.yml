@@ -44,17 +44,31 @@ jobs:
       - name: Show Docker Compose Logs
         run: docker compose logs --timestamps
         if: always() # Run this even if the previous step fails
-
       - name: Wait for Grafana to start
         run: |
-          curl http://localhost:3000
-          #RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
-          #echo $response
-          #if [ $RESPONSE -ne 200 ]; then
-          #  sleep 5;
-          #  echo "Grafana is not accessible"
-          #  exit 1
-          #fi
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
+          echo "HTTP Response Code: $RESPONSE"
+          if [ "$RESPONSE" -ne "200" ]; then
+            echo "Grafana is not accessible yet, waiting..."
+            sleep 10 # Increase sleep duration if needed
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
+            echo "HTTP Response Code (after wait): $RESPONSE"
+            if [ "$RESPONSE" -ne "200" ]; then
+              echo "Grafana is still not accessible after waiting. Exiting."
+              exit 1
+            fi
+          fi
+          echo "Grafana is accessible (HTTP 200)"
+      # - name: Wait for Grafana to start
+      #   run: |
+      #     curl http://localhost:3000
+      #     #RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
+      #     #echo $response
+      #     #if [ $RESPONSE -ne 200 ]; then
+      #     #  sleep 5;
+      #     #  echo "Grafana is not accessible"
+      #     #  exit 1
+      #     #fi
 
       - name: Run Playwright tests
         run: yarn playwright test
