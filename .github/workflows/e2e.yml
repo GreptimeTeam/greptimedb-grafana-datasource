@@ -41,6 +41,9 @@ jobs:
         uses: hoverkraft-tech/compose-action@v2.2.0
         with:
           compose-file: './docker-compose.yml'
+      - name: Show Docker Compose Logs
+        run: docker compose logs --timestamps
+        if: always() # Run this even if the previous step fails
 
       - name: Wait for Grafana to start
         run: |
