@@ -38,7 +38,7 @@ import {
   SelectedColumn,
 } from 'types/queryBuilder';
 import { AdHocFilter } from './adHocFilter';
-import { cloneDeep, isEmpty, isString, defaults } from 'lodash';
+import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
   getIntervalInfo,
@@ -53,7 +53,7 @@ import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
-import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails, Column } from '../greptimedb';
+import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
 import { GreptimeResponse } from 'greptimedb/types';
 
 function createMultiSearchAnyEquivalent(llfColumn: string, searchTermsString: string, alias: string): { aggregateType: AggregateType; column: string; alias: string } {
@@ -92,9 +92,6 @@ export class Datasource
     data: Record<string, string> | null,
     overrides: Partial<BackendSrvRequest> = {}
   ): Observable<FetchResponse<T>> {
-
-    const jsonData = this.settings.jsonData
-    
 
     return getBackendSrv().fetch({
       url: `api/datasources/proxy/uid/${this.uid}/greptime/v1/sql`,

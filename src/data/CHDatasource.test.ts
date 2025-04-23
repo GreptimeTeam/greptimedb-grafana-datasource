@@ -8,9 +8,7 @@ import {
   TypedVariableModel,
   toDataFrame,
 } from '@grafana/data';
-import { DataQuery } from '@grafana/schema';
 import { Observable, of } from 'rxjs';
-import { DataSourceWithBackend } from '@grafana/runtime';
 import { mockDatasource } from '__mocks__/datasource';
 import { CHBuilderQuery, CHQuery, CHSqlQuery, EditorType } from 'types/sql';
 import { ColumnHint, QueryType, BuilderMode, QueryBuilderOptions} from 'types/queryBuilder';

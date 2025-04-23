@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SelectableValue } from '@grafana/data';
 import { InlineFormLabel, MultiSelect, Select } from '@grafana/ui';
 import { ColumnHint, SelectedColumn, TableColumn } from 'types/queryBuilder';
