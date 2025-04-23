@@ -37,10 +37,12 @@ jobs:
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps
 
-      - name: Install and run Docker Compose
-        uses: hoverkraft-tech/compose-action@v2.2.0
-        with:
-          compose-file: './docker-compose.yml'
+      # - name: Install and run Docker Compose
+      #   uses: hoverkraft-tech/compose-action@v2.2.0
+      #   with:
+      #     compose-file: './docker-compose.yml'
+      - name: Start Docker Compose Services
+        run: docker compose up
       - name: Show Docker Compose Logs
         run: docker compose logs --timestamps
         if: always() # Run this even if the previous step fails
