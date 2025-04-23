@@ -11,6 +11,7 @@ permissions:
   issues: write
 
 jobs:
+  if: false
   build:
     name: Build and archive plugin build artifacts
     runs-on: ubuntu-latest
