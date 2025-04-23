@@ -42,7 +42,7 @@ jobs:
       #   with:
       #     compose-file: './docker-compose.yml'
       - name: Start Docker Compose Services
-        run: docker compose up
+        run: docker compose up -d
       - name: Show Docker Compose Logs
         run: docker compose logs --timestamps
         if: always() # Run this even if the previous step fails
