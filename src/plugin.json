@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "GreptimeDB",
+  "id": "info8fcc-greptimedb-datasource",
+  "metrics": true,
+  "backend": true,
+  "logs": true,
+  "tracing": true,
+  "alerting": true,
+  "annotations": true,
+  "executable": "gpx_greptimedb",
+  "includes": [
+  ],
+  "category": "tsdb",
+  "info": {
+    "description": "Greptime datasource plugin for Grafana",
+    "author": {
+      "name": "Grafana Labs"
+    },
+    "keywords": ["Simple"],
+    "logos": {
+      "small": "img/greptimedb_logo.svg",
+      "large": "img/greptimedb_logo.svg"
+    },
+    "links": [
+      {
+        "name": "Learn more",
+        "url": "https://docs.greptime.com/"
+      }
+    ],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=9.5.0",
+    "plugins": []
+  },
+  "routes": [
+	{
+	  "path": "greptime",
+	  "url": "{{ .JsonData.host }}"
+	}
+]
+}
