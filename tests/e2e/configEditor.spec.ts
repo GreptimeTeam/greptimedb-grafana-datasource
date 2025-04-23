@@ -1,7 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 
 const PLUGIN_UID = 'info8fcc-greptimedb-datasource';
-const GreptimeDB_URL = 'http://host.docker.internal:4000';
+const GreptimeDB_URL = 'http://localhost:4000';
 
 test.describe('Config Editor', () => {
   test('valid credentials should display a success alert on the page', async ({ createDataSourceConfigPage, page }) => {
