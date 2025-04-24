@@ -5,6 +5,7 @@ import {
   onUpdateDatasourceSecureJsonDataOption,
 } from '@grafana/data';
 import {  Switch, Input, SecretInput, Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
+import { Auth, ConnectionSettings, convertLegacyAuthProps, AuthMethod } from '@grafana/experimental';
 
 import {
   CHConfig,
@@ -141,6 +142,18 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     </Alert>
   );
 
+
+  const newAuthProps = convertLegacyAuthProps({
+    config: options,
+    onChange: onOptionsChange,
+  });
+
+  console.log(newAuthProps)
+  function returnSelectedMethod() {
+
+    return newAuthProps.selectedMethod;
+  }
+
   return (
     <>
       {uidWarning}
@@ -171,7 +184,24 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
       
 
       <Divider />
-      <ConfigSection title="Credentials">
+      <Auth
+        {...newAuthProps}
+        visibleMethods={[AuthMethod.NoAuth, AuthMethod.BasicAuth]}
+        onAuthMethodSelect={(method) => {
+          onOptionsChange({
+            ...options,
+            basicAuth: method === AuthMethod.BasicAuth,
+            withCredentials: method === AuthMethod.CrossSiteCredentials,
+            jsonData: {
+              ...options.jsonData,
+            },
+          });
+        }}
+        // If your method is selected pass its id to `selectedMethod`,
+        // otherwise pass the id from converted legacy data
+        selectedMethod={returnSelectedMethod()}
+      />
+      {/* <ConfigSection title="Credentials">
         <Field
           label={labels.username.label}
           description={labels.username.tooltip}
@@ -199,7 +229,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
             onChange={onUpdateDatasourceSecureJsonDataOption(props, 'password')}
           />
         </Field>
-      </ConfigSection>
+      </ConfigSection> */}
 
       <Divider />
       <ConfigSection

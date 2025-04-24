@@ -92,7 +92,6 @@ export class Datasource
     data: Record<string, string> | null,
     overrides: Partial<BackendSrvRequest> = {}
   ): Observable<FetchResponse<T>> {
-    const basicAuth = `Basic ${btoa(`${this.settings.username}:${this.settings.password}`)}`
     return getBackendSrv().fetch({
       url: `api/datasources/proxy/uid/${this.uid}/greptime/v1/sql`,
       method: 'POST',
@@ -101,7 +100,7 @@ export class Datasource
       },
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': basicAuth,
+        'x-greptime-db-name': this.settings.jsonData.defaultDatabase
       }
     });
   }
