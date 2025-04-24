@@ -2,10 +2,9 @@ import React, { ChangeEvent, useState } from 'react';
 import {
   DataSourcePluginOptionsEditorProps,
   onUpdateDatasourceJsonDataOption,
-  onUpdateDatasourceSecureJsonDataOption,
 } from '@grafana/data';
-import {  Switch, Input, SecretInput, Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
-import { Auth, ConnectionSettings, convertLegacyAuthProps, AuthMethod } from '@grafana/experimental';
+import {  Switch, Input,  Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
+import { Auth, convertLegacyAuthProps, AuthMethod } from '@grafana/experimental';
 
 import {
   CHConfig,
@@ -31,9 +30,8 @@ export interface ConfigEditorProps extends DataSourcePluginOptionsEditorProps<CH
 
 export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   const { options, onOptionsChange } = props;
-  const { jsonData, secureJsonFields } = options;
+  const { jsonData } = options;
   const labels = allLabels.components.Config.ConfigEditor;
-  const secureJsonData = (options.secureJsonData || {}) as CHSecureConfig;
 
   useConfigDefaults(options, onOptionsChange);
   const onSwitchToggle = (
@@ -50,19 +48,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   };
 
 
-  const onResetPassword = () => {
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        password: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        password: '',
-      },
-    });
-  };
   const onCustomSettingsChange = (customSettings: CHCustomSetting[]) => {
     onOptionsChange({
       ...options,
