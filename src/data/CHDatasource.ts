@@ -777,7 +777,7 @@ export class Datasource
             
             return frames;
           } else {
-            return transformGreptimeResponseToGrafana(greptimeData, target.refId);
+            return transformGreptimeResponseToGrafana(greptimeData, target.refId, sql);
           }
           
           
