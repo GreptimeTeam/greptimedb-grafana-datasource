@@ -10,9 +10,9 @@ import { DurationUnitSelect } from 'components/queryBuilder/DurationUnitSelect';
 import { Datasource } from 'data/CHDatasource';
 import { useBuilderOptionChanges } from 'hooks/useBuilderOptionChanges';
 import useColumns from 'hooks/useColumns';
-import { BuilderOptionsReducerAction, setOptions, setOtelEnabled, setOtelVersion } from 'hooks/useBuilderOptionsState';
+import { BuilderOptionsReducerAction, setOptions } from 'hooks/useBuilderOptionsState';
 import useIsNewQuery from 'hooks/useIsNewQuery';
-import { OtelVersionSelect } from '../OtelVersionSelect';
+// import { OtelVersionSelect } from '../OtelVersionSelect';
 import { useDefaultFilters, useOtelColumns, useTraceDefaultsOnMount } from './traceQueryBuilderHooks';
 import TraceIdInput from '../TraceIdInput';
 import { OrderByEditor, getOrderByOptions } from '../OrderByEditor';
@@ -134,13 +134,13 @@ export const TraceQueryBuilder = (props: TraceQueryBuilderProps) => {
         onToggle={setColumnsOpen}
       >
         {configWarning}
-        <OtelVersionSelect
+        {/* <OtelVersionSelect
           enabled={builderState.otelEnabled}
           onEnabledChange={e => builderOptionsDispatch(setOtelEnabled(e))}
           selectedVersion={builderState.otelVersion}
           onVersionChange={v => builderOptionsDispatch(setOtelVersion(v))}
           wide
-        />
+        /> */}
         <div className="gf-form">
           <ColumnSelect
             disabled={builderState.otelEnabled}

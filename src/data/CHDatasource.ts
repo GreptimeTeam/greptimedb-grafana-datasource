@@ -444,7 +444,7 @@ export class Datasource
   }
 
   getDefaultDatabase(): string {
-    return this.settings.jsonData.defaultDatabase || 'default';
+    return this.settings.jsonData.defaultDatabase || 'public';
   }
 
   getDefaultTable(): string | undefined {
