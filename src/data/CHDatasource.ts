@@ -100,7 +100,7 @@ export class Datasource
       },
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'x-greptime-db-name': this.settings.jsonData.defaultDatabase
+        'x-greptime-db-name': this.settings.jsonData.defaultDatabase || 'public'
       }
     });
   }
