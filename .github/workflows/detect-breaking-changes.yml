@@ -1,6 +1,5 @@
 name: Compatibility check
 on: [push, pull_request]
-if: false
 jobs:
   compatibilitycheck:
     runs-on: ubuntu-latest
