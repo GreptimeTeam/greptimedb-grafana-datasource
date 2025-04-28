@@ -1,7 +1,6 @@
 import React from 'react';
 import { ConfigSection, ConfigSubSection } from 'components/experimental/ConfigSection';
 import { Input, Field, InlineFormLabel, TagsInput } from '@grafana/ui';
-import { OtelVersionSelect } from 'components/queryBuilder/OtelVersionSelect';
 import { ColumnHint } from 'types/queryBuilder';
 import otel, { defaultLogsTable } from 'otel';
 import { LabeledInput } from './LabeledInput';
@@ -26,7 +25,6 @@ interface LogsConfigProps {
 export const LogsConfig = (props: LogsConfigProps) => {
   const {
     onDefaultDatabaseChange, onDefaultTableChange,
-    onOtelEnabledChange, onOtelVersionChange,
     onTimeColumnChange, onLevelColumnChange, onMessageColumnChange,
     onSelectContextColumnsChange, onContextColumnsChange
   } = props;
@@ -85,13 +83,13 @@ export const LogsConfig = (props: LogsConfigProps) => {
         title={labels.columns.title}
         description={labels.columns.description}
       >
-        <OtelVersionSelect
+        {/* <OtelVersionSelect
           enabled={otelEnabled || false}
           selectedVersion={otelVersion || ''}
           onEnabledChange={onOtelEnabledChange}
           onVersionChange={onOtelVersionChange}
           wide
-        />
+        /> */}
         <LabeledInput
           disabled={otelEnabled}
           label={labels.columns.time.label}

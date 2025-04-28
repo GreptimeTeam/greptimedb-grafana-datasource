@@ -11,7 +11,7 @@ interface OtelVersionSelectProps {
   onVersionChange: (version: string) => void,
   wide?: boolean,
 }
-
+ 
 export const OtelVersionSelect = (props: OtelVersionSelectProps) => {
   const { enabled, onEnabledChange, selectedVersion, onVersionChange, wide } = props;
   const { label, tooltip } = selectors.components.OtelVersionSelect;

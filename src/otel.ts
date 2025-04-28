@@ -1,7 +1,7 @@
 import { ColumnHint, TimeUnit } from "types/queryBuilder";
 
-export const defaultLogsTable = 'otel_logs';
-export const defaultTraceTable = 'otel_traces';
+export const defaultLogsTable = '';
+export const defaultTraceTable = '';
 
 export const traceTimestampTableSuffix = '_trace_id_ts';
 

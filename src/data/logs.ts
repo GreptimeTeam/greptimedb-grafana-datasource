@@ -19,12 +19,6 @@ import { config } from '@grafana/runtime';
 import { colors } from '@grafana/ui';
 import { partition } from 'lodash';
 
-/**
- * Partially copy-pasted and adjusted to ClickHouse server-side aggregations
- * from `public/app/core/logsModel.ts` (release-9.4.3 branch)
- *
- * See https://github.com/grafana/grafana/blob/release-9.4.3/public/app/core/logsModel.ts
- */
 
 type LogsVolumeQueryOptions<T extends DataQuery> = {
   targets: T[];
@@ -122,7 +116,7 @@ export function queryLogsVolume<TQuery extends DataQuery, TOptions extends DataS
  */
 export function aggregateRawLogsVolume(rawLogsVolume: DataFrame[]): DataFrame[] {
   if (rawLogsVolume.length !== 1) {
-    return []; // we always expect a single DataFrame with all the aggregations from ClickHouse
+    return []; // we always expect a single DataFrame with all the aggregations from GreptimeDB
   }
 
   const [[timeField], levelFields] = partition(rawLogsVolume[0].fields, (f) => f.name === TIME_FIELD_ALIAS);
@@ -202,26 +196,44 @@ export function getIntervalInfo(scopedVars: ScopedVars): { interval: string; int
   }
 }
 
+// export function getTimeFieldRoundingClause(scopedVars: ScopedVars, timeField: string): string {
+//   // NB: slight discrepancy with getIntervalInfo here
+//   // it returns { interval: '$__interval' } when the interval from the ScopedVars is undefined,
+//   // but we fall back to DAY here
+//   let interval = 'DAY';
+//   if (scopedVars.__interval_ms) {
+//     let intervalMs: number = scopedVars.__interval_ms.value;
+//     if (intervalMs > HOUR) {
+//       interval = 'DAY';
+//     } else if (intervalMs > MINUTE) {
+//       interval = 'HOUR';
+//     } else if (intervalMs > SECOND) {
+//       interval = 'MINUTE';
+//     } else {
+//       interval = 'SECOND';
+//     }
+//   }
+//   return `toStartOfInterval("${timeField}", INTERVAL 1 ${interval})`;
+// }
+
+
+
 export function getTimeFieldRoundingClause(scopedVars: ScopedVars, timeField: string): string {
-  // NB: slight discrepancy with getIntervalInfo here
-  // it returns { interval: '$__interval' } when the interval from the ScopedVars is undefined,
-  // but we fall back to DAY here
-  let interval = 'DAY';
+  let intervalString = '1d'; // Default to DAY
   if (scopedVars.__interval_ms) {
-    let intervalMs: number = scopedVars.__interval_ms.value;
+    const intervalMs: number = scopedVars.__interval_ms.value;
     if (intervalMs > HOUR) {
-      interval = 'DAY';
+      intervalString = '1d';
     } else if (intervalMs > MINUTE) {
-      interval = 'HOUR';
+      intervalString = '1h';
     } else if (intervalMs > SECOND) {
-      interval = 'MINUTE';
+      intervalString = '1m';
     } else {
-      interval = 'SECOND';
+      intervalString = '1s';
     }
   }
-  return `toStartOfInterval("${timeField}", INTERVAL 1 ${interval})`;
+  return `date_bin('${intervalString}', "${timeField}")`;
 }
-
 export const TIME_FIELD_ALIAS = 'time';
 export const DEFAULT_LOGS_ALIAS = 'logs';
 

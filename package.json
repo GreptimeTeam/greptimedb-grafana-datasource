@@ -1,7 +1,7 @@
 {
-  "name": "clickhouse-datasource",
+  "name": "greptime-datasource",
   "version": "4.8.2",
-  "description": "Clickhouse Datasource",
+  "description": "GreptimeDB Datasource",
   "engines": {
     "node": ">=20"
   },
@@ -15,15 +15,21 @@
     "lint:fix": "yarn run lint --fix",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "server": "docker compose up --build",
-    "sign": "npx --yes @grafana/sign-plugin@latest",
+    "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
     "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\"",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "test": "jest --watch --onlyChanged",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "zipunsigned": "rm -f info8fcc-greptimedb-datasource-unsigned.zip && mv dist/ info8fcc-greptimedb-datasource && zip -r info8fcc-greptimedb-datasource-unsigned.zip info8fcc-greptimedb-datasource && mv info8fcc-greptimedb-datasource/ dist",
+    "zip": "mv dist/ info8fcc-greptimedb-datasource && zip info8fcc-greptimedb-datasource.zip info8fcc-greptimedb-datasource  -r && mv info8fcc-greptimedb-datasource/ dist",
+    "unzip": "unzip info8fcc-greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins",
+    "buildzip": "yarn build && mage && yarn sign && yarn zip"
   },
   "author": "Grafana Labs",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
     "@babel/core": "^7.25.7",
     "@grafana/eslint-config": "^7.0.0",
     "@grafana/plugin-e2e": "^1.15.0",
@@ -75,6 +81,7 @@
   "dependencies": {
     "@emotion/css": "11.13.4",
     "@grafana/data": "^11.4.0",
+    "@grafana/experimental": "^2.1.6",
     "@grafana/runtime": "^11.4.0",
     "@grafana/schema": "^11.2.2",
     "@grafana/ui": "^11.2.2",

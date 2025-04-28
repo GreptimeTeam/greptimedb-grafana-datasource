@@ -27,7 +27,7 @@ const LogsContextPanel = (props: LogContextPanelProps) => {
         <Stack direction="column">
           <div>
             {'Unable to match any context columns. Make sure your query returns at least one log context column from your '}
-            <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasourceUid)}#logs-config`}>ClickHouse Data Source settings</a>
+            <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasourceUid)}#logs-config`}>GreptimeDB Data Source settings</a>
           </div>
         </Stack>
       </Alert>

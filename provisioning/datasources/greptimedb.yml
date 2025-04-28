@@ -3,20 +3,19 @@ apiVersion: 1
 
 # List of data sources to delete from the database.
 deleteDatasources:
-  - name: ClickHouse
+  - name: GreptimeDB
     orgId: 1
 
 datasources:
-  - name: ClickHouse
-    type: grafana-clickhouse-datasource
+  - name: GreptimeDB
+    type: info8fcc-greptimedb-datasource
     access: proxy
-    url: clickhouse-server
+    url: http://localhost:4000
     orgId: 1
     jsonData:
-      host: clickhouse-server
-      database: "test"
-      username: "default"
-      port: 9000
-      protocol: native
+      host: http://localhost:4000
+      database: "public"
+      username: ""
+
     secureJsonData:
       # password: ""

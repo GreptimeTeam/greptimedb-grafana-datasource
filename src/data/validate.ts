@@ -27,7 +27,7 @@ export interface ParseError {
   };
 }
 
-// the sql parser only handles generic syntax, allow any clickhouse specific syntax
+// the sql parser only handles generic syntax, allow any GreptimeDB specific syntax
 const allow = ['INTERVAL'];
 
 export function validate(sql: string): Validation {
