@@ -2,71 +2,38 @@ import React, { ChangeEvent, useState } from 'react';
 import {
   DataSourcePluginOptionsEditorProps,
   onUpdateDatasourceJsonDataOption,
-  onUpdateDatasourceSecureJsonDataOption,
 } from '@grafana/data';
-import { RadioButtonGroup, Switch, Input, SecretInput, Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
-import { CertificationKey } from '../components/ui/CertificationKey';
+import {  Switch, Input,  Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
+import { Auth, convertLegacyAuthProps, AuthMethod } from '@grafana/experimental';
+
 import {
   CHConfig,
   CHCustomSetting,
   CHSecureConfig,
   CHLogsConfig,
-  Protocol,
   CHTracesConfig,
   AliasTableEntry
 } from 'types/config';
 import { gte as versionGte } from 'semver';
-import { ConfigSection, ConfigSubSection, DataSourceDescription } from 'components/experimental/ConfigSection';
+import { ConfigSection, ConfigSubSection } from 'components/experimental/ConfigSection';
 import { config } from '@grafana/runtime';
 import { Divider } from 'components/Divider';
 import { TimeUnit } from 'types/queryBuilder';
 import { DefaultDatabaseTableConfig } from 'components/configEditor/DefaultDatabaseTableConfig';
-import { QuerySettingsConfig } from 'components/configEditor/QuerySettingsConfig';
 import { LogsConfig } from 'components/configEditor/LogsConfig';
 import { TracesConfig } from 'components/configEditor/TracesConfig';
-import { HttpHeadersConfig } from 'components/configEditor/HttpHeadersConfig';
 import allLabels from 'labels';
-import { onHttpHeadersChange, useConfigDefaults } from './CHConfigEditorHooks';
+import {  useConfigDefaults } from './CHConfigEditorHooks';
 import {AliasTableConfig} from "../components/configEditor/AliasTableConfig";
 
 export interface ConfigEditorProps extends DataSourcePluginOptionsEditorProps<CHConfig, CHSecureConfig> {}
 
 export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   const { options, onOptionsChange } = props;
-  const { jsonData, secureJsonFields } = options;
+  const { jsonData } = options;
   const labels = allLabels.components.Config.ConfigEditor;
-  const secureJsonData = (options.secureJsonData || {}) as CHSecureConfig;
-  const hasTLSCACert = secureJsonFields && secureJsonFields.tlsCACert;
-  const hasTLSClientCert = secureJsonFields && secureJsonFields.tlsClientCert;
-  const hasTLSClientKey = secureJsonFields && secureJsonFields.tlsClientKey;
-  const protocolOptions = [
-    { label: 'Native', value: Protocol.Native },
-    { label: 'HTTP', value: Protocol.Http },
-  ];
 
   useConfigDefaults(options, onOptionsChange);
-
-  const onPortChange = (port: string) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        port: +port,
-      },
-    });
-  };
-  const onTLSSettingsChange = (
-    key: keyof Pick<CHConfig, 'tlsSkipVerify' | 'tlsAuth' | 'tlsAuthWithCACert'>,
-    value: boolean
-  ) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        [key]: value,
-      },
-    });
-  };
   const onSwitchToggle = (
     key: keyof Pick<CHConfig, 'secure' | 'validateSql' | 'enableSecureSocksProxy' | 'forwardGrafanaHeaders'>,
     value: boolean
@@ -80,51 +47,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     });
   };
 
-  const onProtocolToggle = (protocol: Protocol) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...options.jsonData,
-        protocol: protocol,
-      },
-    });
-  };
 
-  const onCertificateChangeFactory = (key: keyof Omit<CHSecureConfig, 'password'>, value: string) => {
-    onOptionsChange({
-      ...options,
-      secureJsonData: {
-        ...secureJsonData,
-        [key]: value,
-      },
-    });
-  };
-  const onResetClickFactory = (key: keyof Omit<CHSecureConfig, 'password'>) => {
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...secureJsonFields,
-        [key]: false,
-      },
-      secureJsonData: {
-        ...secureJsonData,
-        [key]: '',
-      },
-    });
-  };
-  const onResetPassword = () => {
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        password: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        password: '',
-      },
-    });
-  };
   const onCustomSettingsChange = (customSettings: CHCustomSetting[]) => {
     onOptionsChange({
       ...options,
@@ -184,10 +107,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     options.jsonData.traces
   );
 
-  const defaultPort = jsonData.secure ?
-  (jsonData.protocol === Protocol.Native ? labels.serverPort.secureNativePort : labels.serverPort.secureHttpPort) :
-  (jsonData.protocol === Protocol.Native ? labels.serverPort.insecureNativePort : labels.serverPort.insecureHttpPort);
-  const portDescription = `${labels.serverPort.tooltip} (default for ${jsonData.secure ? 'secure' : ''} ${jsonData.protocol}: ${defaultPort})`
 
   const uidWarning = (!options.uid) && (
     <Alert title="" severity="warning" buttonContent="Close">
@@ -208,15 +127,22 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     </Alert>
   );
 
+
+  const newAuthProps = convertLegacyAuthProps({
+    config: options,
+    onChange: onOptionsChange,
+  });
+
+  console.log(newAuthProps)
+  function returnSelectedMethod() {
+
+    return newAuthProps.selectedMethod;
+  }
+
   return (
     <>
       {uidWarning}
-      <DataSourceDescription
-        dataSourceName="Clickhouse"
-        docsLink="https://grafana.com/grafana/plugins/grafana-clickhouse-datasource/"
-        hasRequiredFields
-      />
-      <Divider />
+
       <ConfigSection title="Server">
         <Field
           required
@@ -235,130 +161,32 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
             placeholder={labels.serverAddress.placeholder}
           />
         </Field>
-        <Field
-          required
-          label={labels.serverPort.label}
-          description={portDescription}
-          invalid={!jsonData.port}
-          error={labels.serverPort.error}
-        >
-          <Input
-            name="port"
-            width={40}
-            type="number"
-            value={jsonData.port || ''}
-            onChange={e => onPortChange(e.currentTarget.value)}
-            label={labels.serverPort.label}
-            aria-label={labels.serverPort.label}
-            placeholder={defaultPort}
-          />
-        </Field>
 
-        <Field label={labels.protocol.label} description={labels.protocol.tooltip}>
-          <RadioButtonGroup<Protocol>
-            options={protocolOptions}
-            disabledOptions={[]}
-            value={jsonData.protocol || Protocol.Native}
-            onChange={(e) => onProtocolToggle(e!)}
-          />
-        </Field>
-        <Field label={labels.secure.label} description={labels.secure.tooltip}>
-          <Switch
-            id="secure"
-            className="gf-form"
-            value={jsonData.secure || false}
-            onChange={(e) => onSwitchToggle('secure', e.currentTarget.checked)}
-          />
-        </Field>
-
-        { jsonData.protocol === Protocol.Http &&
-          <Field label={labels.path.label} description={labels.path.tooltip}>
-            <Input
-              value={jsonData.path || ''}
-              name="path"
-              width={80}
-              onChange={onUpdateDatasourceJsonDataOption(props, 'path')}
-              label={labels.path.label}
-              aria-label={labels.path.label}
-              placeholder={labels.path.placeholder}
-            />
-          </Field>
-        }
+       
       </ConfigSection>
 
-      { jsonData.protocol === Protocol.Http &&
-        <HttpHeadersConfig
-          headers={options.jsonData.httpHeaders}
-          forwardGrafanaHeaders={options.jsonData.forwardGrafanaHeaders}
-          secureFields={options.secureJsonFields}
-          onHttpHeadersChange={headers => onHttpHeadersChange(headers, options, onOptionsChange)}
-          onForwardGrafanaHeadersChange={forwardGrafanaHeaders => onSwitchToggle('forwardGrafanaHeaders', forwardGrafanaHeaders)}
-        />
-      }
+
+      
 
       <Divider />
-      <ConfigSection title="TLS / SSL Settings">
-        <Field
-          label={labels.tlsSkipVerify.label}
-          description={labels.tlsSkipVerify.tooltip}
-        >
-          <Switch
-            className="gf-form"
-            value={jsonData.tlsSkipVerify || false}
-            onChange={(e) => onTLSSettingsChange('tlsSkipVerify', e.currentTarget.checked)}
-          />
-        </Field>
-        <Field
-          label={labels.tlsClientAuth.label}
-          description={labels.tlsClientAuth.tooltip}
-        >
-          <Switch
-            className="gf-form"
-            value={jsonData.tlsAuth || false}
-            onChange={(e) => onTLSSettingsChange('tlsAuth', e.currentTarget.checked)}
-          />
-        </Field>
-        <Field
-          label={labels.tlsAuthWithCACert.label}
-          description={labels.tlsAuthWithCACert.tooltip}
-        >
-          <Switch
-            className="gf-form"
-            value={jsonData.tlsAuthWithCACert || false}
-            onChange={(e) => onTLSSettingsChange('tlsAuthWithCACert', e.currentTarget.checked)}
-          />
-        </Field>
-        {jsonData.tlsAuthWithCACert && (
-          <CertificationKey
-            hasCert={!!hasTLSCACert}
-            onChange={(e) => onCertificateChangeFactory('tlsCACert', e.currentTarget.value)}
-            placeholder={labels.tlsCACert.placeholder}
-            label={labels.tlsCACert.label}
-            onClick={() => onResetClickFactory('tlsCACert')}
-          />
-        )}
-        {jsonData.tlsAuth && (
-          <>
-            <CertificationKey
-              hasCert={!!hasTLSClientCert}
-              onChange={(e) => onCertificateChangeFactory('tlsClientCert', e.currentTarget.value)}
-              placeholder={labels.tlsClientCert.placeholder}
-              label={labels.tlsClientCert.label}
-              onClick={() => onResetClickFactory('tlsClientCert')}
-            />
-            <CertificationKey
-              hasCert={!!hasTLSClientKey}
-              placeholder={labels.tlsClientKey.placeholder}
-              label={labels.tlsClientKey.label}
-              onChange={(e) => onCertificateChangeFactory('tlsClientKey', e.currentTarget.value)}
-              onClick={() => onResetClickFactory('tlsClientKey')}
-            />
-          </>
-        )}
-      </ConfigSection>
-
-      <Divider />
-      <ConfigSection title="Credentials">
+      <Auth
+        {...newAuthProps}
+        visibleMethods={[AuthMethod.NoAuth, AuthMethod.BasicAuth]}
+        onAuthMethodSelect={(method) => {
+          onOptionsChange({
+            ...options,
+            basicAuth: method === AuthMethod.BasicAuth,
+            withCredentials: method === AuthMethod.CrossSiteCredentials,
+            jsonData: {
+              ...options.jsonData,
+            },
+          });
+        }}
+        // If your method is selected pass its id to `selectedMethod`,
+        // otherwise pass the id from converted legacy data
+        selectedMethod={returnSelectedMethod()}
+      />
+      {/* <ConfigSection title="Credentials">
         <Field
           label={labels.username.label}
           description={labels.username.tooltip}
@@ -386,12 +214,12 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
             onChange={onUpdateDatasourceSecureJsonDataOption(props, 'password')}
           />
         </Field>
-      </ConfigSection>
+      </ConfigSection> */}
 
       <Divider />
       <ConfigSection
         title="Additional settings"
-        description="Additional settings are optional settings that can be configured for more control over your data source. This includes the default database, dial and query timeouts, SQL validation, and custom ClickHouse settings."
+        description="Additional settings are optional settings that can be configured for more control over your data source. This includes the default database, dial and query timeouts, SQL validation, and custom GreptimeDB settings."
         isCollapsible
         isInitiallyOpen={hasAdditionalSettings}
       >
@@ -403,21 +231,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
           onDefaultTableChange={onUpdateDatasourceJsonDataOption(props, 'defaultTable')}
         />
         
-        <Divider />
-        <QuerySettingsConfig
-          connMaxLifetime={jsonData.connMaxLifetime}
-          dialTimeout={jsonData.dialTimeout}
-          maxIdleConns={jsonData.maxIdleConns}
-          maxOpenConns={jsonData.maxOpenConns}
-          queryTimeout={jsonData.queryTimeout}
-          validateSql={jsonData.validateSql}
-          onConnMaxIdleConnsChange={onUpdateDatasourceJsonDataOption(props, 'maxIdleConns')}
-          onConnMaxLifetimeChange={onUpdateDatasourceJsonDataOption(props, 'connMaxLifetime')}
-          onConnMaxOpenConnsChange={onUpdateDatasourceJsonDataOption(props, 'maxOpenConns')}
-          onDialTimeoutChange={onUpdateDatasourceJsonDataOption(props, 'dialTimeout')}
-          onQueryTimeoutChange={onUpdateDatasourceJsonDataOption(props, 'queryTimeout')}
-          onValidateSqlChange={e => onSwitchToggle('validateSql', e.currentTarget.checked)}
-        />
 
         <Divider />
         <LogsConfig

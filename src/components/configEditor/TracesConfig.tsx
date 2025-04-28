@@ -2,7 +2,7 @@
 import React from 'react';
 import { ConfigSection, ConfigSubSection } from 'components/experimental/ConfigSection';
 import { Input, Field } from '@grafana/ui';
-import { OtelVersionSelect } from 'components/queryBuilder/OtelVersionSelect';
+// import { OtelVersionSelect } from 'components/queryBuilder/OtelVersionSelect';
 import { ColumnHint, TimeUnit } from 'types/queryBuilder';
 import otel, { defaultTraceTable } from 'otel';
 import { LabeledInput } from './LabeledInput';
@@ -33,7 +33,7 @@ interface TraceConfigProps {
 export const TracesConfig = (props: TraceConfigProps) => {
   const {
     onDefaultDatabaseChange, onDefaultTableChange,
-    onOtelEnabledChange, onOtelVersionChange,
+    // onOtelEnabledChange, onOtelVersionChange,
     onTraceIdColumnChange, onSpanIdColumnChange, onOperationNameColumnChange, onParentSpanIdColumnChange,
     onServiceNameColumnChange, onDurationColumnChange, onDurationUnitChange, onStartTimeColumnChange,
     onTagsColumnChange, onServiceTagsColumnChange, onEventsColumnPrefixChange
@@ -99,13 +99,13 @@ export const TracesConfig = (props: TraceConfigProps) => {
         title={labels.columns.title}
         description={labels.columns.description}
       >
-        <OtelVersionSelect
+        {/* <OtelVersionSelect
           enabled={otelEnabled || false}
           selectedVersion={otelVersion || ''}
           onEnabledChange={onOtelEnabledChange}
           onVersionChange={onOtelVersionChange}
           wide
-        />
+        /> */}
         <LabeledInput
           disabled={otelEnabled}
           label={labels.columns.traceId.label}

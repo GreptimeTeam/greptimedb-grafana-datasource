@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ColumnsEditor } from '../ColumnsEditor';
 import { Filter, OrderBy, QueryBuilderOptions, SelectedColumn, ColumnHint } from 'types/queryBuilder';
 import { ColumnSelect } from '../ColumnSelect';
-import { OtelVersionSelect } from '../OtelVersionSelect';
+// import { OtelVersionSelect } from '../OtelVersionSelect';
 import { OrderByEditor, getOrderByOptions } from '../OrderByEditor';
 import { LimitEditor } from '../LimitEditor';
 import { FiltersEditor } from '../FilterEditor';
@@ -13,7 +13,7 @@ import { Datasource } from 'data/CHDatasource';
 import { useBuilderOptionChanges } from 'hooks/useBuilderOptionChanges';
 import { Alert, Button, InlineFormLabel, Input, VerticalGroup } from '@grafana/ui';
 import useColumns from 'hooks/useColumns';
-import { BuilderOptionsReducerAction, setOptions, setOtelEnabled, setOtelVersion } from 'hooks/useBuilderOptionsState';
+import { BuilderOptionsReducerAction, setOptions, } from 'hooks/useBuilderOptionsState';
 import useIsNewQuery from 'hooks/useIsNewQuery';
 import { useDefaultFilters, useDefaultTimeColumn, useLogDefaultsOnMount, useOtelColumns } from './logsQueryBuilderHooks';
 import { styles } from 'styles';
@@ -103,7 +103,7 @@ export const LogsQueryBuilder = (props: LogsQueryBuilderProps) => {
       <VerticalGroup>
         <div>
           {'To speed up your query building, enter your default logs configuration in your '}
-          <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasource.uid)}#logs-config`}>ClickHouse Data Source settings</a>
+          <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasource.uid)}#logs-config`}>GreptimeDB Data Source settings</a>
         </div>
       </VerticalGroup>
     </Alert>
@@ -112,12 +112,12 @@ export const LogsQueryBuilder = (props: LogsQueryBuilderProps) => {
   return (
     <div>
       { configWarning }
-      <OtelVersionSelect
+      {/* <OtelVersionSelect
         enabled={builderState.otelEnabled}
         onEnabledChange={e => builderOptionsDispatch(setOtelEnabled(e))}
         selectedVersion={builderState.otelVersion}
         onVersionChange={v => builderOptionsDispatch(setOtelVersion(v))}
-      />
+      /> */}
       <ColumnsEditor
         disabled={builderState.otelEnabled}
         allColumns={allColumns}

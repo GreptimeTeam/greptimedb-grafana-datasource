@@ -414,43 +414,7 @@ describe('getQueryOptionsFromSql', () => {
     }
   );
 
-  testCondition(
-    'handles timeseries function with "timeFieldType: DateType"',
-    'SELECT $__timeInterval(time) as "time" FROM "db"."foo" GROUP BY time',
-    {
-      queryType: QueryType.TimeSeries,
-      mode: BuilderMode.Trend,
-      database: 'db',
-      table: 'foo',
-      columns: [{ name: 'time', type: 'datetime', hint: ColumnHint.Time }],
-      aggregates: [],
-      filters: [],
-    },
-    false
-  );
-
-  testCondition(
-    'handles timeseries function with "timeFieldType: DateType" with a filter',
-    'SELECT $__timeInterval(time) as "time" FROM "db"."foo" WHERE ( base IS NOT NULL ) GROUP BY time',
-    {
-      queryType: QueryType.TimeSeries,
-      mode: BuilderMode.Trend,
-      database: 'db',
-      table: 'foo',
-      columns: [{ name: 'time', type: 'datetime', hint: ColumnHint.Time }],
-      aggregates: [],
-      filters: [
-        {
-          condition: 'AND',
-          filterType: 'custom',
-          key: 'base',
-          operator: FilterOperator.IsNotNull,
-          type: 'LowCardinality(String)'
-        },
-      ],
-    },
-    false
-  );
+  
 
   testCondition('handles parsing a column with a complex name with spaces and capital characters', 'SELECT "Complex Name" FROM "db"."foo"', {
     queryType: QueryType.Table,

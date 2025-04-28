@@ -12,14 +12,15 @@ import {
   LogRowContextQueryDirection,
   LogRowModel,
   MetricFindValue,
+  MutableDataFrame,
   QueryFixAction,
   ScopedVars,
   SupplementaryQueryOptions,
   SupplementaryQueryType,
   TypedVariableModel,
 } from '@grafana/data';
-import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
-import { Observable, map, firstValueFrom } from 'rxjs';
+import {  BackendSrvRequest, DataSourceWithBackend, FetchResponse, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { Observable, map, firstValueFrom, catchError, of, forkJoin } from 'rxjs';
 import { CHConfig } from 'types/config';
 import { EditorType, CHQuery } from 'types/sql';
 import {
@@ -52,6 +53,20 @@ import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
+import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
+import { GreptimeResponse } from 'greptimedb/types';
+
+function createMultiSearchAnyEquivalent(llfColumn: string, searchTermsString: string, alias: string): { aggregateType: AggregateType; column: string; alias: string } {
+  const searchTerms = searchTermsString.split(','); // Split the comma-separated string into an array of terms
+  const orConditions = searchTerms.map(term => `INSTR(${llfColumn}, ${term.trim()}) > 0`).join(' OR ');
+  const greptimeEquivalent = `CAST(${orConditions} AS INTEGER)`;
+
+  return {
+    aggregateType: AggregateType.Sum,
+    column: greptimeEquivalent,
+    alias: alias,
+  };
+}
 
 export class Datasource
   extends DataSourceWithBackend<CHQuery, CHConfig>
@@ -71,7 +86,36 @@ export class Datasource
     this.settings = instanceSettings;
     this.adHocFilter = new AdHocFilter();
   }
-
+  
+  _request<T = unknown>(
+    url: string,
+    data: Record<string, string> | null,
+    overrides: Partial<BackendSrvRequest> = {}
+  ): Observable<FetchResponse<T>> {
+    return getBackendSrv().fetch({
+      url: `api/datasources/proxy/uid/${this.uid}/greptime/v1/sql`,
+      method: 'POST',
+      data: {
+        ...data
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'x-greptime-db-name': this.settings.jsonData.defaultDatabase || 'public'
+      }
+    });
+  }
+  // Add GreptimeDB specific methods
+  async testDatasource(): Promise<any> {
+    const response = await this._request('/v1/sql',{ sql: 'SELECT 1' }).toPromise()
+    .then((response) => {
+      // Do something with the response
+      return response
+    })
+    return {
+      status: response?.ok ? 'success' : 'error',
+      message: response?.ok ? 'Database Connection OK' : response?.status,
+    };
+  }
   getDataProvider(
     type: SupplementaryQueryType,
     request: DataQueryRequest<CHQuery>
@@ -147,17 +191,19 @@ export class Datasource
     columns.push({
       name: getTimeFieldRoundingClause(logsVolumeRequest.scopedVars, timeColumn.name),
       alias: TIME_FIELD_ALIAS,
-      hint: ColumnHint.Time
+      hint: ColumnHint.Time,
+      columnName: timeColumn.name
     });
 
     const logLevelColumn = getColumnByHint(query.builderOptions, ColumnHint.LogLevel);
     if (logLevelColumn) {
       // Generates aggregates like
       // sum(toString("log_level") IN ('dbug', 'debug', 'DBUG', 'DEBUG', 'Dbug', 'Debug')) AS debug
-      const llf = `toString("${logLevelColumn.name}")`;
+      const llf = `("${logLevelColumn.name}")`;
       let level: keyof typeof LOG_LEVEL_TO_IN_CLAUSE;
+      
       for (level in LOG_LEVEL_TO_IN_CLAUSE) {
-        aggregates.push({ aggregateType: AggregateType.Sum, column: `multiSearchAny(${llf}, [${LOG_LEVEL_TO_IN_CLAUSE[level]}])`, alias: level });
+        aggregates.push(createMultiSearchAnyEquivalent(llf, LOG_LEVEL_TO_IN_CLAUSE[level], level));
       }
     } else {
       // Count all logs if level column isn't selected
@@ -230,18 +276,6 @@ export class Datasource
 
   applyTemplateVariables(query: CHQuery, scoped: ScopedVars): CHQuery {
     let rawQuery = query.rawSql || '';
-    // we want to skip applying ad hoc filters when we are getting values for ad hoc filters
-    const templateSrv = getTemplateSrv();
-    if (!this.skipAdHocFilter) {
-      const adHocFilters = (templateSrv as any)?.getAdhocFilters(this.name);
-      if (this.adHocFiltersStatus === AdHocFilterStatus.disabled && adHocFilters?.length > 0) {
-        throw new Error(
-          `Unable to apply ad hoc filters. Upgrade ClickHouse to >=${this.adHocCHVerReq.major}.${this.adHocCHVerReq.minor} or remove ad hoc filters for the dashboard.`
-        );
-      }
-      rawQuery = this.adHocFilter.apply(rawQuery, adHocFilters);
-    }
-    this.skipAdHocFilter = false;
     rawQuery = this.applyConditionalAll(rawQuery, getTemplateSrv().getVariables());
     return {
       ...query,
@@ -408,7 +442,7 @@ export class Datasource
   }
 
   getDefaultDatabase(): string {
-    return this.settings.jsonData.defaultDatabase || 'default';
+    return this.settings.jsonData.defaultDatabase || 'public';
   }
 
   getDefaultTable(): string | undefined {
@@ -686,11 +720,120 @@ export class Datasource
           },
         };
       });
+    const range = request.range
 
-    return super.query({
-      ...request,
-      targets,
-    }).pipe(map((res: DataQueryResponse) => transformQueryResponseWithTraceAndLogLinks(this, request, res)));
+    const getInterpolatedSql = (rawSql: string): string => {
+      const fromTimeISO = range?.from.toISOString();
+      const toTimeISO = range?.to.toISOString();
+  
+      let interpolated = getTemplateSrv().replace(rawSql); // Replace standard variables
+      interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
+      interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
+      return interpolated;
+    };
+    // Create an array of Observables, one for each active target request + transformation
+  const targetObservables: Array<Observable<DataFrame[]>> = targets.map((target: CHQuery) => {
+    
+    const sql = getInterpolatedSql(target.rawSql)
+    return this._request('/v1/sql', { sql: sql }) // This returns Observable<BackendDataSourceResponse>
+      .pipe(
+        // Map 1: Extract the data from the response
+        map((response: FetchResponse) => {
+            // --- Optional: Add response validation here ---
+            if (!response.data /* || check response.data.code etc. */) {
+                console.error('Invalid response data received:', response);
+                // Throw an error to be caught by catchError
+                throw new Error(`Invalid response structure received for target ${target.refId}`);
+            }
+            return response.data as GreptimeResponse; // Assert or validate type
+        }),
+        // Map 2: Transform the GreptimeDB response data into Grafana DataFrames
+        map((greptimeData: GreptimeResponse) => {
+          // Pass the appropriate format hint if needed by your transformer
+          // const formatHint = target.formatHint || GrafanaDataFormat.TimeSeries;
+          const editorType = target.editorType
+          let builderOptions
+          if (editorType === EditorType.SQL) {
+            builderOptions = target.meta?.builderOptions || {}
+          } else {
+            builderOptions = target.builderOptions || {}
+          }
+          const queryType = target.refId === 'Trace ID' ? 'Trace' : target.queryType || builderOptions.queryType
+          if (queryType === QueryType.Logs) {
+            const logFrame = transformGreptimeDBLogs(greptimeData, target.refId) as DataFrame
+            return logFrame? [logFrame] : []
+          } else if (queryType === 'Trace') {
+            const frames = transformGreptimeDBTraceDetails(greptimeData, builderOptions as QueryBuilderOptions)
+            
+            return frames;
+          } else {
+            return transformGreptimeResponseToGrafana(greptimeData, target.refId, sql);
+          }
+          
+          
+        }),
+        // --- Error Handling Per Target ---
+        // Catch errors specifically for this target's request/transformation
+        catchError(error => {
+          console.error(`Error processing target ${target.refId}:`, error);
+          // Return an Observable emitting an empty array or a specific error frame
+          // This prevents one failed target from failing the entire query if desired
+          const errorFrame = new MutableDataFrame({
+            refId: target.refId,
+            fields: [
+                { name: 'Error', values: [`Failed to process query for ${target.refId}: ${error?.message || 'Unknown error'}`] }
+            ],
+            meta: { preferredVisualisationType: 'table' }
+          });
+          return of([errorFrame]); // Return Observable<DataFrame[]> with error frame
+          // Or return of([]) to just ignore the failed target's results
+        })
+      ); // End pipe for this target
+    })
+    // --- Combine results using forkJoin and map to final DataQueryResponse ---
+  return forkJoin(targetObservables).pipe(
+    // forkJoin emits Observable<DataFrame[][]>
+    map((results: DataFrame[][]) => {
+      // Flatten the array of DataFrame arrays into a single DataFrame array
+      const flattenedData: DataFrame[] = results.flat();
+
+      // Apply the final transformation function.
+      // This function should now directly return the DataQueryResponse object.
+      const finalResponse: DataQueryResponse = transformQueryResponseWithTraceAndLogLinks(
+        this,     // Pass the datasource instance context
+        request,  // Pass the original query request
+        { data: flattenedData } // Pass the combined data frames
+      );
+      // Return the final structure Grafana expects
+      return finalResponse; // { data: DataFrame[] }
+    }),
+    // Catch errors from forkJoin or the final map transformation
+    catchError(error => {
+      console.error('Error combining results or in final transformation:', error);
+      // Create an error frame for the overall failure
+      const errorFrame = new MutableDataFrame({
+        // No specific refId here, or use request.requestId if available
+        fields: [{ name: 'Error', values: [`Failed to execute query: ${error?.message || 'Unknown error'}`] }],
+        meta: { preferredVisualisationType: 'table' }
+      });
+      // Return an Observable emitting a DataQueryResponse containing the error frame
+      return of({ data: [errorFrame] });
+    })
+  ); 
+  // The final result is Observable<DataQueryResponse> - no .toPromise() needed
+    // const promises = targets.map(async (target) => {
+    //    const response = await this._request('/v1/sql', {sql: target.rawSql}).toPromise();
+    //    const result = transformGreptimeResponseToGrafana(response.data, target.refId)
+    //    return result
+       
+    //   // return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: target.rawSql})))
+    // })
+    
+    // return Promise.all(promises).then((data) => ( transformQueryResponseWithTraceAndLogLinks(this, request, {data: data[0]})))
+    // return super.query({
+    //   ...request,
+    //   targets,
+    // }).pipe(map((res: DataQueryResponse) => transformQueryResponseWithTraceAndLogLinks(this, request, res)));
   }
 
   private runQuery(request: Partial<CHQuery>, options?: any): Promise<DataFrame> {
@@ -813,18 +956,19 @@ export class Datasource
   // 22.7 added 'settings additional_table_filters' which is used for ad hoc filters
   private async canUseAdhocFilters(): Promise<AdHocFilterStatus> {
     this.skipAdHocFilter = true;
-    const data = await this.fetchData(`SELECT version()`);
-    try {
-      const verString = (data[0] as unknown as string).split('.');
-      const ver = { major: Number.parseInt(verString[0], 10), minor: Number.parseInt(verString[1], 10) };
-      return ver.major > this.adHocCHVerReq.major ||
-        (ver.major === this.adHocCHVerReq.major && ver.minor >= this.adHocCHVerReq.minor)
-        ? AdHocFilterStatus.enabled
-        : AdHocFilterStatus.disabled;
-    } catch (err) {
-      console.error(`Unable to parse ClickHouse version: ${err}`);
-      throw err;
-    }
+    return Promise.resolve(AdHocFilterStatus.disabled);
+    // const data = await this.fetchData(`SELECT version()`);
+    // try {
+    //   const verString = (data[0] as unknown as string).split('.');
+    //   const ver = { major: Number.parseInt(verString[0], 10), minor: Number.parseInt(verString[1], 10) };
+    //   return ver.major > this.adHocCHVerReq.major ||
+    //     (ver.major === this.adHocCHVerReq.major && ver.minor >= this.adHocCHVerReq.minor)
+    //     ? AdHocFilterStatus.enabled
+    //     : AdHocFilterStatus.disabled;
+    // } catch (err) {
+    //   console.error(`Unable to parse ClickHouse version: ${err}`);
+    //   throw err;
+    // }
   }
 
   // interface DataSourceWithLogsContextSupport

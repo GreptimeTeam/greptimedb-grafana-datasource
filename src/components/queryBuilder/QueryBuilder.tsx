@@ -103,7 +103,7 @@ const MinimizedQueryViewer = (props: MinimizedQueryBuilder) => {
           <VerticalGroup>
             <div>
               {`To enable data linking, enter your default ${configQueryType} configuration in your `}
-              <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasource.uid)}#${builderOptions.queryType}-config`}>ClickHouse Data Source settings</a>
+              <a style={{ textDecoration: 'underline' }} href={`/connections/datasources/edit/${encodeURIComponent(datasource.uid)}#${builderOptions.queryType}-config`}>GreptimeDB Data Source settings</a>
             </div>
           </VerticalGroup>
         </Alert>

@@ -56,7 +56,7 @@ const generateTraceSearchQuery = (options: QueryBuilderOptions): string => {
   const traceDurationTime = getColumnByHint(options, ColumnHint.TraceDurationTime);
   if (traceDurationTime !== undefined) {
     const timeUnit = options.meta?.traceDurationUnit;
-    selectParts.push(getTraceDurationSelectSql(escapeIdentifier(traceDurationTime.name), timeUnit));
+    selectParts.push(getTraceDurationSelectSqlGreptimeDB(escapeIdentifier(traceDurationTime.name), timeUnit));
   }
 
   const selectPartsSql = selectParts.join(', ');
@@ -85,13 +85,14 @@ const generateTraceSearchQuery = (options: QueryBuilderOptions): string => {
 
   return concatQueryParts(queryParts);
 }
-
+ 
 /**
  * Generates trace query with columns that fit Grafana's Trace panel
  * Column aliases follow this structure:
  * https://grafana.com/docs/grafana/latest/explore/trace-integration/#data-frame-structure
  */
 const generateTraceIdQuery = (options: QueryBuilderOptions): string => {
+  console.log('generateTraceIdQuery')
   const { database, table } = options;
 
   const queryParts: string[] = [];
@@ -131,18 +132,22 @@ const generateTraceIdQuery = (options: QueryBuilderOptions): string => {
   const traceDurationTime = getColumnByHint(options, ColumnHint.TraceDurationTime);
   if (traceDurationTime !== undefined) {
     const timeUnit = options.meta?.traceDurationUnit;
-    selectParts.push(getTraceDurationSelectSql(escapeIdentifier(traceDurationTime.name), timeUnit));
+    selectParts.push(getTraceDurationSelectSqlGreptimeDB(escapeIdentifier(traceDurationTime.name), timeUnit));
   }
 
   // TODO: for tags and serviceTags, consider the column type. They might not require mapping, they could already be JSON.
-  const traceTags = getColumnByHint(options, ColumnHint.TraceTags);
+  const traceTags = getColumnsByHint(options, ColumnHint.TraceTags);
+ 
   if (traceTags !== undefined) {
-    selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceTags.name)}[key]), mapKeys(${escapeIdentifier(traceTags.name)})) as tags`);
+    // selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceTags.name)}[key]), mapKeys(${escapeIdentifier(traceTags.name)})) as tags`);
+    traceTags.map((v) => selectParts.push(`"${v.name}"`))
   }
 
-  const traceServiceTags = getColumnByHint(options, ColumnHint.TraceServiceTags);
+ 
+  const traceServiceTags = getColumnsByHint(options, ColumnHint.TraceServiceTags);
   if (traceServiceTags !== undefined) {
-    selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceServiceTags.name)}[key]), mapKeys(${escapeIdentifier(traceServiceTags.name)})) as serviceTags`);
+    traceServiceTags.map((v) => selectParts.push(`"${v.name}"`))
+    // selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceServiceTags.name)}[key]), mapKeys(${escapeIdentifier(traceServiceTags.name)})) as serviceTags`);
   }
 
   const traceStatusCode = getColumnByHint(options, ColumnHint.TraceStatusCode);
@@ -188,7 +193,7 @@ const generateTraceIdQuery = (options: QueryBuilderOptions): string => {
     queryParts.push(`${escapeIdentifier(traceStartTime.name)} <= trace_end`);
   } else if (hasTraceIdFilter) {
     const traceId = options.meta!.traceId;
-    queryParts.push(`traceID = '${traceId}'`);
+    queryParts.push(`trace_id = '${traceId}'`);
   }
 
   if (filterParts) {
@@ -290,7 +295,7 @@ const generateLogsQuery = (_options: QueryBuilderOptions): string => {
       queryParts.push('AND');
     }
 
-    queryParts.push(`(${logMessage.alias || logMessage.name} LIKE '%${options.meta!.logMessageLike}%')`);
+    queryParts.push(`(${logMessage.name} LIKE '%${options.meta!.logMessageLike}%')`);
   }
 
   const orderBy = getOrderBy(options);
@@ -372,10 +377,10 @@ const generateSimpleTimeSeriesQuery = (_options: QueryBuilderOptions): string =>
   }
 
   if ((options.groupBy?.length || 0) > 0) {
-    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.alias}` : '';
+    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
     queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
   } else if (hasAggregates && timeColumn) {
-    queryParts.push(timeColumn.alias!);
+    queryParts.push(timeColumn.name!);
   }
 
   const orderBy = getOrderBy(options);
@@ -406,7 +411,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
     timeColumn.name = `$__timeInterval(${timeColumn.name})`;
-    timeColumn.alias = 'time';
+    // timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
   }
 
@@ -433,10 +438,10 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   queryParts.push('GROUP BY');
   if ((options.groupBy?.length || 0) > 0) {
-    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.alias}` : '';
+    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
     queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
   } else if (timeColumn) {
-    queryParts.push(timeColumn.alias!);
+    queryParts.push(timeColumn.name!);
   }
 
   const orderBy = getOrderBy(options);
@@ -522,6 +527,7 @@ const generateTableQuery = (options: QueryBuilderOptions): string => {
 
 export const isAggregateQuery = (builder: QueryBuilderOptions): boolean => (builder.aggregates?.length || 0) > 0;
 export const getColumnByHint = (options: QueryBuilderOptions, hint: ColumnHint): SelectedColumn | undefined => options.columns?.find(c => c.hint === hint);
+export const getColumnsByHint = (options: QueryBuilderOptions, hint: ColumnHint): SelectedColumn[] | undefined => options.columns?.filter(c => c.hint === hint);
 export const getColumnIndexByHint = (options: QueryBuilderOptions, hint: ColumnHint): number => (options.columns || []).findIndex(c => c.hint === hint);
 export const getColumnsByHints = (options: QueryBuilderOptions, hints: readonly ColumnHint[]): readonly SelectedColumn[] => {
   const columns = [];
@@ -574,26 +580,41 @@ const escapeValue = (value: string): string => {
  * Returns the SELECT column for trace duration.
  * Time unit is used to convert the value to milliseconds, as is required by Grafana's Trace panel.
  */
-const getTraceDurationSelectSql = (columnIdentifier: string, timeUnit?: TimeUnit): string => {
+// const getTraceDurationSelectSql = (columnIdentifier: string, timeUnit?: TimeUnit): string => {
+//   const alias = 'duration';
+//   switch (timeUnit) {
+//     case TimeUnit.Seconds:
+//       return `multiply(${columnIdentifier}, 1000) as ${alias}`;
+//     case TimeUnit.Milliseconds:
+//       return `${columnIdentifier} as ${alias}`;
+//     case TimeUnit.Microseconds:
+//       return `multiply(${columnIdentifier}, 0.001) as ${alias}`;
+//     case TimeUnit.Nanoseconds:
+//       return `multiply(${columnIdentifier}, 0.000001) as ${alias}`;
+//     default:
+//       return `${columnIdentifier} as ${alias}`;
+//   }
+// }
+
+const getTraceDurationSelectSqlGreptimeDB = (columnIdentifier: string, timeUnit?: TimeUnit): string => {
   const alias = 'duration';
   switch (timeUnit) {
     case TimeUnit.Seconds:
-      return `multiply(${columnIdentifier}, 1000) as ${alias}`;
+      return `${columnIdentifier} * 1000 AS ${alias}`;
     case TimeUnit.Milliseconds:
-      return `${columnIdentifier} as ${alias}`;
+      return `${columnIdentifier} AS ${alias}`;
     case TimeUnit.Microseconds:
-      return `multiply(${columnIdentifier}, 0.001) as ${alias}`;
+      return `FLOOR(${columnIdentifier}) * 0.001 AS ${alias}`;
     case TimeUnit.Nanoseconds:
-      return `multiply(${columnIdentifier}, 0.000001) as ${alias}`;
+      return `FLOOR(${columnIdentifier} * 0.000001) AS ${alias}`;
     default:
-      return `${columnIdentifier} as ${alias}`;
+      return `${columnIdentifier} AS ${alias}`;
   }
-}
-
+};
 /** Returns the input time field converted to a Unix timestamp in nanoseconds and then adjusted to milliseconds. */
-const convertTimeFieldToMilliseconds = (columnIdentifier: string) =>
-  `multiply(toUnixTimestamp64Nano(${columnIdentifier}), 0.000001)`;
 
+const convertTimeFieldToMilliseconds = (columnIdentifier: string) =>
+  `CAST(to_unixtime(${columnIdentifier}) * 1000 AS BIGINT)`;
 /**
  * Concatenates query parts with no empty spaces.
  */
@@ -669,7 +690,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
     let type = filter.type;
     const hintedColumn = filter.hint && getColumnByHint(options, filter.hint);
     if (hintedColumn) {
-      column = hintedColumn.alias || hintedColumn.name;
+      column = hintedColumn.name;
       type = hintedColumn.type || type;
     }
 
@@ -773,7 +794,7 @@ const stripTypeModifiers = (type: string): string => {
 const isBooleanType = (type: string): boolean => (type?.toLowerCase().startsWith('boolean'));
 const numberTypes = ['int', 'float', 'decimal'];
 const isNumberType = (type: string): boolean => numberTypes.some(t => type?.toLowerCase().includes(t));
-const isDateType = (type: string): boolean => type?.toLowerCase().startsWith('date') || type?.toLowerCase().startsWith('nullable(date');
+const isDateType = (type: string): boolean => type?.toLowerCase().startsWith('date') || type?.toLowerCase().startsWith('timestamp') || type?.toLowerCase().startsWith('nullable(date');
 // const isDateTimeType = (type: string): boolean => type?.toLowerCase().startsWith('datetime') || type?.toLowerCase().startsWith('nullable(datetime');
 const isStringType = (type: string): boolean => {
   type = stripTypeModifiers(type.toLowerCase());

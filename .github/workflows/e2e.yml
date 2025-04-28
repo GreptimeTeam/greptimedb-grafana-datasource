@@ -37,21 +37,51 @@ jobs:
       - name: Install Playwright Browsers
         run: yarn playwright install --with-deps
 
-      - name: Install and run Docker Compose
-        uses: hoverkraft-tech/compose-action@v2.2.0
-        with:
-          compose-file: './docker-compose.yml'
-
+      # - name: Install and run Docker Compose
+      #   uses: hoverkraft-tech/compose-action@v2.2.0
+      #   with:
+      #     compose-file: './docker-compose.yml'
+      - name: Start Docker Compose Services
+        run: docker compose up -d
+      - name: Show Docker Compose Logs
+        run: docker compose logs --timestamps
+        if: always() # Run this even if the previous step fails
       - name: Wait for Grafana to start
         run: |
-          curl http://localhost:3000
-          #RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
-          #echo $response
-          #if [ $RESPONSE -ne 200 ]; then
-          #  sleep 5;
-          #  echo "Grafana is not accessible"
-          #  exit 1
-          #fi
+          TIMEOUT=300 # Timeout in seconds (5 minutes)
+          ELAPSED=0
+          GRAFANA_URL="http://localhost:3000"
+
+          while true; do
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$GRAFANA_URL" || true)
+            HTTP_CODE="${RESPONSE:-0}" # Default to 0 if curl fails
+
+            echo "Checking Grafana at $GRAFANA_URL. HTTP Status Code: $HTTP_CODE"
+
+            if [ "$HTTP_CODE" -eq "200" ]; then
+              echo "Grafana is accessible (HTTP 200)"
+              break
+            fi
+
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+              echo "Timeout waiting for Grafana to become accessible"
+              exit 1
+            fi
+
+            echo "Grafana is not yet accessible, waiting..."
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+      # - name: Wait for Grafana to start
+      #   run: |
+      #     curl http://localhost:3000
+      #     #RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
+      #     #echo $response
+      #     #if [ $RESPONSE -ne 200 ]; then
+      #     #  sleep 5;
+      #     #  echo "Grafana is not accessible"
+      #     #  exit 1
+      #     #fi
 
       - name: Run Playwright tests
         run: yarn playwright test

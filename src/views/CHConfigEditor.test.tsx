@@ -20,10 +20,8 @@ describe('ConfigEditor', () => {
   it('new editor', () => {
     render(<ConfigEditor {...mockConfigEditorProps()} />);
     expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.serverPort.insecureHttpPort)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(labels.username.placeholder)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(labels.password.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.path.placeholder)).toBeInTheDocument();
   });
   it('with password', async () => {
     render(
@@ -37,7 +35,6 @@ describe('ConfigEditor', () => {
       />
     );
     expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.serverPort.insecureHttpPort)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(labels.username.placeholder)).toBeInTheDocument();
     const a = screen.getByText('Reset');
     expect(a).toBeInTheDocument();
@@ -53,7 +50,6 @@ describe('ConfigEditor', () => {
         }}
       />
     );
-    expect(screen.queryByPlaceholderText(labels.path.placeholder)).toHaveValue(path);
   });
   it('with secure connection', async () => {
     render(
@@ -65,67 +61,6 @@ describe('ConfigEditor', () => {
         }}
       />
     );
-    expect(screen.queryByPlaceholderText(labels.serverPort.secureHttpPort)).toBeInTheDocument();
   });
-  it('with protocol', async () => {
-    render(
-      <ConfigEditor
-        {...mockConfigEditorProps()}
-        options={{
-          ...mockConfigEditorProps().options,
-          jsonData: { ...mockConfigEditorProps().options.jsonData, protocol: Protocol.Http },
-        }}
-      />
-    );
-    expect(screen.getAllByLabelText('HTTP').pop()).toBeInTheDocument();
-    expect(screen.getAllByLabelText('HTTP').pop()).toBeChecked();
-  });
-  it('without tlsCACert', async () => {
-    render(<ConfigEditor {...mockConfigEditorProps()} />);
-    expect(screen.queryByPlaceholderText(labels.tlsCACert.placeholder)).not.toBeInTheDocument();
-  });
-  it('with tlsCACert', async () => {
-    render(
-      <ConfigEditor
-        {...mockConfigEditorProps()}
-        options={{
-          ...mockConfigEditorProps().options,
-          jsonData: { ...mockConfigEditorProps().options.jsonData, tlsAuthWithCACert: true },
-        }}
-      />
-    );
-    expect(screen.getByPlaceholderText(labels.tlsCACert.placeholder)).toBeInTheDocument();
-  });
-  it('without tlsAuth', async () => {
-    render(<ConfigEditor {...mockConfigEditorProps()} />);
-    expect(screen.queryByPlaceholderText(labels.tlsClientCert.placeholder)).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(labels.tlsClientKey.placeholder)).not.toBeInTheDocument();
-  });
-  it('with tlsAuth', async () => {
-    render(
-      <ConfigEditor
-        {...mockConfigEditorProps()}
-        options={{
-          ...mockConfigEditorProps().options,
-          jsonData: { ...mockConfigEditorProps().options.jsonData, tlsAuth: true },
-        }}
-      />
-    );
-    expect(screen.getByPlaceholderText(labels.tlsClientCert.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.tlsClientKey.placeholder)).toBeInTheDocument();
-  });
-  it('with additional properties', async () => {
-    const jsonDataOverrides = {
-      defaultDatabase: 'default',
-      queryTimeout: '100',
-      dialTimeout: '100',
-      validateSql: true,
-      customSettings: [{ setting: 'test-setting', value: 'test-value' }],
-      forwardGrafanaHeaders: true,
-    };
-    render(<ConfigEditor {...mockConfigEditorProps(jsonDataOverrides)} />);
-    expect(screen.getByText(labels.secureSocksProxy.label)).toBeInTheDocument();
-    expect(screen.getByDisplayValue(jsonDataOverrides.customSettings[0].setting)).toBeInTheDocument();
-    expect(screen.getByDisplayValue(jsonDataOverrides.customSettings[0].value)).toBeInTheDocument();
-  });
+
 });

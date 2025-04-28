@@ -76,58 +76,8 @@ describe('LogsConfig', () => {
     expect(onDefaultTableChange).toHaveBeenCalledWith('changed');
   });
 
-  it('should call onOtelEnabled when changed', () => {
-    const onOtelEnabledChange = jest.fn();
-    const result = render(
-      <LogsConfig
-        logsConfig={{}}
-        onDefaultDatabaseChange={() => {}}
-        onDefaultTableChange={() => {}}
-        onOtelEnabledChange={onOtelEnabledChange}
-        onOtelVersionChange={() => {}}
-        onTimeColumnChange={() => {}}
-        onLevelColumnChange={() => {}}
-        onMessageColumnChange={() => {}}
-        onSelectContextColumnsChange={() => {}}
-        onContextColumnsChange={() => {}}
-      />
-    );
-    expect(result.container.firstChild).not.toBeNull();
 
-    const checkboxes = result.getAllByRole('checkbox');
-    expect(checkboxes).toHaveLength(2);
-    const input = checkboxes[0];
-    expect(input).toBeInTheDocument();
-    fireEvent.click(input);
-    expect(onOtelEnabledChange).toHaveBeenCalledTimes(1);
-    expect(onOtelEnabledChange).toHaveBeenCalledWith(true);
-  });
 
-  it('should call onOtelVersionChange when changed', () => {
-    const onOtelVersionChange = jest.fn();
-    const result = render(
-      <LogsConfig
-        logsConfig={{ otelEnabled: true }}
-        onDefaultDatabaseChange={() => {}}
-        onDefaultTableChange={() => {}}
-        onOtelEnabledChange={() => {}}
-        onOtelVersionChange={onOtelVersionChange}
-        onTimeColumnChange={() => {}}
-        onLevelColumnChange={() => {}}
-        onMessageColumnChange={() => {}}
-        onSelectContextColumnsChange={() => {}}
-        onContextColumnsChange={() => {}}
-      />
-    );
-    expect(result.container.firstChild).not.toBeNull();
-
-    const select = result.getByRole('combobox');
-    expect(select).toBeInTheDocument();
-    fireEvent.keyDown(select, { key: 'ArrowDown' });
-    fireEvent.keyDown(select, { key: 'Enter' });
-    expect(onOtelVersionChange).toHaveBeenCalledTimes(2); // 2 from hook
-    expect(onOtelVersionChange).toHaveBeenCalledWith(expect.any(String));
-  });
 
   it('should call onTimeColumnChange when changed', () => {
     const onTimeColumnChange = jest.fn();
