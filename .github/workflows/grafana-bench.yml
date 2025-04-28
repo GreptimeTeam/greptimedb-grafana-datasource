@@ -1,0 +1,84 @@
+name: Grafana Bench
+on:
+  push:
+    # Only run on push to the main branch
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Build backend
+        uses: magefile/mage-action@v3
+        with:
+          args: buildAll
+          version: latest
+
+      - name: Install frontend dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build frontend
+        run: yarn build
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+
+      - name: Install and run Docker Compose
+        uses: hoverkraft-tech/compose-action@v2.2.0
+        with:
+          compose-file: './docker-compose.yml'
+
+      - name: Wait for Grafana to start
+        run: |
+          TIMEOUT=300 # Timeout in seconds (5 minutes)
+          ELAPSED=0
+          GRAFANA_URL="http://localhost:3000"
+
+          while true; do
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$GRAFANA_URL" || true)
+            HTTP_CODE="${RESPONSE:-0}" # Default to 0 if curl fails
+
+            echo "Checking Grafana at $GRAFANA_URL. HTTP Status Code: $HTTP_CODE"
+
+            if [ "$HTTP_CODE" -eq "200" ]; then
+              echo "Grafana is accessible (HTTP 200)"
+              break
+            fi
+
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+              echo "Timeout waiting for Grafana to become accessible"
+              exit 1
+            fi
+
+            echo "Grafana is not yet accessible, waiting..."
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+
+      - name: Run Grafana Bench tests
+        run: |
+          docker run --rm \
+            --network=host \
+            --volume="./:/home/bench/tests/" \
+            us-docker.pkg.dev/grafanalabs-global/docker-grafana-bench-prod/grafana-bench:v0.3.0 test \
+            --test-runner "playwright" \
+            --test-suite-base "/home/bench/tests/" \
+            --grafana-url "http://localhost:3000" \
+            --pw-execute-cmd "yarn e2e" \
+            --pw-prepare-cmd "yarn install --frozen-lockfile; yarn playwright install" \
+            --test-env-vars "CI=true" \
+            --log-level DEBUG 
+
