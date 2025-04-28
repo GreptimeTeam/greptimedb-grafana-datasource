@@ -41,9 +41,32 @@ jobs:
         with:
           compose-file: './docker-compose.yml'
 
-      - name: Ensure Grafana is running
+      - name: Wait for Grafana to start
         run: |
-          curl http://localhost:3000
+          TIMEOUT=300 # Timeout in seconds (5 minutes)
+          ELAPSED=0
+          GRAFANA_URL="http://localhost:3000"
+
+          while true; do
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$GRAFANA_URL" || true)
+            HTTP_CODE="${RESPONSE:-0}" # Default to 0 if curl fails
+
+            echo "Checking Grafana at $GRAFANA_URL. HTTP Status Code: $HTTP_CODE"
+
+            if [ "$HTTP_CODE" -eq "200" ]; then
+              echo "Grafana is accessible (HTTP 200)"
+              break
+            fi
+
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+              echo "Timeout waiting for Grafana to become accessible"
+              exit 1
+            fi
+
+            echo "Grafana is not yet accessible, waiting..."
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
 
       - name: Run Grafana Bench tests
         run: |

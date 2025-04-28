@@ -1,7 +1,7 @@
 name: Dependabot reviewer
 
 on: pull_request_target
-
+if: false
 permissions:
   pull-requests: write
   contents: write
