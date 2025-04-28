@@ -10,13 +10,14 @@ services:
     networks:
       - grafana
   grafana:
+    image: grafana/grafana:latest
     container_name: grafana
-    build:
-      context: ./.config
-      args:
-        grafana_image: grafana/grafana # Assuming you're using the OSS image
-        grafana_version: latest
-        development: false
+    # build:
+    #   context: ./.config
+    #   args:
+    #     grafana_image: grafana/grafana # Assuming you're using the OSS image
+    #     grafana_version: latest
+    #     development: false
     ports:
       - 3000:3000
     volumes:
@@ -34,6 +35,8 @@ services:
       - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=true # Allow your local plugin
       - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource # Install the ClickHouse plugin
       - GF_DEFAULT_APP_MODE=development # Recommended for local plugin development
+    cap_add:
+      - SYS_PTRACE
     networks:
       - grafana
 
