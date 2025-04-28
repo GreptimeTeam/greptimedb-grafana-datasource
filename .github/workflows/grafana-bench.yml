@@ -43,7 +43,7 @@ jobs:
 
       - name: Wait for Grafana to start
         run: |
-          TIMEOUT=300 # Timeout in seconds (5 minutes)
+          TIMEOUT=600 # Timeout in seconds (5 minutes)
           ELAPSED=0
           GRAFANA_URL="http://localhost:3000"
 
