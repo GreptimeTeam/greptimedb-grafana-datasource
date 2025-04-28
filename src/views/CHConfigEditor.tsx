@@ -2,9 +2,9 @@ import React, { ChangeEvent, useState } from 'react';
 import {
   DataSourcePluginOptionsEditorProps,
   onUpdateDatasourceJsonDataOption,
-  onUpdateDatasourceSecureJsonDataOption,
 } from '@grafana/data';
-import {  Switch, Input, SecretInput, Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
+import {  Switch, Input,  Button, Field, HorizontalGroup, Alert, VerticalGroup } from '@grafana/ui';
+import { Auth, convertLegacyAuthProps, AuthMethod } from '@grafana/experimental';
 
 import {
   CHConfig,
@@ -30,9 +30,8 @@ export interface ConfigEditorProps extends DataSourcePluginOptionsEditorProps<CH
 
 export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   const { options, onOptionsChange } = props;
-  const { jsonData, secureJsonFields } = options;
+  const { jsonData } = options;
   const labels = allLabels.components.Config.ConfigEditor;
-  const secureJsonData = (options.secureJsonData || {}) as CHSecureConfig;
 
   useConfigDefaults(options, onOptionsChange);
   const onSwitchToggle = (
@@ -49,19 +48,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   };
 
 
-  const onResetPassword = () => {
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        password: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        password: '',
-      },
-    });
-  };
   const onCustomSettingsChange = (customSettings: CHCustomSetting[]) => {
     onOptionsChange({
       ...options,
@@ -141,6 +127,18 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     </Alert>
   );
 
+
+  const newAuthProps = convertLegacyAuthProps({
+    config: options,
+    onChange: onOptionsChange,
+  });
+
+  console.log(newAuthProps)
+  function returnSelectedMethod() {
+
+    return newAuthProps.selectedMethod;
+  }
+
   return (
     <>
       {uidWarning}
@@ -171,7 +169,24 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
       
 
       <Divider />
-      <ConfigSection title="Credentials">
+      <Auth
+        {...newAuthProps}
+        visibleMethods={[AuthMethod.NoAuth, AuthMethod.BasicAuth]}
+        onAuthMethodSelect={(method) => {
+          onOptionsChange({
+            ...options,
+            basicAuth: method === AuthMethod.BasicAuth,
+            withCredentials: method === AuthMethod.CrossSiteCredentials,
+            jsonData: {
+              ...options.jsonData,
+            },
+          });
+        }}
+        // If your method is selected pass its id to `selectedMethod`,
+        // otherwise pass the id from converted legacy data
+        selectedMethod={returnSelectedMethod()}
+      />
+      {/* <ConfigSection title="Credentials">
         <Field
           label={labels.username.label}
           description={labels.username.tooltip}
@@ -199,7 +214,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
             onChange={onUpdateDatasourceSecureJsonDataOption(props, 'password')}
           />
         </Field>
-      </ConfigSection>
+      </ConfigSection> */}
 
       <Divider />
       <ConfigSection

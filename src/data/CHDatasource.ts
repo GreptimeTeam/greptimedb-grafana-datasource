@@ -92,7 +92,6 @@ export class Datasource
     data: Record<string, string> | null,
     overrides: Partial<BackendSrvRequest> = {}
   ): Observable<FetchResponse<T>> {
-
     return getBackendSrv().fetch({
       url: `api/datasources/proxy/uid/${this.uid}/greptime/v1/sql`,
       method: 'POST',
@@ -101,7 +100,7 @@ export class Datasource
       },
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        
+        'x-greptime-db-name': this.settings.jsonData.defaultDatabase || 'public'
       }
     });
   }
@@ -109,7 +108,6 @@ export class Datasource
   async testDatasource(): Promise<any> {
     const response = await this._request('/v1/sql',{ sql: 'SELECT 1' }).toPromise()
     .then((response) => {
-      console.log('Request completed with response:', response);
       // Do something with the response
       return response
     })
@@ -277,7 +275,6 @@ export class Datasource
   }
 
   applyTemplateVariables(query: CHQuery, scoped: ScopedVars): CHQuery {
-    console.log('applyTemplateVariables')
     let rawQuery = query.rawSql || '';
     rawQuery = this.applyConditionalAll(rawQuery, getTemplateSrv().getVariables());
     return {
@@ -445,7 +442,7 @@ export class Datasource
   }
 
   getDefaultDatabase(): string {
-    return this.settings.jsonData.defaultDatabase || 'default';
+    return this.settings.jsonData.defaultDatabase || 'public';
   }
 
   getDefaultTable(): string | undefined {
@@ -710,8 +707,6 @@ export class Datasource
   }
 
   query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
-    
-    console.log(request, 'request')
     const targets = request.targets
       // filters out queries disabled in UI
       .filter((t) => t.hide !== true)
@@ -739,10 +734,7 @@ export class Datasource
     // Create an array of Observables, one for each active target request + transformation
   const targetObservables: Array<Observable<DataFrame[]>> = targets.map((target: CHQuery) => {
     
-    console.log(target)
-    
     const sql = getInterpolatedSql(target.rawSql)
-    console.log('sql', sql)
     return this._request('/v1/sql', { sql: sql }) // This returns Observable<BackendDataSourceResponse>
       .pipe(
         // Map 1: Extract the data from the response
@@ -767,18 +759,15 @@ export class Datasource
             builderOptions = target.builderOptions || {}
           }
           const queryType = target.refId === 'Trace ID' ? 'Trace' : target.queryType || builderOptions.queryType
-          console.log('queryType', queryType)
           if (queryType === QueryType.Logs) {
             const logFrame = transformGreptimeDBLogs(greptimeData, target.refId) as DataFrame
-            console.log(logFrame)
             return logFrame? [logFrame] : []
           } else if (queryType === 'Trace') {
             const frames = transformGreptimeDBTraceDetails(greptimeData, builderOptions as QueryBuilderOptions)
-            console.log(frames)
             
             return frames;
           } else {
-            return transformGreptimeResponseToGrafana(greptimeData, target.refId);
+            return transformGreptimeResponseToGrafana(greptimeData, target.refId, sql);
           }
           
           
@@ -816,7 +805,6 @@ export class Datasource
         { data: flattenedData } // Pass the combined data frames
       );
       // Return the final structure Grafana expects
-      console.log('finalResponse', finalResponse)
       return finalResponse; // { data: DataFrame[] }
     }),
     // Catch errors from forkJoin or the final map transformation
@@ -855,7 +843,6 @@ export class Datasource
         range: options ? options.range : (getTemplateSrv() as any).timeRange,
       } as DataQueryRequest<CHQuery>;
       this.query(req).subscribe((res: DataQueryResponse) => {
-        console.log('runQuery', res)
         resolve(res.data[0] || { fields: [] });
       });
     });
