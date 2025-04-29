@@ -710,6 +710,7 @@ export class Datasource
     const targets = request.targets
       // filters out queries disabled in UI
       .filter((t) => t.hide !== true)
+      .filter((t) => t.rawSql)
       // attach timezone information
       .map((t) => {
         return {
