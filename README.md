@@ -62,27 +62,20 @@ You can log in Grafana by visiting http://localhost:3000. The default username a
 
 See our setup guide from our [docs](https://docs.greptime.com/user-guide/integrations/grafana).
 
-## Features
-* Table Data: Presents data in a structured table format. Optimized for datasets without a timestamp field.
-* Time Series Data: Provides data that includes a timestamp field, for time series visualization.
-* Logs Data: Supplies data formatted for log analysis.
-* Trace Data: Provides detailed trace data.
 
-## Screenshots
 
 ### Connection
 ![Connection](screenshots/connection.png)
 
-### Series And Table
-![Series](screenshots/series.png)
-![Table](screenshots/table.png)
-
-### Logs
-![Logs](screenshots/logs.png)
-
-### Trace
-![Trace](screenshots/trace.png)
-
+### Use The Query Builder
+* Table: Presents data in a structured table format. Optimized for datasets without a timestamp field.
+  ![Table Query](/grafana/table.png)
+* Time Series: Provides data that includes a timestamp field, for time series visualization.
+  ![Time Series](/grafana/series.png)
+* Logs: Supplies data formatted for log analysis.
+  ![Logs](/grafana/logs.png)
+* Traces: Provides detailed trace data.
+  ![Traces](/grafana/traceconfig.png)
 
 ## Development
 

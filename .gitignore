@@ -40,3 +40,4 @@ pkg/__debug_bin
 /playwright/.cache/
 /playwright/.auth/
 info8fcc-greptimedb-datasource*
+.DS_Store
