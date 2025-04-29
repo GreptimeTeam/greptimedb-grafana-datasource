@@ -4,12 +4,10 @@
 Release](https://img.shields.io/github/v/release/greptimeteam/greptimedb-grafana-datasource)
 ![GitHub
 License](https://img.shields.io/github/license/greptimeteam/greptimedb-grafana-datasource)
-
 This is a [Grafana](https://grafana.com/grafana) data source plugin built for
 [GreptimeDB](https://github.com/GreptimeTeam/greptimedb). This plugin is built
-on top of original Grafana Prometheus data source and enhanced for GreptimeDB's
+on top of original Grafana ClickHouse data source and enhanced for GreptimeDB's
 additional features.
-
 ## Installation
 
 Grab the latest release from [release
@@ -69,13 +67,13 @@ See our setup guide from our [docs](https://docs.greptime.com/user-guide/integra
 
 ### Use The Query Builder
 * Table: Presents data in a structured table format. Optimized for datasets without a timestamp field.
-  ![Table Query](/grafana/table.png)
+  ![Table Query](/screenshots/table.png)
 * Time Series: Provides data that includes a timestamp field, for time series visualization.
-  ![Time Series](/grafana/series.png)
+  ![Time Series](/screenshots/series.png)
 * Logs: Supplies data formatted for log analysis.
-  ![Logs](/grafana/logs.png)
+  ![Logs](/screenshots/logs.png)
 * Traces: Provides detailed trace data.
-  ![Traces](/grafana/traceconfig.png)
+  ![Traces](/screenshots/traceconfig.png)
 
 ## Development
 
@@ -112,7 +110,7 @@ Join our [community slack](https://www.greptime.com/slack) channel #grafana for
 discussion of this plugin.
 
 ## License
-Built on the ClickHouse Grafana datasource plugin.
+
 GreptimeDB uses the [Apache License
 2.0](https://apache.org/licenses/LICENSE-2.0.txt) to strike a balance between
 open contributions and allowing you to use the software however you want.
