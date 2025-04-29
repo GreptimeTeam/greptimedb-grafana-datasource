@@ -1,72 +1,24 @@
 {
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
   "name": "GreptimeDB",
   "id": "info8fcc-greptimedb-datasource",
   "metrics": true,
   "backend": true,
-  "category": "tsdb",
-  "routes": [
-    {
-      "method": "POST",
-      "path": "v1/prometheus/api/v1/query",
-      "reqRole": "Viewer"
-    },
-    {
-      "method": "POST",
-      "path": "v1/prometheus/api/v1/query_range",
-      "reqRole": "Viewer"
-    },
-    {
-      "method": "POST",
-      "path": "v1/prometheus/api/v1/series",
-      "reqRole": "Viewer"
-    },
-    {
-      "method": "POST",
-      "path": "v1/prometheus/api/v1/labels",
-      "reqRole": "Viewer"
-    },
-    {
-      "method": "POST",
-      "path": "v1/prometheus/api/v1/query_exemplars",
-      "reqRole": "Viewer"
-    },
-    {
-      "method": "GET",
-      "path": "/rules",
-      "reqRole": "Viewer"
-    },
-    {
-      "method": "POST",
-      "path": "/rules",
-      "reqRole": "Editor"
-    },
-    {
-      "method": "DELETE",
-      "path": "/rules",
-      "reqRole": "Editor"
-    },
-    {
-      "method": "DELETE",
-      "path": "/config/v1/rules",
-      "reqRole": "Editor"
-    },
-    {
-      "method": "POST",
-      "path": "/config/v1/rules",
-      "reqRole": "Editor"
-    }
+  "logs": true,
+  "tracing": true,
+  "alerting": true,
+  "annotations": true,
+  "executable": "gpx_greptimedb",
+  "includes": [
   ],
-  "queryOptions": {
-    "minInterval": true
-  },
-  "executable": "gpx_greptime_db",
+  "category": "tsdb",
   "info": {
-    "description": "Open source time series database",
+    "description": "Greptime datasource plugin for Grafana",
     "author": {
-      "name": "GreptimeDB",
-      "url": "https://greptime.com"
+      "name": "Grafana Labs"
     },
+    "keywords": ["Simple"],
     "logos": {
       "small": "img/greptimedb_logo.svg",
       "large": "img/greptimedb_logo.svg"
@@ -77,17 +29,18 @@
         "url": "https://docs.greptime.com/"
       }
     ],
-    "screenshots": [
-      {"name": "Node Exporter", "path": "img/image.png"},
-      {"name": "ConfigEditor", "path": "img/connection.jpg"},
-      {"name": "QueryEditor", "path": "img/query-edit.jpg"}
-    ],
+    "screenshots": [],
     "version": "%VERSION%",
-    "updated": "%TODAY%",
-    "keywords": ["Time-Series", "Database"]
+    "updated": "%TODAY%"
   },
   "dependencies": {
-    "grafanaDependency": ">=10.3.3",
+    "grafanaDependency": ">=9.5.0",
     "plugins": []
-  }
+  },
+  "routes": [
+	{
+	  "path": "greptime",
+	  "url": "{{ .JsonData.host }}"
+	}
+]
 }

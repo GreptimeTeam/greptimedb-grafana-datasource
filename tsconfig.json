@@ -1,12 +1,6 @@
 {
   "extends": "./.config/tsconfig.json",
   "compilerOptions": {
-    "esModuleInterop": true,
-    "jsx": "react",
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "target": "ES2021",
-    "lib": ["ES2021", "DOM"]
+    "rootDir": "."
   },
-  "exclude": ["**/*.test.tsx", "**/*.test.ts", "**/mocks.ts"]
 }

@@ -4,7 +4,6 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
 node_modules/
 
@@ -25,23 +24,20 @@ dist/
 artifacts/
 work/
 ci/
+e2e-results/
+test_summary.json
 
-# e2e test directories
+# Editor
+.idea
+
+pkg/__debug_bin
+
+**/.DS_Store
+.eslintcache
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-
-# Editor
-.idea
+info8fcc-greptimedb-datasource*
 .DS_Store
-.eslintcache
-greptime-ds
-greptime-ds-*.zip
-info8fcc-greptimedb-datasource
-info8fcc-greptimedb-datasource*.zip
-
-# direnv
-.direnv
-.envrc

@@ -10,16 +10,6 @@ This is a [Grafana](https://grafana.com/grafana) data source plugin built for
 on top of original Grafana Prometheus data source and enhanced for GreptimeDB's
 additional features.
 
-## Screenshots
-
-PromQL query builder with additional field selector.
-
-![explore](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/1.png)
-
-Time-series data rendered with GreptimeDB data source.
-
-![dashboard](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/main/screenshots/2.png)
-
 ## Installation
 
 Grab the latest release from [release
@@ -72,22 +62,20 @@ You can log in Grafana by visiting http://localhost:3000. The default username a
 
 See our setup guide from our [docs](https://docs.greptime.com/user-guide/integrations/grafana).
 
-## Features and Roadmap
 
-We started this plugin from forking Grafana's built-in Prometheus plugin. The
-goal of this plugin is to provide visualization support for all native types
-of GreptimeDB data.
 
-- Time series panels
-  - [x] PromQL
-    - [x] GreptimeDB's additional field selector
-  - [x] SQL
-    - [ ] Time macro
-- Event UI
-  - [ ] Event
-- Settings UI
-  - [x] DB name input
-  - [x] Authentication
+### Connection
+![Connection](screenshots/connection.png)
+
+### Use The Query Builder
+* Table: Presents data in a structured table format. Optimized for datasets without a timestamp field.
+  ![Table Query](/grafana/table.png)
+* Time Series: Provides data that includes a timestamp field, for time series visualization.
+  ![Time Series](/grafana/series.png)
+* Logs: Supplies data formatted for log analysis.
+  ![Logs](/grafana/logs.png)
+* Traces: Provides detailed trace data.
+  ![Traces](/grafana/traceconfig.png)
 
 ## Development
 
@@ -124,7 +112,7 @@ Join our [community slack](https://www.greptime.com/slack) channel #grafana for
 discussion of this plugin.
 
 ## License
-
+Built on the ClickHouse Grafana datasource plugin.
 GreptimeDB uses the [Apache License
 2.0](https://apache.org/licenses/LICENSE-2.0.txt) to strike a balance between
 open contributions and allowing you to use the software however you want.

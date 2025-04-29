@@ -133,9 +133,7 @@ export interface GreptimeResponseFailed {
   error: string;
 }
 
-export type GreptimeResponse<T extends any[] = any[]> =
-  | GreptimeResponseSuccess<T>
-  | GreptimeResponseFailed;
+
 
 /**
  * The column schema in the response of the query
@@ -154,4 +152,33 @@ export interface GreptimeColumnSchemaDetailed {
   nullable: boolean;
   default: string;    //TODO maybe this is not a string
   semantic_type: string;
+}
+
+
+
+// Interfaces defining the structure of the GreptimeDB /v1/sql response
+export interface GreptimeColumnSchema {
+  name: string;
+  data_type: string;
+}
+
+export interface GreptimeSchema {
+  column_schemas: GreptimeColumnSchema[];
+}
+
+export interface GreptimeRecords {
+  schema: GreptimeSchema;
+  rows: any[][]; // Array of rows, each row is an array of values
+}
+
+export interface GreptimeOutput {
+  // May have other properties, but 'records' is key for data
+  records: GreptimeRecords;
+}
+
+export interface GreptimeResponse {
+  code: number;
+  execution_time_ms?: number; // Optional
+  output?: GreptimeOutput[]; // Array of result sets
+  error?: string; // Optional error message
 }
