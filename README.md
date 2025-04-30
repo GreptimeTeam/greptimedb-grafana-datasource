@@ -104,11 +104,6 @@ Yarn 1.x is required for this project. Execute these commands in code root folde
    docker compose up
    ```
 
-## Community
-
-Join our [community slack](https://www.greptime.com/slack) channel #grafana for
-discussion of this plugin.
-
 ## License
 
 GreptimeDB uses the [Apache License
