@@ -63,17 +63,17 @@ See our setup guide from our [docs](https://docs.greptime.com/user-guide/integra
 
 
 ### Connection
-![Connection](screenshots/connection.png)
+![Connection](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/connection.png)
 
 ### Use The Query Builder
 * Table: Presents data in a structured table format. Optimized for datasets without a timestamp field.
-  ![Table Query](/screenshots/table.png)
+  ![Table Query](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/table.png)
 * Time Series: Provides data that includes a timestamp field, for time series visualization.
-  ![Time Series](/screenshots/series.png)
+  ![Time Series](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/series.png)
 * Logs: Supplies data formatted for log analysis.
-  ![Logs](/screenshots/logs.png)
+  ![Logs](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/logs.png)
 * Traces: Provides detailed trace data.
-  ![Traces](/screenshots/traceconfig.png)
+  ![Traces](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/screenshots/traceconfig.png)
 
 ## Development
 
