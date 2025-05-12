@@ -73,7 +73,7 @@ See our setup guide from our [docs](https://docs.greptime.com/user-guide/integra
 * Logs: Supplies data formatted for log analysis.
   ![Logs](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/logs.png)
 * Traces: Provides detailed trace data.
-  ![Traces](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/screenshots/traceconfig.png)
+  ![Traces](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/traceconfig.png)
 
 ## Development
 
