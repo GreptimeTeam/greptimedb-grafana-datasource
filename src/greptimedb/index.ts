@@ -1,4 +1,5 @@
-import { DataFrame,
+import {
+  DataFrame,
   Field,
   FieldType, // Imported for mapGreptimeTypeToGrafana
   FieldConfig,
@@ -9,6 +10,7 @@ import { DataFrame,
 import { GreptimeDataTypes } from './types';
 import { getColumnsByHint } from 'data/sqlGenerator';
 import { ColumnHint, QueryBuilderOptions } from 'types/queryBuilder';
+import { CHQuery } from 'types/sql';
 
 
 /**
@@ -44,7 +46,7 @@ function mapGreptimeTypeToGrafana(greptimeType: string | undefined | null): Fiel
   }
   // Interval types -> map to string for now
   if (lowerType.includes('interval')) {
-     return FieldType.string;
+    return FieldType.string;
   }
 
   // Log unhandled types and default to 'other'
@@ -232,7 +234,7 @@ export const greptimeTypeToGrafana: Record<GreptimeDataTypes, FieldType> = {
 
 type GreptimeTimeType = GreptimeDataTypes.TimestampSecond | GreptimeDataTypes.TimestampMillisecond | GreptimeDataTypes.TimestampMicrosecond | GreptimeDataTypes.TimestampNanosecond
 export function toMs(time: number, columnType: GreptimeTimeType) {
-  switch(columnType) {
+  switch (columnType) {
     case GreptimeDataTypes.TimestampSecond:
       return time * 1000
     case GreptimeDataTypes.TimestampMillisecond:
@@ -248,7 +250,7 @@ export function toMs(time: number, columnType: GreptimeTimeType) {
 }
 
 
-export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: string) {
+export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CHQuery, contextColumns: string[]) {
   if (!sqlResponse.output || sqlResponse.output.length === 0) {
     console.error('GreptimeDB query failed or returned no data:', sqlResponse.error);
     return null; // Or handle the error as needed
@@ -268,9 +270,9 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: s
   let severityColumnIndex = -1;
   let idColumnIndex = -1;
   const labelColumnIndices: Record<string, number> = {};
+  const contextColumnIndices: Record<string, number> = {};
 
   columnSchemas.forEach((schema, index) => {
-    console.log(schema)
     const lowerCaseName = schema.name.toLowerCase();
     if (lowerCaseName === 'ts' || lowerCaseName === 'timestamp') {
       timestampColumnIndex = index;
@@ -280,6 +282,8 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: s
       severityColumnIndex = index;
     } else if (lowerCaseName === 'id') {
       idColumnIndex = index;
+    } else if (contextColumns.includes(schema.name)) {
+      contextColumnIndices[schema.name] = index;
     } else {
       // Consider other columns as potential labels
       labelColumnIndices[schema.name] = index;
@@ -296,10 +300,10 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: s
   const severities: string[] = [];
   const ids: string[] = [];
   const labelsArray: Array<Record<string, any>> = [];
-
+  const contextColumnValues: Record<string, string[]> = {};
   rows.forEach((row) => {
     const timestampValue = toMs(row[timestampColumnIndex], columnSchemas[timestampColumnIndex].data_type as GreptimeTimeType);
-    
+
     timestamps.push(
       typeof timestampValue === 'string' || typeof timestampValue === 'number'
         ? new Date(timestampValue).getTime()
@@ -316,6 +320,14 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: s
       }
     }
     labelsArray.push(labels);
+
+    for (const contextName in contextColumnIndices) {
+      if (!contextColumnValues[contextName]) {
+        contextColumnValues[contextName] = [];
+      }
+      contextColumnValues[contextName].push(row[contextColumnIndices[contextName]]);
+    }
+
   });
 
   const fields = [
@@ -331,10 +343,14 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, refId?: s
     fields.push({ name: 'id', type: FieldType.string, values: ids });
   }
 
+  for (const contextName in contextColumnValues) {
+    fields.push({ name: contextName, type: FieldType.string, values: contextColumnValues[contextName] });
+  }
+
   fields.push({ name: 'labels', type: FieldType.other, values: labelsArray });
 
   const result = createDataFrame({
-    refId: refId,
+    refId: query.refId,
     fields: fields,
     meta: {
       preferredVisualisationType: 'logs',
@@ -376,7 +392,7 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, buil
   const rows = records.rows;
 
   const spans: GrafanaTraceSpan[] = rows.map(row => {
-    const data: Record<string, any> = {span_attributes: [], service_attributes: []};
+    const data: Record<string, any> = { span_attributes: [], service_attributes: [] };
     const tagColumnNames = getColumnsByHint(builderOptions, ColumnHint.TraceTags)?.map((v) => v.name) || []
     const serticeTagColumnNames = getColumnsByHint(builderOptions, ColumnHint.TraceServiceTags)?.map((v) => v.name) || []
     columns.forEach((schema, index) => {
@@ -393,7 +409,7 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, buil
       } else {
         data[schema.name] = row[index];
       }
-      
+
     });
 
 
@@ -419,12 +435,12 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, buil
     { name: 'operationName', type: FieldType.string, values: spans.map(s => s.operationName) },
     { name: 'serviceName', type: FieldType.string, values: spans.map(s => s.serviceName) },
     { name: 'startTime', type: FieldType.time, values: spans.map(s => s.startTime) },
-  //   { name: 'duration', type: FieldType.number, values: [
-  //     50,
-  //     100
-  // ],
-  // "config": { "unit": "ms" }, },
-  { name: 'duration', type: FieldType.number, values: spans.map(s => s.duration), "config": { "unit": "ms" }, },
+    //   { name: 'duration', type: FieldType.number, values: [
+    //     50,
+    //     100
+    // ],
+    // "config": { "unit": "ms" }, },
+    { name: 'duration', type: FieldType.number, values: spans.map(s => s.duration), "config": { "unit": "ms" }, },
     { name: 'tags', type: FieldType.other, values: spans.map(s => s.tags) },
     { name: 'serviceTags', type: FieldType.other, values: spans.map(s => s.serviceTags) },
     // { name: 'logs', type: FieldType.other, values: spans.map(s => s.logs) },
@@ -527,107 +543,107 @@ export function transformGreptimeResponseToGrafana(
 
     // Case 1: No grouping columns or only one grouping column.
     if (groupingColumnIndices.length === 0) {
-        const columnValueArrays: any[][] = Array.from({ length: numCols }, () => new Array(numRows));
+      const columnValueArrays: any[][] = Array.from({ length: numCols }, () => new Array(numRows));
 
-        for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
-            const row = rows[rowIndex];
-             for (let colIndex = 0; colIndex < numCols; colIndex++) {
-                const colSchema = columnSchemas[colIndex];
-                const grafanaDataType = mapGreptimeTypeToGrafana(colSchema.data_type);
-                if (grafanaDataType === FieldType.time) {
-                    columnValueArrays[colIndex][rowIndex] = toMs(row[colIndex], colSchema.data_type as GreptimeTimeType);
-                } else {
-                    columnValueArrays[colIndex][rowIndex] = row[colIndex];
-                }
-             }
+      for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
+        const row = rows[rowIndex];
+        for (let colIndex = 0; colIndex < numCols; colIndex++) {
+          const colSchema = columnSchemas[colIndex];
+          const grafanaDataType = mapGreptimeTypeToGrafana(colSchema.data_type);
+          if (grafanaDataType === FieldType.time) {
+            columnValueArrays[colIndex][rowIndex] = toMs(row[colIndex], colSchema.data_type as GreptimeTimeType);
+          } else {
+            columnValueArrays[colIndex][rowIndex] = row[colIndex];
+          }
         }
+      }
+      const fields: Field[] = columnSchemas.map((colSchema, i) => {
+        const fieldName = colSchema.name || `column_${i + 1}`;
+        const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
+        const values = columnValueArrays[i];
+        const config: FieldConfig = {
+          displayName: fieldName,
+        };
+        return {
+          name: fieldName,
+          type: fieldType,
+          config: config,
+          values: values,
+        };
+      });
+      const frame: DataFrame = {
+        name: `Result ${index + 1}`,
+        refId: refId,
+        fields: fields,
+        length: numRows,
+      };
+      dataFrames.push(frame);
+    } else {
+      // Case 2: Multiple grouping columns - create multiple series
+      // Iterate through rows from the response
+      for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
+        const row = rows[rowIndex];
+
+        // Validate row structure
+        if (!Array.isArray(row) || row.length !== numCols) {
+          console.error(`Row ${rowIndex} in result set ${index} has incorrect length (${row?.length ?? 'undefined'}), expected ${numCols}. Skipping row.`);
+          continue; // Move to the next row
+        }
+
+        // Construct a unique key for the series based on the grouping column values.
+        let groupKey = '';
+        for (const groupIndex of groupingColumnIndices) {
+          groupKey += `${columnSchemas[groupIndex].name}:${row[groupIndex]};`;
+        }
+
+        // Initialize the series entry if it doesn't exist
+        if (!seriesMap[groupKey]) {
+          seriesMap[groupKey] = Array.from({ length: numCols }, () => []);
+        }
+
+        // Populate the series data
+        for (let colIndex = 0; colIndex < numCols; colIndex++) {
+          const colSchema = columnSchemas[colIndex];
+          const grafanaDataType = mapGreptimeTypeToGrafana(colSchema.data_type);
+
+          if (grafanaDataType === FieldType.time) {
+            seriesMap[groupKey][colIndex].push(toMs(row[colIndex], colSchema.data_type as GreptimeTimeType));
+          } else {
+            seriesMap[groupKey][colIndex].push(row[colIndex]);
+          }
+        }
+      }
+      // --- Create Grafana DataFrames from Series ---
+      for (const groupKey in seriesMap) {
+        if (!Object.prototype.hasOwnProperty.call(seriesMap, groupKey)) {
+          continue;
+        }
+        const columnValueArrays = seriesMap[groupKey];
         const fields: Field[] = columnSchemas.map((colSchema, i) => {
-            const fieldName = colSchema.name || `column_${i + 1}`;
-            const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
-            const values = columnValueArrays[i];
-            const config: FieldConfig = {
-                displayName: fieldName,
-            };
-            return {
-                name: fieldName,
-                type: fieldType,
-                config: config,
-                values: values,
-            };
+          const fieldName = colSchema.name || `column_${i + 1}`;
+          const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
+          const values = columnValueArrays[i];
+
+          const config: FieldConfig = {
+            displayName: fieldName + '_' + groupKey,
+          };
+
+          return {
+            name: fieldName,
+            type: fieldType,
+            config: config,
+            values: values,
+          };
         });
+
         const frame: DataFrame = {
-            name: `Result ${index + 1}`,
-            refId: refId,
-            fields: fields,
-            length: numRows,
+          name: groupKey, // Use the group key as the frame name
+          refId: refId,
+          fields: fields,
+          length: columnValueArrays[0]?.length || 0,
         };
         dataFrames.push(frame);
-    } else {
-        // Case 2: Multiple grouping columns - create multiple series
-        // Iterate through rows from the response
-        for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
-            const row = rows[rowIndex];
-
-            // Validate row structure
-            if (!Array.isArray(row) || row.length !== numCols) {
-                console.error(`Row ${rowIndex} in result set ${index} has incorrect length (${row?.length ?? 'undefined'}), expected ${numCols}. Skipping row.`);
-                continue; // Move to the next row
-            }
-
-            // Construct a unique key for the series based on the grouping column values.
-            let groupKey = '';
-            for (const groupIndex of groupingColumnIndices) {
-                groupKey += `${columnSchemas[groupIndex].name}:${row[groupIndex]};`;
-            }
-
-            // Initialize the series entry if it doesn't exist
-            if (!seriesMap[groupKey]) {
-                seriesMap[groupKey] = Array.from({ length: numCols }, () => []);
-            }
-
-            // Populate the series data
-            for (let colIndex = 0; colIndex < numCols; colIndex++) {
-                const colSchema = columnSchemas[colIndex];
-                const grafanaDataType = mapGreptimeTypeToGrafana(colSchema.data_type);
-
-                if (grafanaDataType === FieldType.time) {
-                    seriesMap[groupKey][colIndex].push(toMs(row[colIndex], colSchema.data_type as GreptimeTimeType));
-                } else {
-                    seriesMap[groupKey][colIndex].push(row[colIndex]);
-                }
-            }
-        }
-        // --- Create Grafana DataFrames from Series ---
-        for (const groupKey in seriesMap) {
-          if (!Object.prototype.hasOwnProperty.call(seriesMap, groupKey)) {
-            continue;
-          }
-          const columnValueArrays = seriesMap[groupKey];
-          const fields: Field[] = columnSchemas.map((colSchema, i) => {
-            const fieldName = colSchema.name || `column_${i + 1}`;
-            const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
-            const values = columnValueArrays[i];
-
-            const config: FieldConfig = {
-              displayName: fieldName + '_' + groupKey,
-            };
-
-            return {
-              name: fieldName,
-              type: fieldType,
-              config: config,
-              values: values,
-            };
-          });
-
-          const frame: DataFrame = {
-            name: groupKey, // Use the group key as the frame name
-            refId: refId,
-            fields: fields,
-            length: columnValueArrays[0]?.length || 0,
-          };
-          dataFrames.push(frame);
-        }
+      }
     }
   });
 
