@@ -761,7 +761,8 @@ export class Datasource
           }
           const queryType = target.refId === 'Trace ID' ? 'Trace' : target.queryType || builderOptions.queryType
           if (queryType === QueryType.Logs) {
-            const logFrame = transformGreptimeDBLogs(greptimeData, target.refId) as DataFrame
+            const contextColumns = this.getLogContextColumnNames()
+            const logFrame = transformGreptimeDBLogs(greptimeData, target, contextColumns) as DataFrame
             return logFrame? [logFrame] : []
           } else if (queryType === 'Trace') {
             const frames = transformGreptimeDBTraceDetails(greptimeData, builderOptions as QueryBuilderOptions)
@@ -1066,7 +1067,7 @@ export class Datasource
       filterType: 'custom',
       hint: ColumnHint.Time,
       key: '',
-      value: `fromUnixTimestamp64Nano(${row.timeEpochNs})`,
+      value: new Date(Number(row.timeEpochNs) / 1000000).toISOString(),
       type: 'datetime',
       condition: 'AND'
     });
