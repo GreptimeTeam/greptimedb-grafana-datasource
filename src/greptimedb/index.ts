@@ -8,7 +8,7 @@ import {
 } from '@grafana/data';
 
 import { GreptimeDataTypes } from './types';
-import { getColumnsByHint } from 'data/sqlGenerator';
+import { getColumnsByHint, logColumnHintsToAlias } from 'data/sqlGenerator';
 import { ColumnHint, QueryBuilderOptions } from 'types/queryBuilder';
 import { CHQuery } from 'types/sql';
 
@@ -272,28 +272,25 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
   const labelColumnIndices: Record<string, number> = {};
   const contextColumnIndices: Record<string, number> = {};
 
-  columnSchemas.forEach((schema, index) => {
-    const lowerCaseName = schema.name.toLowerCase();
-    if (lowerCaseName === 'ts' || lowerCaseName === 'timestamp') {
-      timestampColumnIndex = index;
-    } else if (lowerCaseName === 'body' || lowerCaseName === 'message') {
-      bodyColumnIndex = index;
-    } else if (lowerCaseName === 'severity' || lowerCaseName === 'level') {
-      severityColumnIndex = index;
-    } else if (lowerCaseName === 'id') {
-      idColumnIndex = index;
-    } else if (contextColumns.includes(schema.name)) {
-      contextColumnIndices[schema.name] = index;
-    } else {
-      // Consider other columns as potential labels
-      labelColumnIndices[schema.name] = index;
-    }
-  });
+  
+  if('builderOptions' in query) {
 
-  // if (timestampColumnIndex === -1 || bodyColumnIndex === -1) {
-  //   console.error('Timestamp or body column not found in GreptimeDB response.');
-  //   return null;
-  // }
+    columnSchemas.forEach((schema, index) => {
+      const lowerCaseName = schema.name.toLowerCase();
+      if (lowerCaseName === logColumnHintsToAlias.get(ColumnHint.Time)) {
+        timestampColumnIndex = index;
+      } else if (lowerCaseName === logColumnHintsToAlias.get(ColumnHint.LogMessage)) {
+        bodyColumnIndex = index;
+      } else if (lowerCaseName === logColumnHintsToAlias.get(ColumnHint.LogLevel)) {
+        severityColumnIndex = index;
+      } else if (contextColumns.includes(schema.name)) {
+        contextColumnIndices[schema.name] = index;
+      } else {
+        // Consider other columns as potential labels
+        labelColumnIndices[schema.name] = index;
+      }
+    });
+  }
 
   const timestamps: number[] = [];
   const bodies: string[] = [];
@@ -309,9 +306,13 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
         ? new Date(timestampValue).getTime()
         : timestampValue
     );
-    bodies.push(String(row[bodyColumnIndex]));
-    severities.push(severityColumnIndex !== -1 ? String(row[severityColumnIndex]) : '');
-    ids.push(idColumnIndex !== -1 ? String(row[idColumnIndex]) : '');
+    if (bodyColumnIndex !== -1) {
+      bodies.push(String(row[bodyColumnIndex]));
+    }
+    if (severityColumnIndex !== -1) {
+      severities.push(String(row[severityColumnIndex]));
+    }
+
 
     const labels: Record<string, any> = {};
     for (const labelName in labelColumnIndices) {

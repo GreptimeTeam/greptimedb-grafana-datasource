@@ -136,21 +136,8 @@ export const LogsQueryBuilder = (props: LogsQueryBuilderProps) => {
           label={labels.logTimeColumn.label}
           tooltip={labels.logTimeColumn.tooltip}
         />
-        <ColumnSelect
-          disabled={builderState.otelEnabled}
-          allColumns={allColumns}
-          selectedColumn={builderState.logLevelColumn}
-          invalid={!builderState.logLevelColumn}
-          onColumnChange={onOptionChange('logLevelColumn')}
-          columnFilterFn={columnFilterString}
-          columnHint={ColumnHint.LogLevel}
-          label={labels.logLevelColumn.label}
-          tooltip={labels.logLevelColumn.tooltip}
-          inline
-        />
-      </div>
-      <div className="gf-form">
-        <ColumnSelect
+
+      <ColumnSelect
           disabled={builderState.otelEnabled}
           allColumns={allColumns}
           selectedColumn={builderState.messageColumn}
@@ -164,22 +151,17 @@ export const LogsQueryBuilder = (props: LogsQueryBuilderProps) => {
         <ColumnSelect
           disabled={builderState.otelEnabled}
           allColumns={allColumns}
-          selectedColumn={builderState.labelsColumn}
-          invalid={!builderState.labelsColumn}
-          onColumnChange={onOptionChange('labelsColumn')}
-          columnHint={ColumnHint.LogLabels}
-          label={labels.logLabelsColumn.label}
-          tooltip={labels.logLabelsColumn.tooltip}
+          selectedColumn={builderState.logLevelColumn}
+          invalid={!builderState.logLevelColumn}
+          onColumnChange={onOptionChange('logLevelColumn')}
+          columnFilterFn={columnFilterString}
+          columnHint={ColumnHint.LogLevel}
+          label={labels.logLevelColumn.label}
+          tooltip={labels.logLevelColumn.tooltip}
           inline
         />
-        {/* <Switch
-          value={builderState.liveView}
-          onChange={onOptionChange('liveView')}
-          label={labels.liveView.label}
-          tooltip={labels.liveView.tooltip}
-          inline
-        /> */}
       </div>
+
       <OrderByEditor
         orderByOptions={getOrderByOptions(builderOptions, allColumns)}
         orderBy={builderState.orderBy}
