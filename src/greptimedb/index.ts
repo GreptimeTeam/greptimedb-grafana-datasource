@@ -272,23 +272,32 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
   const labelColumnIndices: Record<string, number> = {};
   const contextColumnIndices: Record<string, number> = {};
 
-  columnSchemas.forEach((schema, index) => {
-    const lowerCaseName = schema.name.toLowerCase();
-    if (lowerCaseName === 'ts' || lowerCaseName === 'timestamp') {
-      timestampColumnIndex = index;
-    } else if (lowerCaseName === 'body' || lowerCaseName === 'message') {
-      bodyColumnIndex = index;
-    } else if (lowerCaseName === 'severity' || lowerCaseName === 'level') {
-      severityColumnIndex = index;
-    } else if (lowerCaseName === 'id') {
-      idColumnIndex = index;
-    } else if (contextColumns.includes(schema.name)) {
-      contextColumnIndices[schema.name] = index;
-    } else {
-      // Consider other columns as potential labels
-      labelColumnIndices[schema.name] = index;
-    }
-  });
+  
+  if('builderOptions' in query) {
+    const timeColumn = query.builderOptions?.columns?.find(c => c.hint === 'time')
+    const timeColumnName = timeColumn?.alias || timeColumn?.name
+    const bodyColumn = query.builderOptions?.columns?.find(c => c.hint === 'log_message')
+    const bodyColumnName = bodyColumn?.alias || bodyColumn?.name
+    const severityColumn = query.builderOptions?.columns?.find(c => c.hint === 'log_level')
+    const severityColumnName = severityColumn?.alias || severityColumn?.name
+
+    columnSchemas.forEach((schema, index) => {
+      const lowerCaseName = schema.name.toLowerCase();
+      if (lowerCaseName === timeColumnName) {
+        timestampColumnIndex = index;
+      } else if (lowerCaseName === bodyColumnName) {
+        bodyColumnIndex = index;
+      } else if (lowerCaseName === severityColumnName) {
+        severityColumnIndex = index;
+      } else if (contextColumns.includes(schema.name)) {
+        contextColumnIndices[schema.name] = index;
+      } else {
+        // Consider other columns as potential labels
+        labelColumnIndices[schema.name] = index;
+      }
+    });
+  }
+  
 
   // if (timestampColumnIndex === -1 || bodyColumnIndex === -1) {
   //   console.error('Timestamp or body column not found in GreptimeDB response.');
