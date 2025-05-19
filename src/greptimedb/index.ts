@@ -297,12 +297,6 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
       }
     });
   }
-  
-
-  // if (timestampColumnIndex === -1 || bodyColumnIndex === -1) {
-  //   console.error('Timestamp or body column not found in GreptimeDB response.');
-  //   return null;
-  // }
 
   const timestamps: number[] = [];
   const bodies: string[] = [];
@@ -318,9 +312,13 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
         ? new Date(timestampValue).getTime()
         : timestampValue
     );
-    bodies.push(String(row[bodyColumnIndex]));
-    severities.push(severityColumnIndex !== -1 ? String(row[severityColumnIndex]) : '');
-    ids.push(idColumnIndex !== -1 ? String(row[idColumnIndex]) : '');
+    if (bodyColumnIndex !== -1) {
+      bodies.push(String(row[bodyColumnIndex]));
+    }
+    if (severityColumnIndex !== -1) {
+      severities.push(String(row[severityColumnIndex]));
+    }
+
 
     const labels: Record<string, any> = {};
     for (const labelName in labelColumnIndices) {
