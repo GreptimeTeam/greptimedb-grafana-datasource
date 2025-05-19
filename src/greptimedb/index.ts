@@ -8,7 +8,7 @@ import {
 } from '@grafana/data';
 
 import { GreptimeDataTypes } from './types';
-import { getColumnsByHint } from 'data/sqlGenerator';
+import { getColumnsByHint, logColumnHintsToAlias } from 'data/sqlGenerator';
 import { ColumnHint, QueryBuilderOptions } from 'types/queryBuilder';
 import { CHQuery } from 'types/sql';
 
@@ -274,20 +274,14 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
 
   
   if('builderOptions' in query) {
-    const timeColumn = query.builderOptions?.columns?.find(c => c.hint === 'time')
-    const timeColumnName = timeColumn?.alias || timeColumn?.name
-    const bodyColumn = query.builderOptions?.columns?.find(c => c.hint === 'log_message')
-    const bodyColumnName = bodyColumn?.alias || bodyColumn?.name
-    const severityColumn = query.builderOptions?.columns?.find(c => c.hint === 'log_level')
-    const severityColumnName = severityColumn?.alias || severityColumn?.name
 
     columnSchemas.forEach((schema, index) => {
       const lowerCaseName = schema.name.toLowerCase();
-      if (lowerCaseName === timeColumnName) {
+      if (lowerCaseName === logColumnHintsToAlias.get(ColumnHint.Time)) {
         timestampColumnIndex = index;
-      } else if (lowerCaseName === bodyColumnName) {
+      } else if (lowerCaseName === logColumnHintsToAlias.get(ColumnHint.LogMessage)) {
         bodyColumnIndex = index;
-      } else if (lowerCaseName === severityColumnName) {
+      } else if (lowerCaseName === logColumnHintsToAlias.get(ColumnHint.LogLevel)) {
         severityColumnIndex = index;
       } else if (contextColumns.includes(schema.name)) {
         contextColumnIndices[schema.name] = index;
