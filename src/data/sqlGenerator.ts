@@ -410,7 +410,8 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
-    timeColumn.name = `$__timeInterval(${timeColumn.name})`;
+    // timeColumn.name = `$__timeInterval(${timeColumn.name})`;
+    timeColumn.name = `date_trunc('minute', ${timeColumn.name})`
     // timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
   }
