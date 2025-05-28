@@ -1,7 +1,8 @@
 import { DataSourceSettings, KeyValue } from "@grafana/data";
 import { defaultLogsTable, defaultTraceTable } from "otel";
 import { useEffect, useRef } from "react";
-import { CHConfig, CHHttpHeader, CHSecureConfig, Protocol } from "types/config";
+import { CHConfig, CHHttpHeader, CHSecureConfig, CHTracesConfig, Protocol } from "types/config";
+import { TimeUnit } from "types/queryBuilder";
 import { pluginVersion } from "utils/version";
 
 /**
@@ -60,6 +61,17 @@ export const onHttpHeadersChange = (headers: CHHttpHeader[], options: DataSource
   });
 }
 
+const defaultTraceConfig: CHTracesConfig = {
+  traceIdColumn: 'trace_id',
+  spanIdColumn: 'span_id',
+  operationNameColumn: 'span_name',
+  parentSpanIdColumn: 'parent_span_id',
+  serviceNameColumn: 'service_name',
+  durationColumn: 'duration_nano',
+  durationUnit: TimeUnit.Nanoseconds,
+  startTimeColumn: 'timestamp',
+}
+
 /**
  * Applies default settings and migrations to config options.
  */
@@ -105,6 +117,7 @@ export const useConfigDefaults = (options: DataSourceSettings<CHConfig>, onOptio
     if (!jsonData.traces || jsonData.traces.defaultTable === undefined) {
       jsonData.traces = {
         ...jsonData.traces,
+        ...defaultTraceConfig,
         defaultTable: defaultTraceTable
       };
     }
