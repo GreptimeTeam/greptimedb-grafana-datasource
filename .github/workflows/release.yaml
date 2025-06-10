@@ -51,7 +51,14 @@ jobs:
 
       - name: zip
         run: yarn zip
-
+      - name: Wait for files to settle
+        run: sleep 5 # Wait for 5 seconds to ensure files are fully written and released
+      - name: List files before release
+        run: |
+          ls -al info8fcc-greptimedb-datasource.zip
+          ls -al info8fcc-greptimedb-datasource-unsigned.zip
+          pwd # Print current working directory
+        shell: bash
       - name: Determine Release Type
         id: release_type
         shell: bash
