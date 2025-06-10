@@ -61,7 +61,7 @@ You can log in Grafana by visiting http://localhost:3000. The default username a
 See our setup guide from our [docs](https://docs.greptime.com/user-guide/integrations/grafana).
 
 
-
+<!-- 
 ### Connection
 ![Connection](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/connection.png)
 
@@ -73,7 +73,98 @@ See our setup guide from our [docs](https://docs.greptime.com/user-guide/integra
 * Logs: Supplies data formatted for log analysis.
   ![Logs](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/logs.png)
 * Traces: Provides detailed trace data.
-  ![Traces](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/traceconfig.png)
+  ![Traces](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/traceconfig.png) -->
+
+
+### Connection settings
+
+Click the Add data source button and select GreptimeDB as the type.
+
+![grafana-add-greptimedb-data-source](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/connection.png)
+
+Fill in the following URL in the GreptimeDB server URL:
+
+```txt
+http://<host>:4000
+```
+
+In the Auth section, click basic auth, and fill in the username and password for GreptimeDB in the Basic Auth Details section (not set by default, no need to fill in).
+- User: `<username>`
+- Password: `<password>`
+
+Then click the Save & Test button to test the connection.
+
+### General Query Settings
+Before selecting any query type, you first need to configure the **Database** and **Table** to query from.
+
+| Setting   | Description                               |
+| :-------- | :---------------------------------------- |
+| **Database** | Select the database you want to query.     |
+| **Table** | Select the table you want to query from. |
+
+
+---
+
+### Table Query
+
+Choose the `Table` query type when your query results **do not include a time column**. This is suitable for displaying tabular data.
+
+
+| Setting   | Description                                     |
+| :-------- | :---------------------------------------------- |
+| **Columns** | Select the columns you want to retrieve. Multiple selections are allowed. |
+| **Filters** | Set conditions to filter your data.             |
+
+![Table Query](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/table.png)
+
+---
+
+### Metrics Query
+
+Select the `Time Series` query type when your query results **include both a time column and a numerical value column**. This is ideal for visualizing metrics over time.
+
+| Main Setting | Description           |
+| :----------- | :-------------------- |
+| **Time** | Select the time column. |
+| **Columns** | Select the numerical value column(s). |
+
+![Time Series](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/series.png)
+
+---
+
+### Logs Query
+
+Choose the `Logs` query type when you want to query log data. You'll need to specify a **Time** column and a **Message** column.
+
+| Main Setting | Description                   |
+| :----------- | :---------------------------- |
+| **Time** | Select the timestamp column for your logs. |
+| **Message** | Select the column containing the log content. |
+| **Log Level**| (Optional) Select the column representing the log level. |
+
+![Logs](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/logs.png)
+
+---
+
+### Traces Query
+
+Select the `Traces` query type when you want to query distributed tracing data.
+
+| Main Setting          | Description                                                                                             |
+| :-------------------- | :------------------------------------------------------------------------------------------------------ |
+| **Trace Model** | Select `Trace Search` to query a list of traces.                                                        |
+| **Trace Id Column** | Default value: `trace_id`                                                                               |
+| **Span Id Column** | Default value: `span_id`                                                                                |
+| **Parent Span ID Column** | Default value: `parent_span_id`                                                                       |
+| **Service Name Column** | Default value: `service_name`                                                                         |
+| **Operation Name Column** | Default value: `span_name`                                                                            |
+| **Start Time Column** | Default value: `timestamp`                                                                              |
+| **Duration Time Column** | Default value: `duration_nano`                                                                          |
+| **Duration Unit** | Default value: `nano_seconds`                                                                           |
+| **Tags Column** | Multiple selections allowed. Corresponds to columns starting with `span_attributes` (e.g., `span_attributes.http.method`). |
+| **Service Tags Column** | Multiple selections allowed. Corresponds to columns starting with `resource_attributes` (e.g., `resource_attributes.host.name`). |
+
+![Traces](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/traceconfig.png)
 
 ## Development
 

@@ -759,7 +759,7 @@ export class Datasource
           } else {
             builderOptions = target.builderOptions || {}
           }
-          const queryType = target.refId === 'Trace ID' ? 'Trace' : target.queryType || builderOptions.queryType
+          const queryType = target.refId === 'Trace ID' ? 'Trace' : builderOptions.queryType || target.queryType
           if (queryType === QueryType.Logs) {
             const contextColumns = this.getLogContextColumnNames()
             const logFrame = transformGreptimeDBLogs(greptimeData, target, contextColumns) as DataFrame
