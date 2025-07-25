@@ -377,7 +377,7 @@ const generateSimpleTimeSeriesQuery = (_options: QueryBuilderOptions): string =>
   }
 
   if ((options.groupBy?.length || 0) > 0) {
-    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
+    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.columnName || timeColumn.name}` : '';
     queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
   } else if (hasAggregates && timeColumn) {
     queryParts.push(timeColumn.name!);
@@ -648,7 +648,7 @@ const getOrderBy = (options: QueryBuilderOptions): string => {
       let colName = o.name;
       const hintedColumn = o.hint && getColumnByHint(options, o.hint);
       if (hintedColumn) {
-        colName = hintedColumn.alias || hintedColumn.name;
+        colName = hintedColumn.columnName || hintedColumn.name;
       }
 
       if (!colName) {
