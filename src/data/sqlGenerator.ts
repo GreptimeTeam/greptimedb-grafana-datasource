@@ -692,7 +692,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
     let type = filter.type;
     const hintedColumn = filter.hint && getColumnByHint(options, filter.hint);
     if (hintedColumn) {
-      column = hintedColumn.alias || hintedColumn.name;
+      column = hintedColumn.columnName || hintedColumn.name;
       type = hintedColumn.type || type;
     }
 
