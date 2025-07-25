@@ -411,8 +411,9 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
     // timeColumn.name = `$__timeInterval(${timeColumn.name})`;
+    timeColumn.columnName = timeColumn.name;
     timeColumn.name = `date_trunc('minute', ${timeColumn.name})`
-    // timeColumn.alias = 'time';
+    
     selectParts.push(getColumnIdentifier(timeColumn));
   }
 
@@ -691,7 +692,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
     let type = filter.type;
     const hintedColumn = filter.hint && getColumnByHint(options, filter.hint);
     if (hintedColumn) {
-      column = hintedColumn.name;
+      column = hintedColumn.alias || hintedColumn.name;
       type = hintedColumn.type || type;
     }
 
