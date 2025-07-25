@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SelectableValue } from '@grafana/data';
 import { Button, HorizontalGroup, InlineFormLabel, Input, MultiSelect, RadioButtonGroup, Select } from '@grafana/ui';
 import { Filter, FilterOperator, TableColumn, NullFilter } from 'types/queryBuilder';
@@ -7,6 +7,7 @@ import labels from 'labels';
 import { styles } from 'styles';
 import { Datasource } from 'data/CHDatasource';
 import useUniqueMapKeys from 'hooks/useUniqueMapKeys';
+import { validateUserFilters } from './filterValidator';
 
 const boolValues: Array<SelectableValue<boolean>> = [
   { value: true, label: 'True' },
@@ -418,19 +419,37 @@ export const FiltersEditor = (props: {
 }) => {
   const { filters = [], onFiltersChange, allColumns: fieldsList = [], datasource, database, table } = props;
   const { label, tooltip, addLabel } = labels.components.FilterEditor;
+  
+  // Add validation state
+  const [validationError, setValidationError] = useState<string | undefined>();
+  const isFilterValidationEnabled = datasource.settings.jsonData.filterValidationEnabled || false;
   const addFilter = () => {
     onFiltersChange([...filters, { ...defaultNewFilter }]);
   };
+  
   const removeFilter = (index: number) => {
     const newFilters = [...filters];
     newFilters.splice(index, 1);
     onFiltersChange(newFilters);
   };
+  
   const onFilterChange = (index: number, filter: Filter) => {
     const newFilters = [...filters];
     newFilters[index] = filter;
     onFiltersChange(newFilters);
   };
+
+  useEffect(() => {
+    if (!isFilterValidationEnabled) {
+      return;
+    }
+    const validation = validateUserFilters(filters);
+    if (validation.isValid) {
+      setValidationError(undefined);
+    } else {
+      setValidationError(validation.error);
+    }
+  }, [filters, isFilterValidationEnabled]);
 
   return (
     <>
@@ -451,6 +470,9 @@ export const FiltersEditor = (props: {
           </Button>
         </div>
       )}
+      
+      
+      
       {filters.map((filter, index) => {
         return (
           <div className="gf-form" key={index}>
@@ -487,6 +509,13 @@ export const FiltersEditor = (props: {
           >
             {addLabel}
           </Button>
+        </div>
+      )}
+      {/* Display validation error */}
+      {validationError && (
+        <div className="gf-form" style={{ color: 'orange', fontSize: '12px' }}>
+          <div className={`width-8 ${styles.Common.firstLabel}`}></div>
+          <div>⚠️ {validationError}</div>
         </div>
       )}
     </>

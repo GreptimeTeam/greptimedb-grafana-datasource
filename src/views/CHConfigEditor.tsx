@@ -22,6 +22,7 @@ import { TimeUnit } from 'types/queryBuilder';
 import { DefaultDatabaseTableConfig } from 'components/configEditor/DefaultDatabaseTableConfig';
 import { LogsConfig } from 'components/configEditor/LogsConfig';
 import { TracesConfig } from 'components/configEditor/TracesConfig';
+import { QuerySettingsConfig } from 'components/configEditor/QuerySettingsConfig';
 import allLabels from 'labels';
 import {  useConfigDefaults } from './CHConfigEditorHooks';
 import {AliasTableConfig} from "../components/configEditor/AliasTableConfig";
@@ -231,6 +232,13 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
           onDefaultTableChange={onUpdateDatasourceJsonDataOption(props, 'defaultTable')}
         />
         
+        <Divider />
+        <QuerySettingsConfig
+        
+          filterValidationEnabled={jsonData.filterValidationEnabled}
+          
+          onFilterValidationEnabledChange={onUpdateDatasourceJsonDataOption(props, 'filterValidationEnabled')}
+        />
 
         <Divider />
         <LogsConfig
