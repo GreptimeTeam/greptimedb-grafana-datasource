@@ -28,6 +28,11 @@ export interface CHConfig extends DataSourceJsonData {
   queryTimeout?: string;
   validateSql?: boolean;
 
+  /**
+   * Enable filter validation to require at least one user-added filter
+   */
+  filterValidationEnabled?: boolean;
+
   logs?: CHLogsConfig;
   traces?: CHTracesConfig;
 

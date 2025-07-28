@@ -377,7 +377,7 @@ const generateSimpleTimeSeriesQuery = (_options: QueryBuilderOptions): string =>
   }
 
   if ((options.groupBy?.length || 0) > 0) {
-    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
+    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.columnName || timeColumn.name}` : '';
     queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
   } else if (hasAggregates && timeColumn) {
     queryParts.push(timeColumn.name!);
@@ -411,8 +411,9 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
     // timeColumn.name = `$__timeInterval(${timeColumn.name})`;
+    timeColumn.columnName = timeColumn.name;
     timeColumn.name = `date_trunc('minute', ${timeColumn.name})`
-    // timeColumn.alias = 'time';
+    timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
   }
 
@@ -442,7 +443,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
     const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
     queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
   } else if (timeColumn) {
-    queryParts.push(timeColumn.name!);
+    queryParts.push(timeColumn.alias!);
   }
 
   const orderBy = getOrderBy(options);
@@ -691,7 +692,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
     let type = filter.type;
     const hintedColumn = filter.hint && getColumnByHint(options, filter.hint);
     if (hintedColumn) {
-      column = hintedColumn.name;
+      column = hintedColumn.columnName || hintedColumn.name;
       type = hintedColumn.type || type;
     }
 

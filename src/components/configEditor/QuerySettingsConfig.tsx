@@ -1,44 +1,38 @@
 import React, { FormEvent } from 'react';
-import { Switch, Input, Field } from '@grafana/ui';
+import { Switch, Field } from '@grafana/ui';
 import { ConfigSection } from 'components/experimental/ConfigSection';
 import allLabels from 'labels';
 
 interface QuerySettingsConfigProps {
-  connMaxLifetime?: string;
-  dialTimeout?: string;
-  maxIdleConns?: string;
-  maxOpenConns?: string;
-  queryTimeout?: string;
-  validateSql?: boolean;
-  onConnMaxIdleConnsChange: (e: FormEvent<HTMLInputElement>) => void;
-  onConnMaxLifetimeChange: (e: FormEvent<HTMLInputElement>) => void;
-  onConnMaxOpenConnsChange: (e: FormEvent<HTMLInputElement>) => void;
-  onDialTimeoutChange: (e: FormEvent<HTMLInputElement>) => void;
-  onQueryTimeoutChange: (e: FormEvent<HTMLInputElement>) => void;
-  onValidateSqlChange: (e: FormEvent<HTMLInputElement>) => void;
+
+  filterValidationEnabled?: boolean;
+
+  onFilterValidationEnabledChange: (e: FormEvent<HTMLInputElement>) => void;
 }
 
 export const QuerySettingsConfig = (props: QuerySettingsConfigProps) => {
   const {
-    connMaxLifetime,
-    dialTimeout,
-    maxIdleConns,
-    maxOpenConns,
-    queryTimeout,
-    validateSql,
-    onConnMaxIdleConnsChange,
-    onConnMaxLifetimeChange,
-    onConnMaxOpenConnsChange,
-    onDialTimeoutChange,
-    onQueryTimeoutChange,
-    onValidateSqlChange,
+    // connMaxLifetime,
+    // dialTimeout,
+    // maxIdleConns,
+    // maxOpenConns,
+    // queryTimeout,
+    // validateSql,
+    filterValidationEnabled,
+    // onConnMaxIdleConnsChange,
+    // onConnMaxLifetimeChange,
+    // onConnMaxOpenConnsChange,
+    // onDialTimeoutChange,
+    // onQueryTimeoutChange,
+    // onValidateSqlChange,
+    onFilterValidationEnabledChange,
   } = props;
 
   const labels = allLabels.components.Config.QuerySettingsConfig;
 
   return (
     <ConfigSection title={labels.title}>
-      <Field label={labels.dialTimeout.label} description={labels.dialTimeout.tooltip}>
+      {/* <Field label={labels.dialTimeout.label} description={labels.dialTimeout.tooltip}>
         <Input
           name={labels.dialTimeout.name}
           width={40}
@@ -101,6 +95,10 @@ export const QuerySettingsConfig = (props: QuerySettingsConfigProps) => {
 
       <Field label={labels.validateSql.label} description={labels.validateSql.tooltip}>
         <Switch className="gf-form" value={validateSql || false} onChange={onValidateSqlChange} role="checkbox" />
+      </Field> */}
+
+      <Field label="Query Builder Filter Validation" description="Enable validation to require at least one non-default time range condition">
+        <Switch className="gf-form" value={filterValidationEnabled || false} onChange={onFilterValidationEnabledChange} role="checkbox" />
       </Field>
     </ConfigSection>
   );
