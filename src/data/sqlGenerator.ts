@@ -413,7 +413,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
     // timeColumn.name = `$__timeInterval(${timeColumn.name})`;
     timeColumn.columnName = timeColumn.name;
     timeColumn.name = `date_trunc('minute', ${timeColumn.name})`
-    
+    timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
   }
 
@@ -443,7 +443,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
     const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
     queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
   } else if (timeColumn) {
-    queryParts.push(timeColumn.name!);
+    queryParts.push(timeColumn.alias!);
   }
 
   const orderBy = getOrderBy(options);
@@ -648,7 +648,7 @@ const getOrderBy = (options: QueryBuilderOptions): string => {
       let colName = o.name;
       const hintedColumn = o.hint && getColumnByHint(options, o.hint);
       if (hintedColumn) {
-        colName = hintedColumn.columnName || hintedColumn.name;
+        colName = hintedColumn.name;
       }
 
       if (!colName) {
