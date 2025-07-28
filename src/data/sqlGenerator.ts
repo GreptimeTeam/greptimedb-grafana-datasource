@@ -648,7 +648,7 @@ const getOrderBy = (options: QueryBuilderOptions): string => {
       let colName = o.name;
       const hintedColumn = o.hint && getColumnByHint(options, o.hint);
       if (hintedColumn) {
-        colName = hintedColumn.name;
+        colName = hintedColumn.alias || hintedColumn.name;
       }
 
       if (!colName) {
