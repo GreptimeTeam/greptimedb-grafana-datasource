@@ -97,7 +97,7 @@ export const QuerySettingsConfig = (props: QuerySettingsConfigProps) => {
         <Switch className="gf-form" value={validateSql || false} onChange={onValidateSqlChange} role="checkbox" />
       </Field> */}
 
-      <Field label="Query BuilderFilter Validation" description="Enable validation to require at least one user-added filter (excluding default time range filters)">
+      <Field label="Query BuilderFilter Validation" description="Enable validation to require at least one non-time range condition">
         <Switch className="gf-form" value={filterValidationEnabled || false} onChange={onFilterValidationEnabledChange} role="checkbox" />
       </Field>
     </ConfigSection>

@@ -28,7 +28,7 @@ export const validateUserFilters = (filters: Filter[]): FilterValidationResult =
   if (userFilters.length === 0) {
     return {
       isValid: false,
-      error: 'At least one user-added filter is required (excluding default time range filters)'
+      error: 'At least one non-time range condition is required'
     };
   }
 
