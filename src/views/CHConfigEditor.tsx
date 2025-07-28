@@ -36,7 +36,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
 
   useConfigDefaults(options, onOptionsChange);
   const onSwitchToggle = (
-    key: keyof Pick<CHConfig, 'secure' | 'validateSql' | 'enableSecureSocksProxy' | 'forwardGrafanaHeaders'>,
+    key: keyof Pick<CHConfig, 'secure' | 'validateSql' | 'enableSecureSocksProxy' | 'forwardGrafanaHeaders' | 'filterValidationEnabled'>,
     value: boolean
   ) => {
     onOptionsChange({
@@ -235,9 +235,9 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
         <Divider />
         <QuerySettingsConfig
         
-          filterValidationEnabled={jsonData.filterValidationEnabled}
+          filterValidationEnabled={jsonData.filterValidationEnabled || false}
           
-          onFilterValidationEnabledChange={onUpdateDatasourceJsonDataOption(props, 'filterValidationEnabled')}
+          onFilterValidationEnabledChange={(e) => onSwitchToggle('filterValidationEnabled', e.currentTarget.checked)}
         />
 
         <Divider />
