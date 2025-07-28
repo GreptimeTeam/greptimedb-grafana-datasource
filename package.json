@@ -1,6 +1,6 @@
 {
   "name": "greptime-datasource",
-  "version": "2.0.5",
+  "version": "2.0.7",
   "description": "GreptimeDB Datasource",
   "engines": {
     "node": ">=20"
