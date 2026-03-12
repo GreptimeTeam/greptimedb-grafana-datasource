@@ -414,6 +414,29 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, buil
     });
 
 
+    let logs: GrafanaTraceSpan['logs'] = [];
+
+    if (data.span_events) {
+      let events: any[] | null = null;
+
+      if (Array.isArray(data.span_events)) {
+        // GreptimeDB already returned a parsed array (including the empty [] case)
+        events = data.span_events;
+      } else if (typeof data.span_events === 'string' && data.span_events.trim()) {
+        // Non-empty JSON string – attempt to parse
+        try {
+          events = JSON.parse(data.span_events);
+        } catch (e) {
+          console.error('Failed to parse span_events from GreptimeDB:', data.span_events, e);
+          events = null;
+        }
+      }
+
+      if (Array.isArray(events) && events.length > 0) {
+        logs = transformGreptimeDBEvents(events);
+      }
+    }
+
     return {
       traceId: data.trace_id,
       spanId: data.span_id,
@@ -424,7 +447,7 @@ export function transformGreptimeDBTraceDetails(response: GreptimeResponse, buil
       duration: data.duration_nano,
       tags: data.span_attributes,
       serviceTags: data.service_attributes,
-      logs: data.span_events ? transformGreptimeDBEvents(JSON.parse(data.span_events)) : [],
+      logs,
       // Map other relevant fields like span_kind, span_status_code, etc.
     };
   });
