@@ -833,9 +833,54 @@ export class Datasource
       const fromTimeISO = range?.from.toISOString();
       const toTimeISO = range?.to.toISOString();
   
-      let interpolated = getTemplateSrv().replace(rawSql); // Replace standard variables
-      interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
-      interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
+      // 1) 先用 Grafana 的模板引擎替换普通变量（包括 dashboard 变量）
+      let interpolated = getTemplateSrv().replace(rawSql, request.scopedVars);
+
+      // 2) 展开自定义时间宏
+      if (fromTimeISO && toTimeISO) {
+        // $__fromTime / $__toTime
+        interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
+        interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
+
+        // $__timeFilter(time_column) -> time_column BETWEEN 'from' AND 'to'
+        interpolated = interpolated.replace(/\$__timeFilter\(([^)]+)\)/g, (_match, col) => {
+          const column = String(col).trim();
+          return `${column} >= '${fromTimeISO}' AND ${column} <= '${toTimeISO}'`;
+        });
+      }
+
+      // 3) 展开 $__interval（GreptimeDB 目前不支持在服务端解析宏）
+      if (interpolated.includes('$__interval')) {
+        const intervalInfo = getIntervalInfo(request.scopedVars || ({} as any));
+        let interval = intervalInfo.interval;
+
+        // 如果还是 '$__interval'，说明 scopedVars 里没带实际值，按时间范围兜底计算一个
+        if (interval === '$__interval') {
+          let intervalMs = request.intervalMs;
+          if (!intervalMs && range) {
+            const rangeMs = range.to.valueOf() - range.from.valueOf();
+            // 简单估算：大致 100 个点
+            intervalMs = Math.max(Math.floor(rangeMs / 100), 1000);
+          }
+
+          if (intervalMs) {
+            if (intervalMs > 60 * 60 * 1000) {
+              interval = '1d';
+            } else if (intervalMs > 60 * 1000) {
+              interval = '1h';
+            } else if (intervalMs > 1000) {
+              interval = '1m';
+            } else {
+              interval = '1s';
+            }
+          } else {
+            interval = '1m';
+          }
+        }
+
+        interpolated = interpolated.replace(/\$__interval/g, interval);
+      }
+
       return interpolated;
     };
     // Create an array of Observables, one for each active target request + transformation
