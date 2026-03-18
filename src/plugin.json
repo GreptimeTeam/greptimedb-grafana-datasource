@@ -7,7 +7,7 @@
   "backend": true,
   "logs": true,
   "tracing": true,
-  "alerting": true,
+  "alerting": false,
   "annotations": true,
   "executable": "gpx_greptimedb",
   "includes": [
