@@ -37,7 +37,7 @@ import {
   TimeUnit,
   SelectedColumn,
 } from 'types/queryBuilder';
-import { AdHocFilter } from './adHocFilter';
+import { AdHocFilter, AdHocVariableFilter } from './adHocFilter';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
@@ -85,6 +85,67 @@ export class Datasource
     super(instanceSettings);
     this.settings = instanceSettings;
     this.adHocFilter = new AdHocFilter();
+  }
+  
+  private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[]): Filter[] {
+    const result: Filter[] = [];
+
+    for (const f of adHocFilters) {
+      if (!f || !f.key || !f.operator || f.value === undefined || f.value === null) {
+        continue;
+      }
+
+      const key = f.key.includes('.') ? f.key.split('.')[1] : f.key;
+      const condition: 'AND' | 'OR' = (f.condition as any) || 'AND';
+
+      if (f.operator === '=' || f.operator === '!=') {
+        const op = f.operator === '=' ? FilterOperator.Equals : FilterOperator.NotEquals;
+        result.push({
+          filterType: 'custom',
+          key,
+          type: 'string',
+          condition,
+          operator: op,
+          value: f.value,
+        } as Filter);
+        continue;
+      }
+
+      if (f.operator === '=~' || f.operator === '!~') {
+        const op = f.operator === '=~' ? FilterOperator.Like : FilterOperator.NotLike;
+        result.push({
+          filterType: 'custom',
+          key,
+          type: 'string',
+          condition,
+          operator: op,
+          value: f.value,
+        } as Filter);
+        continue;
+      }
+
+      if (f.operator === 'IN') {
+        const cleaned = f.value.trim().replace(/^\(|\)$/g, '');
+        const parts = cleaned
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+        if (parts.length === 0) {
+          continue;
+        }
+        result.push({
+          filterType: 'custom',
+          key,
+          type: 'string',
+          condition,
+          operator: FilterOperator.In,
+          value: parts,
+        } as Filter);
+        continue;
+      }
+    }
+
+    return result;
   }
   
   _request<T = unknown>(
@@ -707,20 +768,52 @@ export class Datasource
   }
 
   query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
+    const templateSrv = getTemplateSrv() as any;
+    const adHocFilters: AdHocVariableFilter[] =
+      !this.skipAdHocFilter && templateSrv.getAdhocFilters
+        ? templateSrv.getAdhocFilters(this.name || this.uid)
+        : [];
+
     const targets = request.targets
       // filters out queries disabled in UI
       .filter((t) => t.hide !== true)
-      .filter((t) => t.rawSql)
-      // attach timezone information
+      // attach timezone information and merge ad-hoc filters for builder queries
       .map((t) => {
-        return {
+        let next: CHQuery = {
           ...t,
           meta: {
             ...t?.meta,
             timezone: this.getTimezone(request),
           },
         };
-      });
+
+        if (
+          adHocFilters.length &&
+          !this.skipAdHocFilter &&
+          next.editorType === EditorType.Builder &&
+          next.builderOptions
+        ) {
+          const extraFilters = this.buildFiltersFromAdhoc(adHocFilters);
+          if (extraFilters.length) {
+            const mergedFilters = [
+              ...(next.builderOptions.filters || []),
+              ...extraFilters,
+            ];
+            const nextBuilderOptions: QueryBuilderOptions = {
+              ...next.builderOptions,
+              filters: mergedFilters,
+            };
+            next = {
+              ...next,
+              builderOptions: nextBuilderOptions,
+              rawSql: generateSql(nextBuilderOptions),
+            };
+          }
+        }
+
+        return next;
+      })
+      .filter((t) => t.rawSql);
     const range = request.range
 
     const getInterpolatedSql = (rawSql: string): string => {
@@ -886,6 +979,11 @@ export class Datasource
   private async fetchTagValuesFromSchema(key: string): Promise<MetricFindValue[]> {
     const { from } = this.getTagSource();
     const [table, col] = key.split('.');
+    // Guard against invalid or undefined column names which can generate invalid SQL like
+    // `select distinct undefined from host limit 1000`
+    if (!table || !col || col === 'undefined') {
+      return [];
+    }
     const source = from?.includes('.') ? `${from.split('.')[0]}.${table}` : table;
     const rawSql = `select distinct ${col} from ${source} limit 1000`;
     const frame = await this.runQuery({ rawSql });
@@ -957,8 +1055,8 @@ export class Datasource
   // Returns true if ClickHouse's version is greater than or equal to 22.7
   // 22.7 added 'settings additional_table_filters' which is used for ad hoc filters
   private async canUseAdhocFilters(): Promise<AdHocFilterStatus> {
-    this.skipAdHocFilter = true;
-    return Promise.resolve(AdHocFilterStatus.disabled);
+    this.skipAdHocFilter = false;
+    return Promise.resolve(AdHocFilterStatus.enabled);
     // const data = await this.fetchData(`SELECT version()`);
     // try {
     //   const verString = (data[0] as unknown as string).split('.');
