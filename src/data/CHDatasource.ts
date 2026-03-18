@@ -37,7 +37,7 @@ import {
   TimeUnit,
   SelectedColumn,
 } from 'types/queryBuilder';
-import { AdHocFilter } from './adHocFilter';
+import { AdHocFilter, AdHocVariableFilter } from './adHocFilter';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
@@ -85,6 +85,80 @@ export class Datasource
     super(instanceSettings);
     this.settings = instanceSettings;
     this.adHocFilter = new AdHocFilter();
+  }
+  
+  private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[]): Filter[] {
+    const result: Filter[] = [];
+
+    for (const f of adHocFilters) {
+      if (!f || !f.key || !f.operator || f.value === undefined || f.value === null) {
+        continue;
+      }
+
+      const key = f.key.includes('.') ? f.key.split('.')[1] : f.key;
+      const condition: 'AND' | 'OR' = (f.condition as any) || 'AND';
+      const isNullLiteral = typeof f.value === 'string' && f.value.trim().toLowerCase() === 'null';
+
+      if (f.operator === '=' || f.operator === '!=') {
+        if (isNullLiteral) {
+          // Treat "null" specially and use IS NULL / IS NOT NULL instead of comparing to string 'null'
+          const op = f.operator === '=' ? FilterOperator.IsNull : FilterOperator.IsNotNull;
+          result.push({
+            filterType: 'custom',
+            key,
+            type: 'string',
+            condition,
+            operator: op,
+          } as Filter);
+        } else {
+          const op = f.operator === '=' ? FilterOperator.Equals : FilterOperator.NotEquals;
+          result.push({
+            filterType: 'custom',
+            key,
+            type: 'string',
+            condition,
+            operator: op,
+            value: f.value,
+          } as Filter);
+        }
+        continue;
+      }
+
+      if (f.operator === '=~' || f.operator === '!~') {
+        const op = f.operator === '=~' ? FilterOperator.Like : FilterOperator.NotLike;
+        result.push({
+          filterType: 'custom',
+          key,
+          type: 'string',
+          condition,
+          operator: op,
+          value: f.value,
+        } as Filter);
+        continue;
+      }
+
+      if (f.operator === 'IN') {
+        const cleaned = f.value.trim().replace(/^\(|\)$/g, '');
+        const parts = cleaned
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+        if (parts.length === 0) {
+          continue;
+        }
+        result.push({
+          filterType: 'custom',
+          key,
+          type: 'string',
+          condition,
+          operator: FilterOperator.In,
+          value: parts,
+        } as Filter);
+        continue;
+      }
+    }
+
+    return result;
   }
   
   _request<T = unknown>(
@@ -707,29 +781,106 @@ export class Datasource
   }
 
   query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
+    const templateSrv = getTemplateSrv() as any;
+    const adHocFilters: AdHocVariableFilter[] =
+      !this.skipAdHocFilter && templateSrv.getAdhocFilters
+        ? templateSrv.getAdhocFilters(this.name || this.uid)
+        : [];
+
     const targets = request.targets
       // filters out queries disabled in UI
       .filter((t) => t.hide !== true)
-      .filter((t) => t.rawSql)
-      // attach timezone information
+      // attach timezone information and merge ad-hoc filters for builder queries
       .map((t) => {
-        return {
+        let next: CHQuery = {
           ...t,
           meta: {
             ...t?.meta,
             timezone: this.getTimezone(request),
           },
         };
-      });
+
+        if (
+          adHocFilters.length &&
+          !this.skipAdHocFilter &&
+          next.editorType === EditorType.Builder &&
+          next.builderOptions
+        ) {
+          const extraFilters = this.buildFiltersFromAdhoc(adHocFilters);
+          if (extraFilters.length) {
+            const mergedFilters = [
+              ...(next.builderOptions.filters || []),
+              ...extraFilters,
+            ];
+            const nextBuilderOptions: QueryBuilderOptions = {
+              ...next.builderOptions,
+              filters: mergedFilters,
+            };
+            next = {
+              ...next,
+              builderOptions: nextBuilderOptions,
+              rawSql: generateSql(nextBuilderOptions),
+            };
+          }
+        }
+
+        return next;
+      })
+      .filter((t) => t.rawSql);
     const range = request.range
 
     const getInterpolatedSql = (rawSql: string): string => {
       const fromTimeISO = range?.from.toISOString();
       const toTimeISO = range?.to.toISOString();
   
-      let interpolated = getTemplateSrv().replace(rawSql); // Replace standard variables
-      interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
-      interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
+      // 1) 先用 Grafana 的模板引擎替换普通变量（包括 dashboard 变量）
+      let interpolated = getTemplateSrv().replace(rawSql, request.scopedVars);
+
+      // 2) 展开自定义时间宏
+      if (fromTimeISO && toTimeISO) {
+        // $__fromTime / $__toTime
+        interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
+        interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
+
+        // $__timeFilter(time_column) -> time_column BETWEEN 'from' AND 'to'
+        interpolated = interpolated.replace(/\$__timeFilter\(([^)]+)\)/g, (_match, col) => {
+          const column = String(col).trim();
+          return `${column} >= '${fromTimeISO}' AND ${column} <= '${toTimeISO}'`;
+        });
+      }
+
+      // 3) 展开 $__interval（GreptimeDB 目前不支持在服务端解析宏）
+      if (interpolated.includes('$__interval')) {
+        const intervalInfo = getIntervalInfo(request.scopedVars || ({} as any));
+        let interval = intervalInfo.interval;
+
+        // 如果还是 '$__interval'，说明 scopedVars 里没带实际值，按时间范围兜底计算一个
+        if (interval === '$__interval') {
+          let intervalMs = request.intervalMs;
+          if (!intervalMs && range) {
+            const rangeMs = range.to.valueOf() - range.from.valueOf();
+            // 简单估算：大致 100 个点
+            intervalMs = Math.max(Math.floor(rangeMs / 100), 1000);
+          }
+
+          if (intervalMs) {
+            if (intervalMs > 60 * 60 * 1000) {
+              interval = '1d';
+            } else if (intervalMs > 60 * 1000) {
+              interval = '1h';
+            } else if (intervalMs > 1000) {
+              interval = '1m';
+            } else {
+              interval = '1s';
+            }
+          } else {
+            interval = '1m';
+          }
+        }
+
+        interpolated = interpolated.replace(/\$__interval/g, interval);
+      }
+
       return interpolated;
     };
     // Create an array of Observables, one for each active target request + transformation
@@ -886,6 +1037,11 @@ export class Datasource
   private async fetchTagValuesFromSchema(key: string): Promise<MetricFindValue[]> {
     const { from } = this.getTagSource();
     const [table, col] = key.split('.');
+    // Guard against invalid or undefined column names which can generate invalid SQL like
+    // `select distinct undefined from host limit 1000`
+    if (!table || !col || col === 'undefined') {
+      return [];
+    }
     const source = from?.includes('.') ? `${from.split('.')[0]}.${table}` : table;
     const rawSql = `select distinct ${col} from ${source} limit 1000`;
     const frame = await this.runQuery({ rawSql });
@@ -920,7 +1076,8 @@ export class Datasource
     this.skipAdHocFilter = true;
 
     if (tagSource.source === undefined) {
-      const rawSql = 'SELECT name, type, table FROM system.columns';
+      const rawSql =
+        'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS';
       const results = await this.runQuery({ rawSql });
       return { type: TagType.schema, frame: results };
     }
@@ -946,19 +1103,19 @@ export class Datasource
       return { type: TagType.query, source };
     }
     if (!source.includes('.')) {
-      const sql = `SELECT name, type, table FROM system.columns WHERE database IN ('${source}')`;
+      const sql = `SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema IN ('${source}')`;
       return { type: TagType.schema, source: sql, from: source };
     }
     const [db, table] = source.split('.');
-    const sql = `SELECT name, type, table FROM system.columns WHERE database IN ('${db}') AND table = '${table}'`;
+    const sql = `SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema IN ('${db}') AND table_name = '${table}'`;
     return { type: TagType.schema, source: sql, from: source };
   }
 
   // Returns true if ClickHouse's version is greater than or equal to 22.7
   // 22.7 added 'settings additional_table_filters' which is used for ad hoc filters
   private async canUseAdhocFilters(): Promise<AdHocFilterStatus> {
-    this.skipAdHocFilter = true;
-    return Promise.resolve(AdHocFilterStatus.disabled);
+    this.skipAdHocFilter = false;
+    return Promise.resolve(AdHocFilterStatus.enabled);
     // const data = await this.fetchData(`SELECT version()`);
     // try {
     //   const verString = (data[0] as unknown as string).split('.');

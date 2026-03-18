@@ -547,10 +547,16 @@ export const getColumnsByHints = (options: QueryBuilderOptions, hints: readonly 
 const getColumnIdentifier = (col: SelectedColumn): string => {
   let colName = col.name;
 
-  // allow for functions like count()
-  if (colName.includes('(') || colName.includes(')') || colName.includes('"') || colName.includes('"') || colName.includes(' as ')) {
-    colName = col.name
-  } else if (colName.includes(' ')) {
+  // allow for functions like count() or already-qualified expressions;
+  // otherwise always quote identifiers to preserve case (e.g. "aUTEM")
+  if (
+    colName.includes('(') ||
+    colName.includes(')') ||
+    colName.includes('"') ||
+    colName.toLowerCase().includes(' as ')
+  ) {
+    colName = col.name;
+  } else {
     colName = escapeIdentifier(col.name);
   }
 
@@ -698,6 +704,21 @@ const getFilters = (options: QueryBuilderOptions): string => {
 
     if (!column) {
       continue;
+    }
+
+    // Quote plain identifiers to preserve case (e.g. "aUTEM"),
+    // but avoid touching expressions, dotted paths, or already-quoted names.
+    const needsQuoting =
+      !!column &&
+      !column.includes('(') &&
+      !column.includes(')') &&
+      !column.includes('"') &&
+      !column.includes('.') &&
+      !column.includes('[') &&
+      !column.includes(']') &&
+      !column.toLowerCase().includes(' as ');
+    if (needsQuoting) {
+      column = escapeIdentifier(column);
     }
 
     if (filter.mapKey) {
