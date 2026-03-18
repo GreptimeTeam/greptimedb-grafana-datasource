@@ -1052,11 +1052,16 @@ export class Datasource
 
   async getTagValues({ key }: any): Promise<MetricFindValue[]> {
     const { type } = this.getTagSource();
+    const prevSkip = this.skipAdHocFilter;
     this.skipAdHocFilter = true;
-    if (type === TagType.query) {
-      return this.fetchTagValuesFromQuery(key);
+    try {
+      if (type === TagType.query) {
+        return this.fetchTagValuesFromQuery(key);
+      }
+      return this.fetchTagValuesFromSchema(key);
+    } finally {
+      this.skipAdHocFilter = prevSkip;
     }
-    return this.fetchTagValuesFromSchema(key);
   }
 
   private async fetchTagValuesFromSchema(key: string): Promise<MetricFindValue[]> {
@@ -1098,21 +1103,25 @@ export class Datasource
 
   private async fetchTags(): Promise<Tags> {
     const tagSource = this.getTagSource();
+    const prevSkip = this.skipAdHocFilter;
     this.skipAdHocFilter = true;
+    try {
+      if (tagSource.source === undefined) {
+        const rawSql =
+          'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS';
+        const results = await this.runQuery({ rawSql });
+        return { type: TagType.schema, frame: results };
+      }
 
-    if (tagSource.source === undefined) {
-      const rawSql =
-        'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS';
-      const results = await this.runQuery({ rawSql });
-      return { type: TagType.schema, frame: results };
+      if (tagSource.type === TagType.query) {
+        this.adHocFilter.setTargetTableFromQuery(tagSource.source);
+      }
+
+      const results = await this.runQuery({ rawSql: tagSource.source });
+      return { type: tagSource.type, frame: results };
+    } finally {
+      this.skipAdHocFilter = prevSkip;
     }
-
-    if (tagSource.type === TagType.query) {
-      this.adHocFilter.setTargetTableFromQuery(tagSource.source);
-    }
-
-    const results = await this.runQuery({ rawSql: tagSource.source });
-    return { type: tagSource.type, frame: results };
   }
 
   private getTagSource() {
