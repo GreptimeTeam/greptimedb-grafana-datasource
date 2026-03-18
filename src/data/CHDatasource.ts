@@ -1018,7 +1018,8 @@ export class Datasource
     this.skipAdHocFilter = true;
 
     if (tagSource.source === undefined) {
-      const rawSql = 'SELECT name, type, table FROM system.columns';
+      const rawSql =
+        'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS';
       const results = await this.runQuery({ rawSql });
       return { type: TagType.schema, frame: results };
     }
@@ -1044,11 +1045,11 @@ export class Datasource
       return { type: TagType.query, source };
     }
     if (!source.includes('.')) {
-      const sql = `SELECT name, type, table FROM system.columns WHERE database IN ('${source}')`;
+      const sql = `SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema IN ('${source}')`;
       return { type: TagType.schema, source: sql, from: source };
     }
     const [db, table] = source.split('.');
-    const sql = `SELECT name, type, table FROM system.columns WHERE database IN ('${db}') AND table = '${table}'`;
+    const sql = `SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema IN ('${db}') AND table_name = '${table}'`;
     return { type: TagType.schema, source: sql, from: source };
   }
 
