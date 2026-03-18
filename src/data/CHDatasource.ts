@@ -782,10 +782,35 @@ export class Datasource
 
   query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
     const templateSrv = getTemplateSrv() as any;
-    const adHocFilters: AdHocVariableFilter[] =
-      !this.skipAdHocFilter && templateSrv.getAdhocFilters
-        ? templateSrv.getAdhocFilters(this.name || this.uid)
-        : [];
+    // Grafana stores adhoc filters scoped by datasource identity.
+    // Using uid is more stable than name (name can be empty/changed).
+    const adHocFilters: AdHocVariableFilter[] = (() => {
+      if (this.skipAdHocFilter || !templateSrv.getAdhocFilters) {
+        return [];
+      }
+
+      // Different Grafana versions / call-sites key adhoc filters differently.
+      // Try the most stable identifiers first.
+      const keys: Array<string | undefined> = [
+        this.settings?.uid,
+        this.uid,
+        this.settings?.name,
+        (this as any).name,
+        this.settings?.id ? String(this.settings.id) : undefined,
+      ];
+
+      for (const key of keys) {
+        if (!key) {
+          continue;
+        }
+        const filters = templateSrv.getAdhocFilters(key);
+        if (filters && filters.length) {
+          return filters;
+        }
+      }
+
+      return [];
+    })();
 
     const targets = request.targets
       // filters out queries disabled in UI
