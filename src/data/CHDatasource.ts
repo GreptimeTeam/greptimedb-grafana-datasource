@@ -97,17 +97,30 @@ export class Datasource
 
       const key = f.key.includes('.') ? f.key.split('.')[1] : f.key;
       const condition: 'AND' | 'OR' = (f.condition as any) || 'AND';
+      const isNullLiteral = typeof f.value === 'string' && f.value.trim().toLowerCase() === 'null';
 
       if (f.operator === '=' || f.operator === '!=') {
-        const op = f.operator === '=' ? FilterOperator.Equals : FilterOperator.NotEquals;
-        result.push({
-          filterType: 'custom',
-          key,
-          type: 'string',
-          condition,
-          operator: op,
-          value: f.value,
-        } as Filter);
+        if (isNullLiteral) {
+          // Treat "null" specially and use IS NULL / IS NOT NULL instead of comparing to string 'null'
+          const op = f.operator === '=' ? FilterOperator.IsNull : FilterOperator.IsNotNull;
+          result.push({
+            filterType: 'custom',
+            key,
+            type: 'string',
+            condition,
+            operator: op,
+          } as Filter);
+        } else {
+          const op = f.operator === '=' ? FilterOperator.Equals : FilterOperator.NotEquals;
+          result.push({
+            filterType: 'custom',
+            key,
+            type: 'string',
+            condition,
+            operator: op,
+            value: f.value,
+          } as Filter);
+        }
         continue;
       }
 
