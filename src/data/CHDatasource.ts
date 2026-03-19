@@ -1192,13 +1192,9 @@ export class Datasource
         continue;
       }
 
-      let value = field.values.get(row.rowIndex);
+      let value = field.values[row.rowIndex];
       if (value && field.type === 'other' && isMapKey) {
         value = value[keyName];
-      }
-
-      if (!value) {
-        continue;
       }
 
       let contextColumnName: string;
@@ -1210,7 +1206,7 @@ export class Datasource
 
       contextColumns.push({
         name: contextColumnName,
-        value
+        value: value ?? null
       });
     }
 
@@ -1268,14 +1264,16 @@ export class Datasource
       throw new Error('Unable to match any log context columns');
     }
 
-    const contextColumnFilters: Filter[] = contextColumns.map(c => ({
-      operator: FilterOperator.Equals,
-      filterType: 'custom',
-      key: c.name,
-      value: c.value,
-      type: 'string',
-      condition: 'AND'
-    }));
+    const contextColumnFilters: Filter[] = contextColumns
+      .filter(c => c.value !== null && c.value !== undefined)
+      .map(c => ({
+        operator: FilterOperator.Equals,
+        filterType: 'custom',
+        key: c.name,
+        value: c.value as string,
+        type: 'string',
+        condition: 'AND'
+      }));
     builderOptions.filters.push(...contextColumnFilters);
 
     contextQuery.rawSql = generateSql(builderOptions);
@@ -1321,5 +1319,5 @@ interface Tags {
 
 export interface LogContextColumn {
   name: string;
-  value: string;
+  value: string | null;
 }
