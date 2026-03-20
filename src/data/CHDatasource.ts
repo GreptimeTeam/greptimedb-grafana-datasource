@@ -825,9 +825,11 @@ export class Datasource
           },
         };
 
+        const skipAdHocForTarget = Boolean((next as any)?.meta?.skipAdHocFilters);
         if (
           adHocFilters.length &&
           !this.skipAdHocFilter &&
+          !skipAdHocForTarget &&
           next.editorType === EditorType.Builder &&
           next.builderOptions
         ) {
@@ -1234,6 +1236,10 @@ export class Datasource
 
     const contextQuery = cloneDeep(query);
     contextQuery.refId = '';
+    contextQuery.meta = {
+      ...(contextQuery.meta || {}),
+      skipAdHocFilters: true,
+    } as any;
     const builderOptions = contextQuery.builderOptions;
     builderOptions.limit = options.limit;
 
@@ -1281,6 +1287,8 @@ export class Datasource
       targets: [contextQuery],
     } as DataQueryRequest<CHQuery>;
 
+    // Do NOT toggle this.skipAdHocFilter here: concurrent dashboard/log queries on the same
+    // datasource instance would skip ad hoc filters. Per-target meta.skipAdHocFilters is enough.
     return await firstValueFrom(this.query(req));
   }
 
