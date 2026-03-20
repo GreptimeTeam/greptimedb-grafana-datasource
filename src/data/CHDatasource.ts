@@ -825,9 +825,11 @@ export class Datasource
           },
         };
 
+        const skipAdHocForTarget = Boolean((next as any)?.meta?.skipAdHocFilters);
         if (
           adHocFilters.length &&
           !this.skipAdHocFilter &&
+          !skipAdHocForTarget &&
           next.editorType === EditorType.Builder &&
           next.builderOptions
         ) {
@@ -1188,16 +1190,25 @@ export class Datasource
           f.name === `arrayElement(${mapName}, '${keyName}')`
         ))
       ));
-      if (!field) {
+
+      let value: unknown;
+      if (field) {
+        value = field.values[row.rowIndex];
+        if (value && field.type === 'other' && isMapKey) {
+          value = (value as Record<string, unknown>)[keyName];
+        }
+      } else if (isMapKey) {
         continue;
+      } else {
+        // LogLines: Grafana dataplane only uses `labels` for extra metadata in the logs UI;
+        // context columns may only exist on each row's labels object.
+        const labelsField = row.dataFrame.fields.find(f => f.name === 'labels');
+        if (labelsField) {
+          const labelsRow = labelsField.values[row.rowIndex] as Record<string, unknown> | undefined;
+          value = labelsRow?.[columnName];
+        }
       }
-
-      let value = field.values.get(row.rowIndex);
-      if (value && field.type === 'other' && isMapKey) {
-        value = value[keyName];
-      }
-
-      if (!value) {
+      if (!field && (value === undefined || value === null)) {
         continue;
       }
 
@@ -1208,9 +1219,11 @@ export class Datasource
         contextColumnName = columnName;
       }
 
+      const normalizedValue =
+        value === null || value === undefined ? null : String(value);
       contextColumns.push({
         name: contextColumnName,
-        value
+        value: normalizedValue,
       });
     }
 
@@ -1238,6 +1251,10 @@ export class Datasource
 
     const contextQuery = cloneDeep(query);
     contextQuery.refId = '';
+    contextQuery.meta = {
+      ...(contextQuery.meta || {}),
+      skipAdHocFilters: true,
+    } as any;
     const builderOptions = contextQuery.builderOptions;
     builderOptions.limit = options.limit;
 
@@ -1268,14 +1285,16 @@ export class Datasource
       throw new Error('Unable to match any log context columns');
     }
 
-    const contextColumnFilters: Filter[] = contextColumns.map(c => ({
-      operator: FilterOperator.Equals,
-      filterType: 'custom',
-      key: c.name,
-      value: c.value,
-      type: 'string',
-      condition: 'AND'
-    }));
+    const contextColumnFilters: Filter[] = contextColumns
+      .filter(c => c.value !== null && c.value !== undefined)
+      .map(c => ({
+        operator: FilterOperator.Equals,
+        filterType: 'custom',
+        key: c.name,
+        value: c.value as string,
+        type: 'string',
+        condition: 'AND'
+      }));
     builderOptions.filters.push(...contextColumnFilters);
 
     contextQuery.rawSql = generateSql(builderOptions);
@@ -1283,6 +1302,8 @@ export class Datasource
       targets: [contextQuery],
     } as DataQueryRequest<CHQuery>;
 
+    // Do NOT toggle this.skipAdHocFilter here: concurrent dashboard/log queries on the same
+    // datasource instance would skip ad hoc filters. Per-target meta.skipAdHocFilters is enough.
     return await firstValueFrom(this.query(req));
   }
 
@@ -1321,5 +1342,5 @@ interface Tags {
 
 export interface LogContextColumn {
   name: string;
-  value: string;
+  value: string | null;
 }

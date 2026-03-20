@@ -320,14 +320,17 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
         labels[labelName] = row[labelColumnIndices[labelName]];
       }
     }
-    labelsArray.push(labels);
-
+    // Per Grafana dataplane LogLines: extra top-level fields are ignored by the logs UI.
+    // Put context columns into `labels` so they appear in single-line log details (Fields/Labels).
     for (const contextName in contextColumnIndices) {
       if (!contextColumnValues[contextName]) {
         contextColumnValues[contextName] = [];
       }
-      contextColumnValues[contextName].push(row[contextColumnIndices[contextName]]);
+      const contextValue = row[contextColumnIndices[contextName]];
+      contextColumnValues[contextName].push(contextValue);
+      labels[contextName] = contextValue;
     }
+    labelsArray.push(labels);
 
   });
 

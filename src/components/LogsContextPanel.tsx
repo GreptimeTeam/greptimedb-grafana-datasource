@@ -34,6 +34,21 @@ const LogsContextPanel = (props: LogContextPanelProps) => {
     );
   }
 
+  const emptyColumns = columns.filter(c => c.value === null || c.value === undefined || c.value === '');
+  if (emptyColumns.length > 0 && emptyColumns.length === columns.length) {
+    return (
+      <Alert data-testid={Components.LogsContextPanel.alert} title="" severity="info">
+        <Stack direction="column">
+          <div>
+            {`Context column${emptyColumns.length > 1 ? 's' : ''} `}
+            <strong>{emptyColumns.map(c => c.name).join(', ')}</strong>
+            {` ${emptyColumns.length > 1 ? 'have' : 'has'} no value in this log row. Context query will not be filtered by ${emptyColumns.length > 1 ? 'them' : 'it'}.`}
+          </div>
+        </Stack>
+      </Alert>
+    );
+  }
+
   return (
     <div className={LogsContextPanelStyles}>
       {columns.map((p) => (
@@ -90,7 +105,7 @@ const iconMatcher = (contextName: string): IconName => {
 
 interface LogContextKeyProps {
   name: string;
-  value: string;
+  value: string | null;
   primaryColor: string;
   primaryTextColor: string;
   secondaryColor: string;
@@ -149,7 +164,7 @@ const LogContextKey = (props: LogContextKeyProps) => {
         <div>test</div>
         <span className={styles.contextName}>{name}</span>
       </div>
-      <span className={styles.contextValue}>{value}</span>
+      <span className={styles.contextValue}>{value ?? <em style={{ opacity: 0.5 }}>empty</em>}</span>
     </div>
   );
 }
