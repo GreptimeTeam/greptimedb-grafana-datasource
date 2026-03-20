@@ -1190,13 +1190,26 @@ export class Datasource
           f.name === `arrayElement(${mapName}, '${keyName}')`
         ))
       ));
-      if (!field) {
-        continue;
-      }
 
-      let value = field.values[row.rowIndex];
-      if (value && field.type === 'other' && isMapKey) {
-        value = value[keyName];
+      let value: unknown;
+      if (field) {
+        value = field.values[row.rowIndex];
+        if (value && field.type === 'other' && isMapKey) {
+          value = (value as Record<string, unknown>)[keyName];
+        }
+      } else if (isMapKey) {
+        continue;
+      } else {
+        // LogLines: Grafana dataplane only uses `labels` for extra metadata in the logs UI;
+        // context columns may only exist on each row's labels object.
+        const labelsField = row.dataFrame.fields.find(f => f.name === 'labels');
+        if (labelsField) {
+          const labelsRow = labelsField.values[row.rowIndex] as Record<string, unknown> | undefined;
+          value = labelsRow?.[columnName];
+        }
+      }
+      if (!field && (value === undefined || value === null)) {
+        continue;
       }
 
       let contextColumnName: string;
@@ -1206,9 +1219,11 @@ export class Datasource
         contextColumnName = columnName;
       }
 
+      const normalizedValue =
+        value === null || value === undefined ? null : String(value);
       contextColumns.push({
         name: contextColumnName,
-        value: value ?? null
+        value: normalizedValue,
       });
     }
 
