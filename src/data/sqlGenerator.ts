@@ -713,7 +713,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
       !column.includes('(') &&
       !column.includes(')') &&
       !column.includes('"') &&
-      !column.includes('.') &&
+//      !column.includes('.') &&
       !column.includes('[') &&
       !column.includes(']') &&
       !column.toLowerCase().includes(' as ');
