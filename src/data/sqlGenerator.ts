@@ -749,12 +749,34 @@ const getFilters = (options: QueryBuilderOptions): string => {
       column += `['${filter.mapKey}']`;
     }
 
+    const isMatchesTerm =
+      filter.operator === FilterOperator.MatchesTerm ||
+      filter.operator === FilterOperator.NotMatchesTerm ||
+      filter.operator === FilterOperator.MatchesTermCaseInsensitive ||
+      filter.operator === FilterOperator.NotMatchesTermCaseInsensitive;
+
+    const isMatchesTermCaseInsensitive =
+      filter.operator === FilterOperator.MatchesTermCaseInsensitive ||
+      filter.operator === FilterOperator.NotMatchesTermCaseInsensitive;
+
+    if (isMatchesTermCaseInsensitive) {
+      column = `lower(${column})`;
+    }
+
     filterParts.push(column);
 
     let operator: string = filter.operator;
     let negate = false;
     if (filter.operator === FilterOperator.IsEmpty || filter.operator === FilterOperator.IsNotEmpty) {
       operator = '';
+    } else if (filter.operator === FilterOperator.NotMatchesTerm) {
+      operator = FilterOperator.MatchesTerm;
+      negate = true;
+    } else if (filter.operator === FilterOperator.NotMatchesTermCaseInsensitive) {
+      operator = FilterOperator.MatchesTerm;
+      negate = true;
+    } else if (filter.operator === FilterOperator.MatchesTermCaseInsensitive) {
+      operator = FilterOperator.MatchesTerm;
     } else if (filter.operator === FilterOperator.NotLike) {
       operator = 'LIKE';
       negate = true;
@@ -803,6 +825,10 @@ const getFilters = (options: QueryBuilderOptions): string => {
     } else if (isStringFilter(type, filter.operator)) {
       if (filter.operator === FilterOperator.Like || filter.operator === FilterOperator.NotLike) {
         filterParts.push(`'%${filter.value || ''}%'`);
+      } else if (isMatchesTerm) {
+        const raw = (filter as StringFilter).value || '';
+        const term = isMatchesTermCaseInsensitive ? raw.toLowerCase() : raw;
+        filterParts.push(escapeValue(term));
       } else {
         filterParts.push(escapeValue((filter as StringFilter).value || ''));
       }
