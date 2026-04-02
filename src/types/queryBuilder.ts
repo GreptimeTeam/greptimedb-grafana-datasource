@@ -200,6 +200,14 @@ export enum FilterOperator {
   GreaterThanOrEqual = '>=',
   Like = 'LIKE',
   NotLike = 'NOT LIKE',
+  /**
+   * GreptimeDB fulltext exact term/phrase match.
+   * See: https://docs.greptime.cn/user-guide/logs/fulltext-search/#%E4%BD%BF%E7%94%A8-matches_term-%E5%87%BD%E6%95%B0%E8%BF%9B%E8%A1%8C%E7%B2%BE%E7%A1%AE%E5%8C%B9%E9%85%8D
+   */
+  MatchesTerm = '@@',
+  NotMatchesTerm = 'NOT @@',
+  MatchesTermCaseInsensitive = 'CI @@',
+  NotMatchesTermCaseInsensitive = 'NOT CI @@',
   In = 'IN',
   NotIn = 'NOT IN',
   WithInGrafanaTimeRange = 'WITH IN DASHBOARD TIME RANGE',
@@ -257,7 +265,11 @@ export interface StringFilter extends CommonFilterProps {
     | FilterOperator.Equals
     | FilterOperator.NotEquals
     | FilterOperator.Like
-    | FilterOperator.NotLike;
+    | FilterOperator.NotLike
+    | FilterOperator.MatchesTerm
+    | FilterOperator.NotMatchesTerm
+    | FilterOperator.MatchesTermCaseInsensitive
+    | FilterOperator.NotMatchesTermCaseInsensitive;
   value: string;
 }
 

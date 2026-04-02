@@ -105,11 +105,146 @@ describe('SQL Generator', () => {
     };
 
     const expectedSqlParts = [
-      'SELECT log_ts as "timestamp", log_body as "body", log_level as "level"',
+      'SELECT "log_ts" as "timestamp", "log_body" as "body", "log_level" as "level"',
       'FROM "default"."logs"',
-      'WHERE ( timestamp >= $__fromTime AND timestamp <= $__toTime )',
-      'AND ( level = \'error\' )',
+      'WHERE ( "log_ts" >= $__fromTime AND "log_ts" <= $__toTime )',
+      'AND ( "log_level" = \'error\' )',
       'ORDER BY timestamp DESC LIMIT 1000'
+    ];
+
+    const sql = generateSql(opts);
+    expect(sql).toEqual(expectedSqlParts.join(' '));
+  });
+
+  it('generates logs query with fulltext matches_term (@@) filter', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'default',
+      table: 'logs',
+      queryType: QueryType.Logs,
+      columns: [
+        { name: 'log_ts', type: 'DateTime', hint: ColumnHint.Time },
+        { name: 'log_level', type: 'String', hint: ColumnHint.LogLevel },
+        { name: 'log_body', type: 'String', hint: ColumnHint.LogMessage },
+      ],
+      limit: 1000,
+      filters: [
+        {
+          filterType: 'custom',
+          type: 'datetime',
+          key: '',
+          condition: 'AND',
+          hint: ColumnHint.Time,
+          operator: FilterOperator.WithInGrafanaTimeRange,
+        },
+        {
+          filterType: 'custom',
+          type: 'String',
+          key: '',
+          value: 'error',
+          condition: 'AND',
+          hint: ColumnHint.LogMessage,
+          operator: FilterOperator.MatchesTerm,
+        },
+      ],
+      orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.DESC }],
+    };
+
+    const expectedSqlParts = [
+      'SELECT "log_ts" as "timestamp", "log_body" as "body", "log_level" as "level"',
+      'FROM "default"."logs"',
+      'WHERE ( "log_ts" >= $__fromTime AND "log_ts" <= $__toTime )',
+      'AND ( "log_body" @@ \'error\' )',
+      'ORDER BY timestamp DESC LIMIT 1000',
+    ];
+
+    const sql = generateSql(opts);
+    expect(sql).toEqual(expectedSqlParts.join(' '));
+  });
+
+  it('generates logs query with fulltext NOT matches_term (@@) filter', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'default',
+      table: 'logs',
+      queryType: QueryType.Logs,
+      columns: [
+        { name: 'log_ts', type: 'DateTime', hint: ColumnHint.Time },
+        { name: 'log_level', type: 'String', hint: ColumnHint.LogLevel },
+        { name: 'log_body', type: 'String', hint: ColumnHint.LogMessage },
+      ],
+      limit: 1000,
+      filters: [
+        {
+          filterType: 'custom',
+          type: 'datetime',
+          key: '',
+          condition: 'AND',
+          hint: ColumnHint.Time,
+          operator: FilterOperator.WithInGrafanaTimeRange,
+        },
+        {
+          filterType: 'custom',
+          type: 'String',
+          key: '',
+          value: 'critical',
+          condition: 'AND',
+          hint: ColumnHint.LogMessage,
+          operator: FilterOperator.NotMatchesTerm,
+        },
+      ],
+      orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.DESC }],
+    };
+
+    const expectedSqlParts = [
+      'SELECT "log_ts" as "timestamp", "log_body" as "body", "log_level" as "level"',
+      'FROM "default"."logs"',
+      'WHERE ( "log_ts" >= $__fromTime AND "log_ts" <= $__toTime )',
+      'AND ( NOT ( "log_body" @@ \'critical\' ) )',
+      'ORDER BY timestamp DESC LIMIT 1000',
+    ];
+
+    const sql = generateSql(opts);
+    expect(sql).toEqual(expectedSqlParts.join(' '));
+  });
+
+  it('generates logs query with fulltext case-insensitive matches_term (@@) filter', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'default',
+      table: 'logs',
+      queryType: QueryType.Logs,
+      columns: [
+        { name: 'log_ts', type: 'DateTime', hint: ColumnHint.Time },
+        { name: 'log_level', type: 'String', hint: ColumnHint.LogLevel },
+        { name: 'log_body', type: 'String', hint: ColumnHint.LogMessage },
+      ],
+      limit: 1000,
+      filters: [
+        {
+          filterType: 'custom',
+          type: 'datetime',
+          key: '',
+          condition: 'AND',
+          hint: ColumnHint.Time,
+          operator: FilterOperator.WithInGrafanaTimeRange,
+        },
+        {
+          filterType: 'custom',
+          type: 'String',
+          key: '',
+          value: 'Warning',
+          condition: 'AND',
+          hint: ColumnHint.LogMessage,
+          operator: FilterOperator.MatchesTermCaseInsensitive,
+        },
+      ],
+      orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.DESC }],
+    };
+
+    const expectedSqlParts = [
+      'SELECT "log_ts" as "timestamp", "log_body" as "body", "log_level" as "level"',
+      'FROM "default"."logs"',
+      'WHERE ( "log_ts" >= $__fromTime AND "log_ts" <= $__toTime )',
+      'AND ( lower("log_body") @@ \'warning\' )',
+      'ORDER BY timestamp DESC LIMIT 1000',
     ];
 
     const sql = generateSql(opts);

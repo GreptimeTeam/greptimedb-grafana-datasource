@@ -294,8 +294,7 @@ const generateLogsQuery = (_options: QueryBuilderOptions): string => {
     if (filterParts) {
       queryParts.push('AND');
     }
-
-    queryParts.push(`(${logMessage.name} LIKE '%${options.meta!.logMessageLike}%')`);
+    queryParts.push(`(${escapeIdentifier(logMessage.name)} LIKE '%${options.meta!.logMessageLike}%')`);
   }
 
   const orderBy = getOrderBy(options);
@@ -377,8 +376,10 @@ const generateSimpleTimeSeriesQuery = (_options: QueryBuilderOptions): string =>
   }
 
   if ((options.groupBy?.length || 0) > 0) {
-    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.columnName || timeColumn.name}` : '';
-    queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
+    const escapedGroupBy = options.groupBy!.map(g => escapeIdentifierIfNeeded(g)).join(', ');
+    const escapedGroupByTime =
+      timeColumn !== undefined ? `, ${escapeIdentifierIfNeeded(timeColumn.columnName || timeColumn.name)}` : '';
+    queryParts.push(`${escapedGroupBy}${escapedGroupByTime}`);
   } else if (hasAggregates && timeColumn) {
     queryParts.push(timeColumn.name!);
   }
@@ -441,7 +442,9 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   queryParts.push('GROUP BY');
   if ((options.groupBy?.length || 0) > 0) {
     const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
-    queryParts.push(`${options.groupBy!.join(', ')}${groupByTime}`);
+    const escapedGroupBy = options.groupBy!.map(g => escapeIdentifierIfNeeded(g)).join(', ');
+    const escapedGroupByTime = timeColumn !== undefined ? `, ${escapeIdentifierIfNeeded(timeColumn.name)}` : '';
+    queryParts.push(`${escapedGroupBy}${escapedGroupByTime || groupByTime}`);
   } else if (timeColumn) {
     queryParts.push(timeColumn.alias!);
   }
@@ -510,7 +513,7 @@ const generateTableQuery = (options: QueryBuilderOptions): string => {
 
   if (isAggregateMode && (options.groupBy?.length || 0) > 0) {
     queryParts.push('GROUP BY');
-    queryParts.push(options.groupBy!.join(', '));
+    queryParts.push(options.groupBy!.map(g => escapeIdentifierIfNeeded(g)).join(', '));
   }
 
   const orderBy = getOrderBy(options);
@@ -575,6 +578,27 @@ const getTableIdentifier = (database: string, table: string): string => {
 const escapeIdentifier = (id: string): string => {
   return id ? `"${id}"` : '';
 }
+
+const isSimpleLowerIdentifier = (id: string): boolean => /^[a-z_][a-z0-9_]*$/.test(id);
+const escapeIdentifierIfNeeded = (identifier: string): string => {
+  if (!identifier) {
+    return identifier;
+  }
+  // Avoid escaping expressions/aliases that are not plain identifiers.
+  if (
+    identifier.includes('(') ||
+    identifier.includes(')') ||
+    identifier.includes('"') ||
+    identifier.includes('[') ||
+    identifier.includes(']') ||
+    identifier.toLowerCase().includes(' as ')
+  ) {
+    return identifier;
+  }
+
+  // Keep simple lower identifiers unquoted (matches getColumnIdentifier behavior).
+  return isSimpleLowerIdentifier(identifier) ? identifier : escapeIdentifier(identifier);
+};
 
 const escapeValue = (value: string): string => {
   if (value.includes('$') || value.includes('(') || value.includes(')') || value.includes('\'') || value.includes('"')) {
@@ -661,7 +685,7 @@ const getOrderBy = (options: QueryBuilderOptions): string => {
         return;
       }
 
-      orderByParts.push(`${colName} ${o.dir}`);
+      orderByParts.push(`${escapeIdentifierIfNeeded(colName)} ${o.dir}`);
     });
   }
 
@@ -725,12 +749,34 @@ const getFilters = (options: QueryBuilderOptions): string => {
       column += `['${filter.mapKey}']`;
     }
 
+    const isMatchesTerm =
+      filter.operator === FilterOperator.MatchesTerm ||
+      filter.operator === FilterOperator.NotMatchesTerm ||
+      filter.operator === FilterOperator.MatchesTermCaseInsensitive ||
+      filter.operator === FilterOperator.NotMatchesTermCaseInsensitive;
+
+    const isMatchesTermCaseInsensitive =
+      filter.operator === FilterOperator.MatchesTermCaseInsensitive ||
+      filter.operator === FilterOperator.NotMatchesTermCaseInsensitive;
+
+    if (isMatchesTermCaseInsensitive) {
+      column = `lower(${column})`;
+    }
+
     filterParts.push(column);
 
     let operator: string = filter.operator;
     let negate = false;
     if (filter.operator === FilterOperator.IsEmpty || filter.operator === FilterOperator.IsNotEmpty) {
       operator = '';
+    } else if (filter.operator === FilterOperator.NotMatchesTerm) {
+      operator = FilterOperator.MatchesTerm;
+      negate = true;
+    } else if (filter.operator === FilterOperator.NotMatchesTermCaseInsensitive) {
+      operator = FilterOperator.MatchesTerm;
+      negate = true;
+    } else if (filter.operator === FilterOperator.MatchesTermCaseInsensitive) {
+      operator = FilterOperator.MatchesTerm;
     } else if (filter.operator === FilterOperator.NotLike) {
       operator = 'LIKE';
       negate = true;
@@ -779,6 +825,10 @@ const getFilters = (options: QueryBuilderOptions): string => {
     } else if (isStringFilter(type, filter.operator)) {
       if (filter.operator === FilterOperator.Like || filter.operator === FilterOperator.NotLike) {
         filterParts.push(`'%${filter.value || ''}%'`);
+      } else if (isMatchesTerm) {
+        const raw = (filter as StringFilter).value || '';
+        const term = isMatchesTermCaseInsensitive ? raw.toLowerCase() : raw;
+        filterParts.push(escapeValue(term));
       } else {
         filterParts.push(escapeValue((filter as StringFilter).value || ''));
       }
