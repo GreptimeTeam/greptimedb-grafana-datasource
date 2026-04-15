@@ -1259,7 +1259,7 @@ export class Datasource
     builderOptions.limit = options.limit;
     const range = (getTemplateSrv() as any).timeRange;
     const toTimeISO = range?.to.toISOString();
-    const fromTimeISO = range?.to.fromISOString();    
+    const fromTimeISO = range?.from.toISOString();    
 
     if (!getColumnByHint(builderOptions, ColumnHint.Time)) {
       throw new Error('Missing time column for log context');
