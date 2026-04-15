@@ -1258,7 +1258,7 @@ export class Datasource
     const builderOptions = contextQuery.builderOptions;
     builderOptions.limit = options.limit;
     const range = (getTemplateSrv() as any).timeRange;
-    const toTimeISO = range?.to.toISOString();
+    const toTimeISO = range?.to.fromISOString();
     const fromTimeISO = range?.from.fromISOString();    
 
     if (!getColumnByHint(builderOptions, ColumnHint.Time)) {
