@@ -1258,8 +1258,8 @@ export class Datasource
     const builderOptions = contextQuery.builderOptions;
     builderOptions.limit = options.limit;
     const range = (getTemplateSrv() as any).timeRange;
-    const toTimeISO = range?.to.fromISOString();
-    const fromTimeISO = range?.from.fromISOString();    
+    const toTimeISO = range?.to.toISOString();
+    const fromTimeISO = range?.to.fromISOString();    
 
     if (!getColumnByHint(builderOptions, ColumnHint.Time)) {
       throw new Error('Missing time column for log context');
