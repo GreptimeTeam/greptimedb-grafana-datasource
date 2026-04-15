@@ -1257,6 +1257,9 @@ export class Datasource
     } as any;
     const builderOptions = contextQuery.builderOptions;
     builderOptions.limit = options.limit;
+    const range = (getTemplateSrv() as any).timeRange;
+    const toTimeISO = range?.to.toISOString();
+    const fromTimeISO = range?.from.fromISOString();    
 
     if (!getColumnByHint(builderOptions, ColumnHint.Time)) {
       throw new Error('Missing time column for log context');
@@ -1279,6 +1282,20 @@ export class Datasource
       type: 'datetime',
       condition: 'AND'
     });
+
+    if (fromTimeISO && toTimeISO) {
+      builderOptions.filters.push({
+        operator: options.direction === LogRowContextQueryDirection.Forward 
+          ? FilterOperator.LessThanOrEqual   // Lower bound of newer logs ：time <= $__to
+          : FilterOperator.GreaterThanOrEqual, // Upper bound of older logs ：time >= $__from
+        filterType: 'custom',
+        hint: ColumnHint.Time,
+        key: '',
+        value: options.direction === LogRowContextQueryDirection.Forward ? toTimeISO : fromTimeISO,
+        type: 'datetime',
+        condition: 'AND'
+      });
+    }
 
     const contextColumns = this.getLogContextColumnsFromLogRow(row);
     if (contextColumns.length < 1) {
