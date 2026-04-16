@@ -34,6 +34,14 @@ const dismissBlockingModal = async (page: any) => {
 
     await page.waitForTimeout(300);
   }
+
+  // Some onboarding dialogs leave the page in a locked-scroll state.
+  // Ensure the test can scroll and interact with lower page controls.
+  await page.evaluate(() => {
+    document.documentElement.style.overflow = 'auto';
+    document.body.style.overflow = 'auto';
+    document.body.style.pointerEvents = 'auto';
+  });
 };
 
 test.describe('Config Editor', () => {
@@ -53,9 +61,10 @@ test.describe('Config Editor', () => {
     // Bench CI occasionally has a transient portal overlay intercepting pointer events.
     // Use a force click on the Save and Test button to avoid flaky failures.
     const saveAndTestButton = page.getByRole('button', { name: /save and test/i });
-    await expect(saveAndTestButton).toBeEnabled({ timeout: 10000 });
     await saveAndTestButton.scrollIntoViewIfNeeded();
+    await expect(saveAndTestButton).toBeEnabled({ timeout: 10000 });
     await dismissBlockingModal(page);
+    await saveAndTestButton.scrollIntoViewIfNeeded();
     await saveAndTestButton.click({ force: true });
 
     const successAlert = page.getByTestId('data-testid Alert success').first();
