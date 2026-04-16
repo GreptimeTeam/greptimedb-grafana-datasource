@@ -38,6 +38,8 @@ jobs:
 
       - name: Install and run Docker Compose
         uses: hoverkraft-tech/compose-action@v2.2.0
+        env:
+          GF_DEFAULT_APP_MODE: production
         with:
           compose-file: './docker-compose.yml'
 
