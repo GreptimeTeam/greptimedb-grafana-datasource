@@ -73,11 +73,13 @@ test.describe('Config Editor', () => {
     await expect(hostInput).toBeVisible({ timeout: 20000 });
     await hostInput.fill(GreptimeDB_URL);
     await expect(hostInput).toHaveValue(GreptimeDB_URL);
-    await page.keyboard.press('Tab');
+    // Avoid tabbing into auth dropdown, which can trap focus/scroll in CI.
+    await hostInput.blur();
 
     // Bench CI occasionally has a transient portal overlay intercepting pointer events.
     // Use a force click on the Save and Test button to avoid flaky failures.
     const saveAndTestButton = page.getByRole('button', { name: /save and test/i });
+    await page.keyboard.press('Escape');
     await saveAndTestButton.scrollIntoViewIfNeeded();
     await expect(saveAndTestButton).toBeEnabled({ timeout: 10000 });
     await dismissBlockingModal(page);
