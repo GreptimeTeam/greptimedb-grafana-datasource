@@ -1257,6 +1257,10 @@ export class Datasource
     } as any;
     const builderOptions = contextQuery.builderOptions;
     builderOptions.limit = options.limit;
+    builderOptions.meta = {
+      ...(builderOptions.meta || {}),
+      logMessageLike: '',
+    };
     const range = (getTemplateSrv() as any).timeRange;
     const toTimeISO = range?.to.toISOString();
     const fromTimeISO = range?.from.toISOString();    

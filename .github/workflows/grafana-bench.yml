@@ -68,6 +68,31 @@ jobs:
             ELAPSED=$((ELAPSED + 5))
           done
 
+      - name: Wait for GreptimeDB to start
+        run: |
+          TIMEOUT=300
+          ELAPSED=0
+          GREPTIME_URL="http://localhost:4000/v1/sql"
+          while true; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$GREPTIME_URL" || true)
+            HTTP_CODE="${HTTP_CODE:-0}"
+            echo "Checking GreptimeDB at $GREPTIME_URL. HTTP Status Code: $HTTP_CODE"
+
+            # 200/400/401/405 all mean service is reachable on HTTP.
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "400" ] || [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "405" ]; then
+              echo "GreptimeDB is reachable"
+              break
+            fi
+
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+              echo "Timeout waiting for GreptimeDB to become reachable"
+              exit 1
+            fi
+
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+
       - name: Run Grafana Bench tests
         run: |
           docker run --rm \
@@ -81,4 +106,23 @@ jobs:
             --pw-prepare-cmd "yarn install --frozen-lockfile; yarn playwright install" \
             --test-env-vars "CI=true" \
             --log-level DEBUG 
+
+      - name: Collect Docker logs on failure
+        if: failure()
+        run: |
+          mkdir -p ci-artifacts
+          docker logs grafana > ci-artifacts/grafana.log 2>&1 || true
+          docker logs greptimedb_dev > ci-artifacts/greptimedb.log 2>&1 || true
+
+      - name: Upload E2E artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grafana-bench-e2e-artifacts
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            test-results/**
+            playwright-report/**
+            ci-artifacts/**
 
