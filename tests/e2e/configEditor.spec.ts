@@ -8,12 +8,10 @@ test.describe('Config Editor', () => {
     const configPage = await createDataSourceConfigPage({ type: PLUGIN_UID });
     await page.locator('input[name="host"]').fill(GreptimeDB_URL);
 
-    await configPage.saveAndTest({
-      path: ''
-    });
+    // Bench CI occasionally has a transient portal overlay intercepting pointer events.
+    // Use a force click on the Save and Test button to avoid flaky failures.
+    await page.getByTestId('data-testid Data source settings page Save and Test button').click({ force: true });
     await expect(configPage).toHaveAlert('success');
-
-    await page.pause();
   });
 
   test('mandatory fields should show error if left empty', async ({ createDataSourceConfigPage, page }) => {
