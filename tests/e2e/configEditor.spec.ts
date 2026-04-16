@@ -4,8 +4,8 @@ const PLUGIN_UID = 'info8fcc-greptimedb-datasource';
 const GreptimeDB_URL = process.env.GREPTIMEDB_URL || 'http://greptimedb:4000';
 
 const dismissBlockingModal = async (page: any) => {
-  // Best effort: close any visible modal/dialog that may intercept clicks.
-  for (let i = 0; i < 3; i++) {
+  // Close visible dialogs via explicit close controls (no text dependency).
+  for (let i = 0; i < 4; i++) {
     const dialogs = page.locator('[role="dialog"]:visible');
     const count = await dialogs.count();
     if (count === 0) {
@@ -14,25 +14,42 @@ const dismissBlockingModal = async (page: any) => {
 
     const topDialog = dialogs.nth(count - 1);
 
-    const closeButton = topDialog
+    const dialogCloseByName = topDialog.getByRole('button', {
+      name: /close|dismiss|skip|not now|x/i,
+    }).first();
+    const dialogCloseByAttrs = topDialog
       .locator(
         [
           'button[aria-label*="close" i]',
           'button[title*="close" i]',
           'button[aria-label*="dismiss" i]',
           'button[title*="dismiss" i]',
+          'button[data-testid*="close" i]',
           'button[aria-label="x" i]',
         ].join(', ')
       )
       .first();
+    const globalCloseByAttrs = page
+      .locator(
+        [
+          '[role="dialog"]:visible button[aria-label*="close" i]',
+          '[role="dialog"]:visible button[title*="close" i]',
+          '[role="dialog"]:visible button[data-testid*="close" i]',
+        ].join(', ')
+      )
+      .first();
 
-    if (await closeButton.isVisible()) {
-      await closeButton.click({ force: true });
+    if (await dialogCloseByName.isVisible()) {
+      await dialogCloseByName.click({ force: true });
+    } else if (await dialogCloseByAttrs.isVisible()) {
+      await dialogCloseByAttrs.click({ force: true });
+    } else if (await globalCloseByAttrs.isVisible()) {
+      await globalCloseByAttrs.click({ force: true });
     } else {
-      await page.keyboard.press('Escape');
+      throw new Error('Blocking dialog is visible but no close button was found');
     }
 
-    await page.waitForTimeout(300);
+    await expect(topDialog).not.toBeVisible({ timeout: 10000 });
   }
 
   // Some onboarding dialogs leave the page in a locked-scroll state.
