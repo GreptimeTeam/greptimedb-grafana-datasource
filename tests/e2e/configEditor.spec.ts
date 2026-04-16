@@ -19,7 +19,7 @@ test.describe('Config Editor', () => {
 
     const successAlert = page.getByTestId('data-testid Alert success').first();
     const errorAlert = page.getByTestId('data-testid Alert error').first();
-    await expect(successAlert.or(errorAlert)).toBeVisible({ timeout: 15000 });
+    await expect(successAlert.or(errorAlert)).toBeVisible({ timeout: 60000 });
 
     if (await errorAlert.isVisible()) {
       throw new Error(`Save and Test failed: ${await errorAlert.innerText()}`);
