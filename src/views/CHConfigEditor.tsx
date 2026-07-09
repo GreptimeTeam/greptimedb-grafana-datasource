@@ -250,6 +250,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
           onTimeColumnChange={c => onLogsConfigChange('timeColumn', c)}
           onLevelColumnChange={c => onLogsConfigChange('levelColumn', c)}
           onMessageColumnChange={c => onLogsConfigChange('messageColumn', c)}
+          onTraceIdColumnChange={c => onLogsConfigChange('traceIdColumn', c)}
           onSelectContextColumnsChange={c => onLogsConfigChange('selectContextColumns', c)}
           onContextColumnsChange={c => onLogsConfigChange('contextColumns', c)}
         />

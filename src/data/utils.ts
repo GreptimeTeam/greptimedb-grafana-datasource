@@ -3,7 +3,7 @@ import { ColumnHint, FilterOperator, OrderByDirection, QueryBuilderOptions, Quer
 import { CHBuilderQuery, CHQuery, EditorType } from "types/sql";
 import { Datasource } from "./CHDatasource";
 import { pluginVersion } from "utils/version";
-import { logColumnHintsToAlias } from "./sqlGenerator";
+import { logColumnHintsToAlias, getColumnByHint } from "./sqlGenerator";
 
 /**
  * Returns true if the builder options contain enough information to start showing a query
@@ -112,6 +112,31 @@ export const tryApplyColumnHints = (columns: SelectedColumn[], hintsToColumns?: 
  */
 export const columnLabelToPlaceholder = (label: string) => label.toLowerCase().replace(/ /g, '_');
 
+export const buildTraceIdLogFilter = (traceIdColumn: string): StringFilter => ({
+  type: 'string',
+  operator: FilterOperator.Equals,
+  filterType: 'custom',
+  key: traceIdColumn,
+  hint: ColumnHint.TraceId,
+  condition: 'AND',
+  value: '${__value.raw}',
+});
+
+export const ensureTraceIdLogColumn = (options: QueryBuilderOptions, traceIdColumn: string): void => {
+  if (getColumnByHint(options, ColumnHint.TraceId)) {
+    return;
+  }
+
+  options.columns = options.columns || [];
+  options.columns.push({ name: traceIdColumn, hint: ColumnHint.TraceId });
+};
+
+const applyTraceLogsQueryDefaults = (datasource: Datasource, builderOptions: QueryBuilderOptions): void => {
+  const traceIdColumn = datasource.getLogsTraceIdColumn();
+  builderOptions.filters = [buildTraceIdLogFilter(traceIdColumn)];
+  ensureTraceIdLogColumn(builderOptions, traceIdColumn);
+};
+
 /**
  * Mutates the DataQueryResponse to include trace/log links on the traceID field.
  * The link will open a second query editor in split view
@@ -202,44 +227,25 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
       // Copy fields directly from log search
       traceLogsQuery.builderOptions = {
         ...originalQuery.builderOptions,
-        filters: [
-          {
-            type: 'string',
-            operator: FilterOperator.Equals,
-            filterType: 'custom',
-            key: '',
-            hint: ColumnHint.TraceId,
-            condition: 'AND',
-            value: '${__value.raw}'
-          } as StringFilter
-        ],
         orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }],
         meta: {
           ...originalQuery.builderOptions.meta,
           minimized: true,
         }
       };
+      applyTraceLogsQueryDefaults(datasource, traceLogsQuery.builderOptions);
     } else {
       // Create new query based on log defaults
 
       const otelVersion = datasource.getLogsOtelVersion();
+      const traceIdColumn = datasource.getLogsTraceIdColumn();
       const options: QueryBuilderOptions = {
         database: datasource.getDefaultLogsDatabase() || traceLogsQuery.builderOptions.database || datasource.getDefaultDatabase(),
         table: datasource.getDefaultLogsTable() || datasource.getDefaultTable() || traceLogsQuery.builderOptions.table,
         queryType: QueryType.Logs,
         columns: [],
         orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }],
-        filters: [
-          {
-            type: 'string',
-            operator: FilterOperator.Equals,
-            filterType: 'custom',
-            key: '',
-            hint: ColumnHint.TraceId,
-            condition: 'AND',
-            value: '${__value.raw}'
-          } as StringFilter
-        ],
+        filters: [buildTraceIdLogFilter(traceIdColumn)],
         meta: {
           minimized: true,
           otelEnabled: Boolean(otelVersion),
@@ -251,6 +257,7 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
       for (let [hint, colName] of defaultColumns) {
         options.columns!.push({ name: colName, hint });
       }
+      ensureTraceIdLogColumn(options, traceIdColumn);
 
       traceLogsQuery.builderOptions = options;
     }
