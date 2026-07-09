@@ -222,6 +222,10 @@ export default {
           message: {
             label: 'Log Message column',
             tooltip: 'Column for log message'
+          },
+          traceId: {
+            label: 'Trace ID column',
+            tooltip: 'Column used to correlate logs with traces'
           }
          },
          contextColumns: {

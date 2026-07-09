@@ -18,6 +18,7 @@ interface LogsConfigProps {
   onTimeColumnChange: (v: string) => void;
   onLevelColumnChange: (v: string) => void;
   onMessageColumnChange: (v: string) => void;
+  onTraceIdColumnChange: (v: string) => void;
   onSelectContextColumnsChange: (v: boolean) => void;
   onContextColumnsChange: (v: string[]) => void;
 }
@@ -25,13 +26,13 @@ interface LogsConfigProps {
 export const LogsConfig = (props: LogsConfigProps) => {
   const {
     onDefaultDatabaseChange, onDefaultTableChange,
-    onTimeColumnChange, onLevelColumnChange, onMessageColumnChange,
+    onTimeColumnChange, onLevelColumnChange, onMessageColumnChange, onTraceIdColumnChange,
     onSelectContextColumnsChange, onContextColumnsChange
   } = props;
   let {
     defaultDatabase, defaultTable,
     otelEnabled, otelVersion,
-    timeColumn, levelColumn, messageColumn,
+    timeColumn, levelColumn, messageColumn, traceIdColumn,
     selectContextColumns, contextColumns
   } = (props.logsConfig || {});
   const labels = allLabels.components.Config.LogsConfig;
@@ -41,6 +42,7 @@ export const LogsConfig = (props: LogsConfigProps) => {
     timeColumn = otelConfig.logColumnMap.get(ColumnHint.Time);
     levelColumn = otelConfig.logColumnMap.get(ColumnHint.LogLevel);
     messageColumn = otelConfig.logColumnMap.get(ColumnHint.LogMessage);
+    traceIdColumn = otelConfig.logColumnMap.get(ColumnHint.TraceId);
   }
 
   const onContextColumnsChangeTrimmed = (columns: string[]) => onContextColumnsChange(columns.map(c => c.trim()).filter(c => c));
@@ -113,6 +115,14 @@ export const LogsConfig = (props: LogsConfigProps) => {
           tooltip={labels.columns.message.tooltip}
           value={messageColumn || ''}
           onChange={onMessageColumnChange}
+        />
+        <LabeledInput
+          disabled={otelEnabled}
+          label={labels.columns.traceId.label}
+          placeholder={columnLabelToPlaceholder(labels.columns.traceId.label)}
+          tooltip={labels.columns.traceId.tooltip}
+          value={traceIdColumn || ''}
+          onChange={onTraceIdColumnChange}
         />
       </ConfigSubSection>
       <br/>

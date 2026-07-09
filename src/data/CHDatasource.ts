@@ -549,8 +549,13 @@ export class Datasource
     logsConfig.timeColumn && result.set(ColumnHint.Time, logsConfig.timeColumn);
     logsConfig.levelColumn && result.set(ColumnHint.LogLevel, logsConfig.levelColumn);
     logsConfig.messageColumn && result.set(ColumnHint.LogMessage, logsConfig.messageColumn);
+    result.set(ColumnHint.TraceId, logsConfig.traceIdColumn || 'trace_id');
 
     return result;
+  }
+
+  getLogsTraceIdColumn(): string {
+    return this.getDefaultLogsColumns().get(ColumnHint.TraceId) || this.settings.jsonData.logs?.traceIdColumn || 'trace_id';
   }
 
   shouldSelectLogContextColumns(): boolean {

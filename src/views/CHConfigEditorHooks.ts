@@ -109,6 +109,7 @@ export const useConfigDefaults = (options: DataSourceSettings<CHConfig>, onOptio
       jsonData.logs = {
         ...jsonData.logs,
         defaultTable: defaultLogsTable,
+        traceIdColumn: jsonData.logs?.traceIdColumn || 'trace_id',
         selectContextColumns: true,
         contextColumns: []
       };

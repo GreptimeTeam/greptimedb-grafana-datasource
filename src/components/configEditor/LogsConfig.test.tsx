@@ -17,6 +17,7 @@ describe('LogsConfig', () => {
         onTimeColumnChange={() => {}}
         onLevelColumnChange={() => {}}
         onMessageColumnChange={() => {}}
+        onTraceIdColumnChange={() => {}}
         onSelectContextColumnsChange={() => {}}
         onContextColumnsChange={() => {}}
       />
@@ -36,6 +37,7 @@ describe('LogsConfig', () => {
         onTimeColumnChange={() => {}}
         onLevelColumnChange={() => {}}
         onMessageColumnChange={() => {}}
+        onTraceIdColumnChange={() => {}}
         onSelectContextColumnsChange={() => {}}
         onContextColumnsChange={() => {}}
       />
@@ -62,6 +64,7 @@ describe('LogsConfig', () => {
         onTimeColumnChange={() => {}}
         onLevelColumnChange={() => {}}
         onMessageColumnChange={() => {}}
+        onTraceIdColumnChange={() => {}}
         onSelectContextColumnsChange={() => {}}
         onContextColumnsChange={() => {}}
       />
@@ -91,6 +94,7 @@ describe('LogsConfig', () => {
         onTimeColumnChange={onTimeColumnChange}
         onLevelColumnChange={() => {}}
         onMessageColumnChange={() => {}}
+        onTraceIdColumnChange={() => {}}
         onSelectContextColumnsChange={() => {}}
         onContextColumnsChange={() => {}}
       />
@@ -117,6 +121,7 @@ describe('LogsConfig', () => {
         onTimeColumnChange={() => {}}
         onLevelColumnChange={onLevelColumnChange}
         onMessageColumnChange={() => {}}
+        onTraceIdColumnChange={() => {}}
         onSelectContextColumnsChange={() => {}}
         onContextColumnsChange={() => {}}
       />
@@ -143,6 +148,7 @@ describe('LogsConfig', () => {
         onTimeColumnChange={() => {}}
         onLevelColumnChange={() => {}}
         onMessageColumnChange={onMessageColumnChange}
+        onTraceIdColumnChange={() => {}}
         onSelectContextColumnsChange={() => {}}
         onContextColumnsChange={() => {}}
       />
