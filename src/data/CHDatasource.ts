@@ -38,6 +38,7 @@ import {
   SelectedColumn,
 } from 'types/queryBuilder';
 import { AdHocFilter, AdHocVariableFilter } from './adHocFilter';
+import { CHVariableSupport } from './CHVariableSupport';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
@@ -57,6 +58,34 @@ import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
 import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
 import { GreptimeResponse } from 'greptimedb/types';
+
+/** Prefer Greptime/Grafana fetch error bodies over an empty Error.message ("Unknown error"). */
+function formatQueryError(error: any): string {
+  if (!error) {
+    return 'Unknown error';
+  }
+  const data = error.data ?? error;
+  const fromBody =
+    (typeof data === 'string' && data) ||
+    data?.error ||
+    data?.message ||
+    data?.error_info?.message ||
+    (typeof data?.error_code !== 'undefined' ? `error_code=${data.error_code}` : undefined);
+  if (fromBody) {
+    return String(fromBody);
+  }
+  if (error.message) {
+    return String(error.message);
+  }
+  if (error.status) {
+    return `HTTP ${error.status}`;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Unknown error';
+  }
+}
 
 function createMultiSearchAnyEquivalent(llfColumn: string, searchTermsString: string, alias: string): { aggregateType: AggregateType; column: string; alias: string } {
   const searchTerms = searchTermsString.split(','); // Split the comma-separated string into an array of terms
@@ -87,6 +116,7 @@ export class Datasource
     super(instanceSettings);
     this.settings = instanceSettings;
     this.adHocFilter = new AdHocFilter();
+    this.variables = new CHVariableSupport(this);
   }
   
   private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[]): Filter[] {
@@ -950,17 +980,15 @@ export class Datasource
         // Catch errors specifically for this target's request/transformation
         catchError(error => {
           console.error(`Error processing target ${target.refId}:`, error);
-          // Return an Observable emitting an empty array or a specific error frame
-          // This prevents one failed target from failing the entire query if desired
+          const detail = formatQueryError(error);
           const errorFrame = new MutableDataFrame({
             refId: target.refId,
             fields: [
-                { name: 'Error', values: [`Failed to process query for ${target.refId}: ${error?.message || 'Unknown error'}`] }
+                { name: 'Error', values: [`Failed to process query for ${target.refId}: ${detail}`] }
             ],
             meta: { preferredVisualisationType: 'table' }
           });
-          return of([errorFrame]); // Return Observable<DataFrame[]> with error frame
-          // Or return of([]) to just ignore the failed target's results
+          return of([errorFrame]);
         })
       ); // End pipe for this target
     })
@@ -984,13 +1012,10 @@ export class Datasource
     // Catch errors from forkJoin or the final map transformation
     catchError(error => {
       console.error('Error combining results or in final transformation:', error);
-      // Create an error frame for the overall failure
       const errorFrame = new MutableDataFrame({
-        // No specific refId here, or use request.requestId if available
-        fields: [{ name: 'Error', values: [`Failed to execute query: ${error?.message || 'Unknown error'}`] }],
+        fields: [{ name: 'Error', values: [`Failed to execute query: ${formatQueryError(error)}`] }],
         meta: { preferredVisualisationType: 'table' }
       });
-      // Return an Observable emitting a DataQueryResponse containing the error frame
       return of({ data: [errorFrame] });
     })
   ); 
@@ -1012,9 +1037,12 @@ export class Datasource
 
   private runQuery(request: Partial<CHQuery>, options?: any): Promise<DataFrame> {
     return new Promise((resolve) => {
+      // VariableSupport often passes `{ range: undefined }`. Do not treat a present
+      // but empty options object as having a valid range — fall back to dashboard time.
+      const range = options?.range ?? (getTemplateSrv() as any).timeRange;
       const req = {
         targets: [{ ...request, refId: String(Math.random()) }],
-        range: options ? options.range : (getTemplateSrv() as any).timeRange,
+        range,
       } as DataQueryRequest<CHQuery>;
       this.query(req).subscribe((res: DataQueryResponse) => {
         resolve(res.data[0] || { fields: [] });
