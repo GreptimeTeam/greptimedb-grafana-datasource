@@ -411,9 +411,10 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
-    // Align with ClickHouse: panel-interval bucketing via $__timeInterval (expanded to date_bin in CHDatasource).
-    // Intentional Greptime deviation from upstream: CH expands this to toStartOfInterval in Go macros.
-    timeColumn.name = `$__timeInterval(${timeColumn.name})`;
+    // Greptime-native preview: show date_bin so users can see how points are bucketed.
+    // `$__interval` is expanded from Grafana's panel interval in CHDatasource before the query runs.
+    // (ClickHouse uses $__timeInterval → toStartOfInterval; we keep expanding that macro too for hand-written SQL.)
+    timeColumn.name = `date_bin('$__interval', ${timeColumn.name})`;
     timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
   }

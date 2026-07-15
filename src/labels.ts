@@ -292,7 +292,8 @@ export default {
     },
     SqlPreview: {
       label: 'SQL Preview',
-      tooltip: 'Preview of the generated SQL. You can safely switch to SQL Editor to customize the generated query',
+      tooltip:
+        'Preview of the generated SQL. Aggregate time series uses Greptime date_bin(\'$__interval\', …); $__interval is replaced with the panel interval when the query runs. You can switch to SQL Editor to customize.',
     },
     AggregatesEditor: {
       label: 'Aggregates',
@@ -351,7 +352,8 @@ export default {
       simpleQueryModeLabel: 'Simple',
       aggregateQueryModeLabel: 'Aggregate',
       builderModeLabel: 'Builder Mode',
-      builderModeTooltip: 'Switches the query builder between the simple and aggregate modes',
+      builderModeTooltip:
+        'Simple returns raw points. Aggregate buckets time with Greptime date_bin() using the Grafana panel interval ($__interval).',
       timeColumn: {
         label: 'Time',
         tooltip: 'Column to use for the time series'

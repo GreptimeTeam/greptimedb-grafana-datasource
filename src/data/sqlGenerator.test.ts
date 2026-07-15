@@ -317,7 +317,7 @@ describe('SQL Generator', () => {
     expect(sql).toEqual(expectedSqlParts.join(' '));
   });
 
-  it('generates Trend aggregate time series with $__timeInterval (ClickHouse-aligned)', () => {
+  it('generates Trend aggregate time series with date_bin($__interval) for Greptime', () => {
     const opts: QueryBuilderOptions = {
       database: 'default',
       table: 'time_data',
@@ -340,7 +340,8 @@ describe('SQL Generator', () => {
     };
 
     const sql = generateSql(opts);
-    expect(sql).toContain('$__timeInterval(time_field)');
+    expect(sql).toContain("date_bin('$__interval', time_field)");
+    expect(sql).not.toContain('$__timeInterval');
     expect(sql).not.toContain("date_trunc('minute'");
     expect(sql).toContain('as "time"');
     expect(sql).toContain('GROUP BY time');
@@ -362,7 +363,7 @@ describe('SQL Generator', () => {
     };
 
     const sql = generateSql(opts);
-    expect(sql).toContain('$__timeInterval(greptime_timestamp) as "time"');
+    expect(sql).toContain(`date_bin('$__interval', greptime_timestamp) as "time"`);
     expect(sql).toContain('GROUP BY host, time');
   });
 
