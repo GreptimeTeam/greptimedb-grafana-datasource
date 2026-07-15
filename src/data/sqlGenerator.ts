@@ -411,9 +411,10 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
-    // timeColumn.name = `$__timeInterval(${timeColumn.name})`;
-    timeColumn.columnName = timeColumn.name;
-    timeColumn.name = `date_trunc('minute', ${timeColumn.name})`
+    // Greptime-native preview: show date_bin so users can see how points are bucketed.
+    // `$__interval` is expanded from Grafana's panel interval in CHDatasource before the query runs.
+    // (ClickHouse uses $__timeInterval → toStartOfInterval; we keep expanding that macro too for hand-written SQL.)
+    timeColumn.name = `date_bin('$__interval', ${timeColumn.name})`;
     timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
   }
@@ -439,12 +440,12 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
     queryParts.push(filterParts);
   }
 
+  // Same shape as ClickHouse: GROUP BY time alias (and optional dims)
   queryParts.push('GROUP BY');
   if ((options.groupBy?.length || 0) > 0) {
-    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
+    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.alias}` : '';
     const escapedGroupBy = options.groupBy!.map(g => escapeIdentifierIfNeeded(g)).join(', ');
-    const escapedGroupByTime = timeColumn !== undefined ? `, ${escapeIdentifierIfNeeded(timeColumn.name)}` : '';
-    queryParts.push(`${escapedGroupBy}${escapedGroupByTime || groupByTime}`);
+    queryParts.push(`${escapedGroupBy}${groupByTime}`);
   } else if (timeColumn) {
     queryParts.push(timeColumn.alias!);
   }

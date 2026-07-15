@@ -1,22 +1,18 @@
 import {
   DataFrame,
   Field,
-  FieldType, // Imported for mapGreptimeTypeToGrafana
-  FieldConfig,
+  FieldType,
   createDataFrame,
   DataFrameType,
 } from '@grafana/data';
 
-import { GreptimeDataTypes } from './types';
+import { GreptimeDataTypes, GreptimeResponse } from './types';
 import { getColumnsByHint, logColumnHintsToAlias } from 'data/sqlGenerator';
 import { ColumnHint, QueryBuilderOptions } from 'types/queryBuilder';
 import { CHQuery } from 'types/sql';
 
-
 /**
  * Maps GreptimeDB data type strings to Grafana FieldType enums.
- * @param greptimeType The data_type string from GreptimeDB schema.
- * @returns Corresponding Grafana FieldType.
  */
 function mapGreptimeTypeToGrafana(greptimeType: string | undefined | null): FieldType {
   if (!greptimeType) {
@@ -24,179 +20,27 @@ function mapGreptimeTypeToGrafana(greptimeType: string | undefined | null): Fiel
   }
   const lowerType = greptimeType.toLowerCase();
 
-  // Time types
   if (lowerType.includes('timestamp')) {
     return FieldType.time;
   }
-  // Numeric types (covers int, float, double, decimal, numeric variants)
   if (lowerType.includes('int') || lowerType.includes('float') || lowerType.includes('double') || lowerType.includes('decimal') || lowerType.includes('numeric')) {
     return FieldType.number;
   }
-  // Boolean types
   if (lowerType.includes('bool')) {
     return FieldType.boolean;
   }
-  // String types
   if (lowerType.includes('string') || lowerType.includes('varchar') || lowerType.includes('text')) {
     return FieldType.string;
   }
-  // Date types -> map to time for Grafana representation
   if (lowerType.includes('date')) {
     return FieldType.time;
   }
-  // Interval types -> map to string for now
   if (lowerType.includes('interval')) {
     return FieldType.string;
   }
 
-  // Log unhandled types and default to 'other'
   console.warn(`Unhandled GreptimeDB type: "${greptimeType}", mapping to FieldType.other.`);
   return FieldType.other;
-}
-
-
-// Assumes GreptimeResponse, GreptimeOutput etc interfaces are defined as above
-// Assumes mapGreptimeTypeToGrafana function is defined as above
-
-/**
- * Transforms a GreptimeDB /v1/sql API JSON response into Grafana DataFrames.
- * Designed for use in Grafana frontend datasources.
- *
- * @param response The parsed JSON object from the GreptimeDB API response.
- * @param refId Optional: The reference ID of the query that generated this response.
- * @returns An array of Grafana DataFrame objects.
- */
-export function transformGreptimeResponseToGrafana1(
-  response: GreptimeResponse,
-  refId?: string
-): DataFrame[] {
-  const dataFrames: DataFrame[] = [];
-
-  // Basic validation and error handling
-  if (!response || !response.output || !Array.isArray(response.output)) {
-    if (response?.error) {
-      console.error(`GreptimeDB query failed: ${response.error} (Code: ${response.code})`);
-      // Consider throwing an error or returning a specific error frame if needed
-      // Example: throw new Error(`GreptimeDB Error: ${response.error}`);
-    } else {
-      console.error('Invalid or missing "output" array in GreptimeDB response.');
-    }
-    return dataFrames; // Return empty array if response structure is invalid
-  }
-
-  // Process each result set in the 'output' array
-  response.output.forEach((resultSet, index) => {
-    // Validate structure of the current result set
-    if (!resultSet?.records?.schema?.column_schemas || !resultSet?.records?.rows) {
-      console.warn(`Skipping invalid result set at index ${index}. Missing schema, column_schemas, or rows.`);
-      return; // continue to next iteration
-    }
-
-    const { schema, rows } = resultSet.records;
-    const columnSchemas = schema.column_schemas;
-    const numCols = columnSchemas.length;
-    const numRows = rows.length;
-
-    // Handle cases with no columns
-    if (numCols === 0) {
-      console.info(`Result set at index ${index} contains no columns.`);
-      // Optionally create and push an empty frame if needed:
-      // dataFrames.push({ name: `Result ${index + 1}`, refId, fields: [], length: 0 });
-      return; // continue to next iteration
-    }
-
-    // --- Data Transposition ---
-    // Create arrays to hold the data for each column
-    const columnValueArrays: any[][] = Array.from({ length: numCols }, () => new Array(numRows));
-
-    // Iterate through rows from the response
-    for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
-      const row = rows[rowIndex];
-
-      // Validate row structure
-      if (!Array.isArray(row) || row.length !== numCols) {
-        console.error(`Row ${rowIndex} in result set ${index} has incorrect length (${row?.length ?? 'undefined'}), expected ${numCols}. Filling with undefined.`);
-        // Fill this row's values with undefined in all columns
-        for (let colIndex = 0; colIndex < numCols; colIndex++) {
-          columnValueArrays[colIndex][rowIndex] = undefined;
-        }
-        continue; // Move to the next row
-      }
-
-      // Populate the column arrays with data from the current row
-      for (let colIndex = 0; colIndex < numCols; colIndex++) {
-        // GreptimeDB JSON null becomes JS null. Grafana's Array<T> handles null.
-        // Map to undefined if strict undefined is preferred, though null is usually fine.
-        const grafanaDataType = mapGreptimeTypeToGrafana(columnSchemas[colIndex].data_type)
-        if (grafanaDataType === FieldType.time) {
-          columnValueArrays[colIndex][rowIndex] = toMs(row[colIndex], columnSchemas[colIndex].data_type as GreptimeTimeType);
-        } else {
-          columnValueArrays[colIndex][rowIndex] = row[colIndex];
-        }
-      }
-    }
-    // --- End Data Transposition ---
-
-
-    // Create Grafana Fields from the transposed column data
-    const fields: Field[] = columnSchemas.map((colSchema, i) => {
-      const fieldName = colSchema.name || `column_${i + 1}`; // Fallback name
-      const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
-      const values: any[] = columnValueArrays[i]; // Use simple Array<T>
-
-      // Basic field configuration (can be expanded)
-      const config: FieldConfig = {
-        displayName: fieldName, // Use column name as display name initially
-        // Add units, decimals, mappings etc. based on colSchema or query options if needed
-      };
-
-      return {
-        name: fieldName,
-        type: fieldType,
-        config: config,
-        values: values, // The array containing column data
-      };
-    });
-
-    // Construct the Grafana DataFrame for this result set
-    const frame: DataFrame = {
-      name: `Result ${index + 1}`, // Assign a basic name (could be based on query alias)
-      refId: refId, // Link back to the query
-      fields: fields, // The array of Field objects
-      length: numRows, // Explicitly set the number of rows
-    };
-
-    dataFrames.push(frame);
-  });
-
-  return dataFrames;
-}
-
-// Interfaces defining the structure of the GreptimeDB /v1/sql response
-interface GreptimeColumnSchema {
-  name: string;
-  data_type: string;
-}
-
-interface GreptimeSchema {
-  column_schemas: GreptimeColumnSchema[];
-}
-
-interface GreptimeRecords {
-  schema: GreptimeSchema;
-  rows: any[][]; // Array of rows, each row is an array of values
-}
-
-interface GreptimeOutput {
-  // May have other properties, but 'records' is key for data
-  records: GreptimeRecords;
-}
-
-interface GreptimeResponse {
-  code: number;
-  execution_time_ms?: number; // Optional
-  output?: GreptimeOutput[]; // Array of result sets
-  error?: string; // Optional error message
 }
 
 export const greptimeTypeToGrafana: Record<GreptimeDataTypes, FieldType> = {
@@ -497,32 +341,20 @@ function transformGreptimeDBEvents(events: any[]): Array<{ timestamp: number; fi
 }
 
 
-// Function to parse the GROUP BY clause from the SQL query (simplified)
-function parseGroupByColumns(sql: string): string[] {
-  const groupByColumns: string[] = [];
-  const groupByClause = sql.match(/GROUP BY\s+([^\s]+(?:,\s*[^\s]+)*)/i); // Case-insensitive
-
-  if (groupByClause && groupByClause[1]) {
-    // Split the GROUP BY clause by commas and trim whitespace
-    groupByClause[1].split(',').forEach(column => {
-      groupByColumns.push(column.trim());
-    });
-  }
-  return groupByColumns;
-}
-
+/**
+ * Transforms GreptimeDB /v1/sql JSON into Grafana DataFrames (long table format).
+ * Mirrors ClickHouse/sqlutil FrameFromRows: one frame per result set, no GROUP BY
+ * splitting, and no forced displayName (so panel Display name and Grafana labels work).
+ */
 export function transformGreptimeResponseToGrafana(
   response: GreptimeResponse,
-  refId?: string,
-  sql?: string // Added the optional sql parameter
+  refId?: string
 ): DataFrame[] {
   const dataFrames: DataFrame[] = [];
 
-  // Basic validation and error handling
   if (!response || !response.output || !Array.isArray(response.output)) {
     if (response?.error) {
       console.error(`GreptimeDB query failed: ${response.error} (Code: ${response.code})`);
-      // Consider throwing an error or returning a specific error frame if needed
       dataFrames.push({
         refId: refId,
         fields: [{ name: 'Error', type: FieldType.string, values: [response.error], config: {} }],
@@ -531,15 +363,13 @@ export function transformGreptimeResponseToGrafana(
     } else {
       console.error('Invalid or missing "output" array in GreptimeDB response.');
     }
-    return dataFrames; // Return even with error frame
+    return dataFrames;
   }
 
-  // Process each result set in the 'output' array
   response.output.forEach((resultSet, index) => {
-    // Validate structure of the current result set
     if (!resultSet?.records?.schema?.column_schemas || !resultSet?.records?.rows) {
       console.warn(`Skipping invalid result set at index ${index}. Missing schema, column_schemas, or rows.`);
-      return; // continue to next iteration
+      return;
     }
 
     const { schema, rows } = resultSet.records;
@@ -547,131 +377,55 @@ export function transformGreptimeResponseToGrafana(
     const numCols = columnSchemas.length;
     const numRows = rows.length;
 
-    // Handle cases with no columns
     if (numCols === 0) {
       console.info(`Result set at index ${index} contains no columns.`);
       dataFrames.push({ name: `Result ${index + 1}`, refId, fields: [], length: 0 });
       return;
     }
 
-    // --- Identify Grouping Columns and Value Columns ---
-    let groupingColumnIndices: number[] = [];
+    const columnValueArrays: any[][] = Array.from({ length: numCols }, () => new Array(numRows));
 
-    if (sql) {
-      // Use the parsed GROUP BY columns from the SQL query
-      const groupByColumns = parseGroupByColumns(sql);
-      groupingColumnIndices = columnSchemas.map((colSchema, i) => {
-        return groupByColumns.includes(colSchema.name) ? i : -1;
-      }).filter(i => i !== -1);
-    }
+    for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
+      const row = rows[rowIndex];
 
-    // --- Data Transposition and Series Creation ---
-    const seriesMap: Record<string, any[][]> = {}; // { groupKey: columnDataArrays }
-
-    // Case 1: No grouping columns or only one grouping column.
-    if (groupingColumnIndices.length === 0) {
-      const columnValueArrays: any[][] = Array.from({ length: numCols }, () => new Array(numRows));
-
-      for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
-        const row = rows[rowIndex];
+      if (!Array.isArray(row) || row.length !== numCols) {
+        console.error(
+          `Row ${rowIndex} in result set ${index} has incorrect length (${row?.length ?? 'undefined'}), expected ${numCols}. Filling with undefined.`
+        );
         for (let colIndex = 0; colIndex < numCols; colIndex++) {
-          const colSchema = columnSchemas[colIndex];
-          const grafanaDataType = mapGreptimeTypeToGrafana(colSchema.data_type);
-          if (grafanaDataType === FieldType.time) {
-            columnValueArrays[colIndex][rowIndex] = toMs(row[colIndex], colSchema.data_type as GreptimeTimeType);
-          } else {
-            columnValueArrays[colIndex][rowIndex] = row[colIndex];
-          }
+          columnValueArrays[colIndex][rowIndex] = undefined;
+        }
+        continue;
+      }
+
+      for (let colIndex = 0; colIndex < numCols; colIndex++) {
+        const colSchema = columnSchemas[colIndex];
+        const grafanaDataType = mapGreptimeTypeToGrafana(colSchema.data_type);
+        if (grafanaDataType === FieldType.time) {
+          columnValueArrays[colIndex][rowIndex] = toMs(row[colIndex], colSchema.data_type as GreptimeTimeType);
+        } else {
+          columnValueArrays[colIndex][rowIndex] = row[colIndex];
         }
       }
-      const fields: Field[] = columnSchemas.map((colSchema, i) => {
-        const fieldName = colSchema.name || `column_${i + 1}`;
-        const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
-        const values = columnValueArrays[i];
-        const config: FieldConfig = {
-          displayName: fieldName,
-        };
-        return {
-          name: fieldName,
-          type: fieldType,
-          config: config,
-          values: values,
-        };
-      });
-      const frame: DataFrame = {
-        name: `Result ${index + 1}`,
-        refId: refId,
-        fields: fields,
-        length: numRows,
+    }
+
+    const fields: Field[] = columnSchemas.map((colSchema, i) => {
+      const fieldName = colSchema.name || `column_${i + 1}`;
+      return {
+        name: fieldName,
+        type: mapGreptimeTypeToGrafana(colSchema.data_type),
+        // Empty config: do not set displayName (ClickHouse/sqlutil behavior; fixes #63)
+        config: {},
+        values: columnValueArrays[i],
       };
-      dataFrames.push(frame);
-    } else {
-      // Case 2: Multiple grouping columns - create multiple series
-      // Iterate through rows from the response
-      for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
-        const row = rows[rowIndex];
+    });
 
-        // Validate row structure
-        if (!Array.isArray(row) || row.length !== numCols) {
-          console.error(`Row ${rowIndex} in result set ${index} has incorrect length (${row?.length ?? 'undefined'}), expected ${numCols}. Skipping row.`);
-          continue; // Move to the next row
-        }
-
-        // Construct a unique key for the series based on the grouping column values.
-        let groupKey = '';
-        for (const groupIndex of groupingColumnIndices) {
-          groupKey += `${columnSchemas[groupIndex].name}:${row[groupIndex]};`;
-        }
-
-        // Initialize the series entry if it doesn't exist
-        if (!seriesMap[groupKey]) {
-          seriesMap[groupKey] = Array.from({ length: numCols }, () => []);
-        }
-
-        // Populate the series data
-        for (let colIndex = 0; colIndex < numCols; colIndex++) {
-          const colSchema = columnSchemas[colIndex];
-          const grafanaDataType = mapGreptimeTypeToGrafana(colSchema.data_type);
-
-          if (grafanaDataType === FieldType.time) {
-            seriesMap[groupKey][colIndex].push(toMs(row[colIndex], colSchema.data_type as GreptimeTimeType));
-          } else {
-            seriesMap[groupKey][colIndex].push(row[colIndex]);
-          }
-        }
-      }
-      // --- Create Grafana DataFrames from Series ---
-      for (const groupKey in seriesMap) {
-        if (!Object.prototype.hasOwnProperty.call(seriesMap, groupKey)) {
-          continue;
-        }
-        const columnValueArrays = seriesMap[groupKey];
-        const fields: Field[] = columnSchemas.map((colSchema, i) => {
-          const fieldName = colSchema.name || `column_${i + 1}`;
-          const fieldType = mapGreptimeTypeToGrafana(colSchema.data_type);
-          const values = columnValueArrays[i];
-
-          const config: FieldConfig = {
-            displayName: fieldName + '_' + groupKey,
-          };
-
-          return {
-            name: fieldName,
-            type: fieldType,
-            config: config,
-            values: values,
-          };
-        });
-
-        const frame: DataFrame = {
-          name: groupKey, // Use the group key as the frame name
-          refId: refId,
-          fields: fields,
-          length: columnValueArrays[0]?.length || 0,
-        };
-        dataFrames.push(frame);
-      }
-    }
+    dataFrames.push({
+      name: `Result ${index + 1}`,
+      refId: refId,
+      fields: fields,
+      length: numRows,
+    });
   });
 
   return dataFrames;

@@ -283,7 +283,8 @@ describe('SQL Generator', () => {
     expect(sql).toEqual(expectedSqlParts.join(' '));
   });
 
-  it('generates aggregate time series query', () => {
+  it('generates simple time series query with aggregates (non-Trend mode)', () => {
+    // Without mode: Trend this hits generateSimpleTimeSeriesQuery, not Aggregate/Trend.
     const opts: QueryBuilderOptions = {
       database: 'default',
       table: 'time_data',
@@ -307,13 +308,63 @@ describe('SQL Generator', () => {
       orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }]
     };
     const expectedSqlParts = [
-      'SELECT time_field as "time", number_field, sum(number_field) as total',
-      'FROM "default"."time_data" WHERE ( number_field > 0 )',
-      'GROUP BY time ORDER BY time ASC LIMIT 100'
+      'SELECT "time_field" as "time", "number_field", sum(number_field) as total',
+      'FROM "default"."time_data" WHERE ( "number_field" > 0 )',
+      'GROUP BY time_field ORDER BY time ASC LIMIT 100'
     ];
 
     const sql = generateSql(opts);
     expect(sql).toEqual(expectedSqlParts.join(' '));
+  });
+
+  it('generates Trend aggregate time series with date_bin($__interval) for Greptime', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'default',
+      table: 'time_data',
+      queryType: QueryType.TimeSeries,
+      mode: BuilderMode.Trend,
+      columns: [{ name: 'time_field', type: 'DateTime', hint: ColumnHint.Time }],
+      limit: 1000,
+      aggregates: [{ aggregateType: AggregateType.Max, column: 'max_current_amps' }],
+      filters: [
+        {
+          filterType: 'custom',
+          key: 'channel',
+          type: 'String',
+          condition: 'AND',
+          operator: FilterOperator.Equals,
+          value: 'total',
+        },
+      ],
+      orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }],
+    };
+
+    const sql = generateSql(opts);
+    expect(sql).toContain("date_bin('$__interval', time_field)");
+    expect(sql).not.toContain('$__timeInterval');
+    expect(sql).not.toContain("date_trunc('minute'");
+    expect(sql).toContain('as "time"');
+    expect(sql).toContain('GROUP BY time');
+    expect(sql).toContain('LIMIT 1000');
+    expect(sql).toContain('max(max_current_amps)');
+  });
+
+  it('generates Trend aggregate time series with groupBy dims and time alias', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'default',
+      table: 'time_data',
+      queryType: QueryType.TimeSeries,
+      mode: BuilderMode.Trend,
+      columns: [{ name: 'greptime_timestamp', type: 'TimestampMillisecond', hint: ColumnHint.Time }],
+      limit: 1000,
+      groupBy: ['host'],
+      aggregates: [{ aggregateType: AggregateType.Sum, column: 'cpu', alias: 'cpu' }],
+      orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }],
+    };
+
+    const sql = generateSql(opts);
+    expect(sql).toContain(`date_bin('$__interval', greptime_timestamp) as "time"`);
+    expect(sql).toContain('GROUP BY host, time');
   });
 
   it('generates trace ID query without OTel enabled', () => {

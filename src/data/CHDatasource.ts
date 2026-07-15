@@ -38,10 +38,13 @@ import {
   SelectedColumn,
 } from 'types/queryBuilder';
 import { AdHocFilter, AdHocVariableFilter } from './adHocFilter';
+import { CHVariableSupport } from './CHVariableSupport';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
   getIntervalInfo,
+  expandGreptimeIntervalMacros,
+  resolveGreptimePanelInterval,
   getTimeFieldRoundingClause,
   LOG_LEVEL_TO_IN_CLAUSE,
   queryLogsVolume,
@@ -55,6 +58,34 @@ import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
 import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
 import { GreptimeResponse } from 'greptimedb/types';
+
+/** Prefer Greptime/Grafana fetch error bodies over an empty Error.message ("Unknown error"). */
+function formatQueryError(error: any): string {
+  if (!error) {
+    return 'Unknown error';
+  }
+  const data = error.data ?? error;
+  const fromBody =
+    (typeof data === 'string' && data) ||
+    data?.error ||
+    data?.message ||
+    data?.error_info?.message ||
+    (typeof data?.error_code !== 'undefined' ? `error_code=${data.error_code}` : undefined);
+  if (fromBody) {
+    return String(fromBody);
+  }
+  if (error.message) {
+    return String(error.message);
+  }
+  if (error.status) {
+    return `HTTP ${error.status}`;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Unknown error';
+  }
+}
 
 function createMultiSearchAnyEquivalent(llfColumn: string, searchTermsString: string, alias: string): { aggregateType: AggregateType; column: string; alias: string } {
   const searchTerms = searchTermsString.split(','); // Split the comma-separated string into an array of terms
@@ -85,6 +116,7 @@ export class Datasource
     super(instanceSettings);
     this.settings = instanceSettings;
     this.adHocFilter = new AdHocFilter();
+    this.variables = new CHVariableSupport(this);
   }
   
   private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[]): Filter[] {
@@ -864,53 +896,40 @@ export class Datasource
     const getInterpolatedSql = (rawSql: string): string => {
       const fromTimeISO = range?.from.toISOString();
       const toTimeISO = range?.to.toISOString();
-  
-      // 1) 先用 Grafana 的模板引擎替换普通变量（包括 dashboard 变量）
-      let interpolated = getTemplateSrv().replace(rawSql, request.scopedVars);
+      const rangeMs = range ? range.to.valueOf() - range.from.valueOf() : undefined;
 
-      // 2) 展开自定义时间宏
+      // Resolve panel interval from Grafana's request (not logs-style 1s/1m/1h snap).
+      // Expand BEFORE templateSrv so `$__interval` inside date_bin() is not left to
+      // a mismatched Grafana variable replacement.
+      const scopedInterval =
+        typeof request.scopedVars?.__interval?.value === 'string'
+          ? request.scopedVars.__interval.value
+          : undefined;
+      const scopedIntervalMs =
+        typeof request.scopedVars?.__interval_ms?.value === 'number'
+          ? request.scopedVars.__interval_ms.value
+          : undefined;
+      const resolvedInterval = resolveGreptimePanelInterval({
+        interval: request.interval || scopedInterval,
+        intervalMs: request.intervalMs ?? scopedIntervalMs,
+        rangeMs,
+        maxDataPoints: request.maxDataPoints,
+      });
+
+      let interpolated = expandGreptimeIntervalMacros(rawSql, resolvedInterval);
+
+      // Dashboard template variables (not $__interval — already expanded above)
+      interpolated = getTemplateSrv().replace(interpolated, request.scopedVars);
+
+      // Expand custom time macros
       if (fromTimeISO && toTimeISO) {
-        // $__fromTime / $__toTime
         interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
         interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
 
-        // $__timeFilter(time_column) -> time_column BETWEEN 'from' AND 'to'
         interpolated = interpolated.replace(/\$__timeFilter\(([^)]+)\)/g, (_match, col) => {
           const column = String(col).trim();
           return `${column} >= '${fromTimeISO}' AND ${column} <= '${toTimeISO}'`;
         });
-      }
-
-      // 3) 展开 $__interval（GreptimeDB 目前不支持在服务端解析宏）
-      if (interpolated.includes('$__interval')) {
-        const intervalInfo = getIntervalInfo(request.scopedVars || ({} as any));
-        let interval = intervalInfo.interval;
-
-        // 如果还是 '$__interval'，说明 scopedVars 里没带实际值，按时间范围兜底计算一个
-        if (interval === '$__interval') {
-          let intervalMs = request.intervalMs;
-          if (!intervalMs && range) {
-            const rangeMs = range.to.valueOf() - range.from.valueOf();
-            // 简单估算：大致 100 个点
-            intervalMs = Math.max(Math.floor(rangeMs / 100), 1000);
-          }
-
-          if (intervalMs) {
-            if (intervalMs > 60 * 60 * 1000) {
-              interval = '1d';
-            } else if (intervalMs > 60 * 1000) {
-              interval = '1h';
-            } else if (intervalMs > 1000) {
-              interval = '1m';
-            } else {
-              interval = '1s';
-            }
-          } else {
-            interval = '1m';
-          }
-        }
-
-        interpolated = interpolated.replace(/\$__interval/g, interval);
       }
 
       return interpolated;
@@ -952,7 +971,7 @@ export class Datasource
             
             return frames;
           } else {
-            return transformGreptimeResponseToGrafana(greptimeData, target.refId, sql);
+            return transformGreptimeResponseToGrafana(greptimeData, target.refId);
           }
           
           
@@ -961,17 +980,15 @@ export class Datasource
         // Catch errors specifically for this target's request/transformation
         catchError(error => {
           console.error(`Error processing target ${target.refId}:`, error);
-          // Return an Observable emitting an empty array or a specific error frame
-          // This prevents one failed target from failing the entire query if desired
+          const detail = formatQueryError(error);
           const errorFrame = new MutableDataFrame({
             refId: target.refId,
             fields: [
-                { name: 'Error', values: [`Failed to process query for ${target.refId}: ${error?.message || 'Unknown error'}`] }
+                { name: 'Error', values: [`Failed to process query for ${target.refId}: ${detail}`] }
             ],
             meta: { preferredVisualisationType: 'table' }
           });
-          return of([errorFrame]); // Return Observable<DataFrame[]> with error frame
-          // Or return of([]) to just ignore the failed target's results
+          return of([errorFrame]);
         })
       ); // End pipe for this target
     })
@@ -995,13 +1012,10 @@ export class Datasource
     // Catch errors from forkJoin or the final map transformation
     catchError(error => {
       console.error('Error combining results or in final transformation:', error);
-      // Create an error frame for the overall failure
       const errorFrame = new MutableDataFrame({
-        // No specific refId here, or use request.requestId if available
-        fields: [{ name: 'Error', values: [`Failed to execute query: ${error?.message || 'Unknown error'}`] }],
+        fields: [{ name: 'Error', values: [`Failed to execute query: ${formatQueryError(error)}`] }],
         meta: { preferredVisualisationType: 'table' }
       });
-      // Return an Observable emitting a DataQueryResponse containing the error frame
       return of({ data: [errorFrame] });
     })
   ); 
@@ -1023,9 +1037,12 @@ export class Datasource
 
   private runQuery(request: Partial<CHQuery>, options?: any): Promise<DataFrame> {
     return new Promise((resolve) => {
+      // VariableSupport often passes `{ range: undefined }`. Do not treat a present
+      // but empty options object as having a valid range — fall back to dashboard time.
+      const range = options?.range ?? (getTemplateSrv() as any).timeRange;
       const req = {
         targets: [{ ...request, refId: String(Math.random()) }],
-        range: options ? options.range : (getTemplateSrv() as any).timeRange,
+        range,
       } as DataQueryRequest<CHQuery>;
       this.query(req).subscribe((res: DataQueryResponse) => {
         resolve(res.data[0] || { fields: [] });

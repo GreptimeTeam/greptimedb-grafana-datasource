@@ -1,14 +1,14 @@
 services:
-  # greptimedb:
-  #   image: greptime/greptimedb:latest
-  #   container_name: greptimedb_dev
-  #   command: standalone start --http-addr=0.0.0.0:4000 --rpc-bind-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
-  #   ports:
-  #     - 4000:4000
-  #     - 4001:4001
-  #     - 4002:4002
-  #   networks:
-  #     - grafana
+  greptimedb:
+    image: greptime/greptimedb:latest
+    container_name: greptimedb_dev
+    command: standalone start --http-addr=0.0.0.0:4000 --rpc-bind-addr=0.0.0.0:4001 --mysql-addr=0.0.0.0:4002
+    ports:
+      - 4000:4000
+      - 4001:4001
+      - 4002:4002
+    networks:
+      - grafana
   grafana:
     container_name: grafana
     build:
