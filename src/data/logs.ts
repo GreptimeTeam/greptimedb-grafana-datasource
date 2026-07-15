@@ -196,6 +196,91 @@ export function getIntervalInfo(scopedVars: ScopedVars): { interval: string; int
   }
 }
 
+/** Parse Grafana interval strings like `15s`, `5m`, `2h`, `1d` to milliseconds. */
+export function parseGrafanaIntervalToMs(interval: string): number | undefined {
+  const m = interval.trim().match(/^(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)$/i);
+  if (!m) {
+    return undefined;
+  }
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n <= 0) {
+    return undefined;
+  }
+  switch (m[2].toLowerCase()) {
+    case 'ms':
+      return n;
+    case 's':
+      return n * 1000;
+    case 'm':
+      return n * 60_000;
+    case 'h':
+      return n * 3_600_000;
+    case 'd':
+      return n * 86_400_000;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Resolve a Greptime `date_bin` interval from Grafana's panel interval only.
+ * Prefer `request.interval` as-is, then `intervalMs`. Range/maxDataPoints are
+ * used only when Grafana did not provide an interval (fallback).
+ */
+export function resolveGreptimePanelInterval(options: {
+  interval?: string;
+  intervalMs?: number;
+  rangeMs?: number;
+  maxDataPoints?: number;
+}): string {
+  const fromString = options.interval?.trim();
+  if (fromString && fromString !== '$__interval' && parseGrafanaIntervalToMs(fromString) !== undefined) {
+    return fromString;
+  }
+
+  if (options.intervalMs && options.intervalMs > 0) {
+    return msToGreptimeDateBinInterval(options.intervalMs);
+  }
+
+  if (options.rangeMs && options.rangeMs > 0) {
+    const points = Math.max(options.maxDataPoints || 1000, 1);
+    return msToGreptimeDateBinInterval(Math.max(Math.floor(options.rangeMs / points), 1000));
+  }
+
+  return '1m';
+}
+
+/** Convert milliseconds to a Greptime `date_bin` duration literal (`15s`, `5m`, `2h`, `1d`). */
+export function msToGreptimeDateBinInterval(ms: number): string {
+  const sec = Math.max(Math.round(ms / 1000), 1);
+  if (sec < 60) {
+    return `${sec}s`;
+  }
+  const min = Math.round(sec / 60);
+  if (min < 60) {
+    return `${Math.max(min, 1)}m`;
+  }
+  const hour = Math.round(min / 60);
+  if (hour < 24) {
+    return `${Math.max(hour, 1)}h`;
+  }
+  return `${Math.max(Math.round(hour / 24), 1)}d`;
+}
+
+/**
+ * Expand Greptime frontend interval macros after the panel interval is resolved.
+ * $__timeInterval must be expanded before bare $__interval so the latter cannot
+ * corrupt `$__timeInterval` (substring match). Equivalent to ClickHouse's
+ * $__timeInterval → toStartOfInterval, using Greptime date_bin instead.
+ */
+export function expandGreptimeIntervalMacros(sql: string, resolvedInterval: string): string {
+  let out = sql.replace(/\$__timeInterval\(([^)]+)\)/g, (_match, col) => {
+    return `date_bin('${resolvedInterval}', ${String(col).trim()})`;
+  });
+  out = out.replace(/\$__interval/g, resolvedInterval);
+  return out;
+}
+
 // export function getTimeFieldRoundingClause(scopedVars: ScopedVars, timeField: string): string {
 //   // NB: slight discrepancy with getIntervalInfo here
 //   // it returns { interval: '$__interval' } when the interval from the ScopedVars is undefined,

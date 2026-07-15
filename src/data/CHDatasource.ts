@@ -42,6 +42,8 @@ import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
   getIntervalInfo,
+  expandGreptimeIntervalMacros,
+  resolveGreptimePanelInterval,
   getTimeFieldRoundingClause,
   LOG_LEVEL_TO_IN_CLAUSE,
   queryLogsVolume,
@@ -864,53 +866,40 @@ export class Datasource
     const getInterpolatedSql = (rawSql: string): string => {
       const fromTimeISO = range?.from.toISOString();
       const toTimeISO = range?.to.toISOString();
-  
-      // 1) 先用 Grafana 的模板引擎替换普通变量（包括 dashboard 变量）
-      let interpolated = getTemplateSrv().replace(rawSql, request.scopedVars);
+      const rangeMs = range ? range.to.valueOf() - range.from.valueOf() : undefined;
 
-      // 2) 展开自定义时间宏
+      // Resolve panel interval from Grafana's request (not logs-style 1s/1m/1h snap).
+      // Expand BEFORE templateSrv so `$__interval` inside date_bin() is not left to
+      // a mismatched Grafana variable replacement.
+      const scopedInterval =
+        typeof request.scopedVars?.__interval?.value === 'string'
+          ? request.scopedVars.__interval.value
+          : undefined;
+      const scopedIntervalMs =
+        typeof request.scopedVars?.__interval_ms?.value === 'number'
+          ? request.scopedVars.__interval_ms.value
+          : undefined;
+      const resolvedInterval = resolveGreptimePanelInterval({
+        interval: request.interval || scopedInterval,
+        intervalMs: request.intervalMs ?? scopedIntervalMs,
+        rangeMs,
+        maxDataPoints: request.maxDataPoints,
+      });
+
+      let interpolated = expandGreptimeIntervalMacros(rawSql, resolvedInterval);
+
+      // Dashboard template variables (not $__interval — already expanded above)
+      interpolated = getTemplateSrv().replace(interpolated, request.scopedVars);
+
+      // Expand custom time macros
       if (fromTimeISO && toTimeISO) {
-        // $__fromTime / $__toTime
         interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
         interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
 
-        // $__timeFilter(time_column) -> time_column BETWEEN 'from' AND 'to'
         interpolated = interpolated.replace(/\$__timeFilter\(([^)]+)\)/g, (_match, col) => {
           const column = String(col).trim();
           return `${column} >= '${fromTimeISO}' AND ${column} <= '${toTimeISO}'`;
         });
-      }
-
-      // 3) 展开 $__interval（GreptimeDB 目前不支持在服务端解析宏）
-      if (interpolated.includes('$__interval')) {
-        const intervalInfo = getIntervalInfo(request.scopedVars || ({} as any));
-        let interval = intervalInfo.interval;
-
-        // 如果还是 '$__interval'，说明 scopedVars 里没带实际值，按时间范围兜底计算一个
-        if (interval === '$__interval') {
-          let intervalMs = request.intervalMs;
-          if (!intervalMs && range) {
-            const rangeMs = range.to.valueOf() - range.from.valueOf();
-            // 简单估算：大致 100 个点
-            intervalMs = Math.max(Math.floor(rangeMs / 100), 1000);
-          }
-
-          if (intervalMs) {
-            if (intervalMs > 60 * 60 * 1000) {
-              interval = '1d';
-            } else if (intervalMs > 60 * 1000) {
-              interval = '1h';
-            } else if (intervalMs > 1000) {
-              interval = '1m';
-            } else {
-              interval = '1s';
-            }
-          } else {
-            interval = '1m';
-          }
-        }
-
-        interpolated = interpolated.replace(/\$__interval/g, interval);
       }
 
       return interpolated;
@@ -952,7 +941,7 @@ export class Datasource
             
             return frames;
           } else {
-            return transformGreptimeResponseToGrafana(greptimeData, target.refId, sql);
+            return transformGreptimeResponseToGrafana(greptimeData, target.refId);
           }
           
           

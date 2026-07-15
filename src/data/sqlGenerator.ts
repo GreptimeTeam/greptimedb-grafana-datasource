@@ -411,9 +411,9 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
-    // timeColumn.name = `$__timeInterval(${timeColumn.name})`;
-    timeColumn.columnName = timeColumn.name;
-    timeColumn.name = `date_trunc('minute', ${timeColumn.name})`
+    // Align with ClickHouse: panel-interval bucketing via $__timeInterval (expanded to date_bin in CHDatasource).
+    // Intentional Greptime deviation from upstream: CH expands this to toStartOfInterval in Go macros.
+    timeColumn.name = `$__timeInterval(${timeColumn.name})`;
     timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
   }
@@ -439,12 +439,12 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
     queryParts.push(filterParts);
   }
 
+  // Same shape as ClickHouse: GROUP BY time alias (and optional dims)
   queryParts.push('GROUP BY');
   if ((options.groupBy?.length || 0) > 0) {
-    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.name}` : '';
+    const groupByTime = timeColumn !== undefined ? `, ${timeColumn.alias}` : '';
     const escapedGroupBy = options.groupBy!.map(g => escapeIdentifierIfNeeded(g)).join(', ');
-    const escapedGroupByTime = timeColumn !== undefined ? `, ${escapeIdentifierIfNeeded(timeColumn.name)}` : '';
-    queryParts.push(`${escapedGroupBy}${escapedGroupByTime || groupByTime}`);
+    queryParts.push(`${escapedGroupBy}${groupByTime}`);
   } else if (timeColumn) {
     queryParts.push(timeColumn.alias!);
   }

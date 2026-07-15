@@ -1,4 +1,4 @@
-import { aggregateRawLogsVolume, getIntervalInfo, getTimeFieldRoundingClause, LOG_LEVEL_TO_IN_CLAUSE } from './logs';
+import { aggregateRawLogsVolume, expandGreptimeIntervalMacros, getIntervalInfo, getTimeFieldRoundingClause, LOG_LEVEL_TO_IN_CLAUSE, msToGreptimeDateBinInterval, resolveGreptimePanelInterval } from './logs';
 import { FieldType } from '@grafana/data';
 
 describe('logs', () => {
@@ -166,7 +166,7 @@ describe('logs', () => {
 
   describe('getTimeFieldRoundingClause', () => {
     it('should fall back to DAY grouping when no interval info is provided', async () => {
-      expect(getTimeFieldRoundingClause({}, 'created_at')).toEqual('toStartOfInterval("created_at", INTERVAL 1 DAY)');
+      expect(getTimeFieldRoundingClause({}, 'created_at')).toEqual("date_bin('1d', \"created_at\")");
     });
     it('should do buckets per day when the provided interval greater than an hour', async () => {
       expect(
@@ -179,7 +179,7 @@ describe('logs', () => {
           },
           'created_at'
         )
-      ).toEqual('toStartOfInterval("created_at", INTERVAL 1 DAY)');
+      ).toEqual("date_bin('1d', \"created_at\")");
     });
     it('should do buckets per hour when the provided interval greater than a minute', async () => {
       expect(
@@ -192,7 +192,7 @@ describe('logs', () => {
           },
           'created_at'
         )
-      ).toEqual('toStartOfInterval("created_at", INTERVAL 1 HOUR)');
+      ).toEqual("date_bin('1h', \"created_at\")");
     });
     it('should do buckets per minute when the provided interval greater than a second', async () => {
       expect(
@@ -205,7 +205,7 @@ describe('logs', () => {
           },
           'created_at'
         )
-      ).toEqual('toStartOfInterval("created_at", INTERVAL 1 MINUTE)');
+      ).toEqual("date_bin('1m', \"created_at\")");
     });
     it('should do buckets per second', async () => {
       expect(
@@ -218,7 +218,49 @@ describe('logs', () => {
           },
           'created_at'
         )
-      ).toEqual('toStartOfInterval("created_at", INTERVAL 1 SECOND)');
+      ).toEqual("date_bin('1s', \"created_at\")");
+    });
+  });
+
+  describe('resolveGreptimePanelInterval', () => {
+    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+
+    it('follows Grafana interval string as-is (no range coarsening)', () => {
+      expect(resolveGreptimePanelInterval({ interval: '5m', intervalMs: 60_000, rangeMs: twoDaysMs, maxDataPoints: 1000 })).toBe(
+        '5m'
+      );
+      // Even on a multi-day range, trust Grafana's 1m when that is what it sent
+      expect(resolveGreptimePanelInterval({ interval: '1m', intervalMs: 60_000, rangeMs: twoDaysMs, maxDataPoints: 1000 })).toBe(
+        '1m'
+      );
+    });
+
+    it('converts intervalMs with fine granularity (not logs 1s/1m/1h snap)', () => {
+      // ~2 day range / 1000 points ≈ 172.8s → should be minutes, not forced 1h/1m snap only
+      expect(msToGreptimeDateBinInterval(172_800)).toBe('3m');
+      expect(resolveGreptimePanelInterval({ intervalMs: 172_800 })).toBe('3m');
+      expect(resolveGreptimePanelInterval({ intervalMs: 3_600_000 })).toBe('1h');
+    });
+
+    it('uses range and maxDataPoints only as fallback when Grafana interval is absent', () => {
+      expect(resolveGreptimePanelInterval({ rangeMs: twoDaysMs, maxDataPoints: 1000 })).toBe('3m');
+    });
+  });
+
+  describe('expandGreptimeIntervalMacros', () => {
+    it('expands $__timeInterval to date_bin before bare $__interval', () => {
+      const sql =
+        "SELECT $__timeInterval(greptime_timestamp) as time, avg(v) FROM t WHERE $__interval IS NOT NULL GROUP BY time";
+      expect(expandGreptimeIntervalMacros(sql, '1m')).toBe(
+        "SELECT date_bin('1m', greptime_timestamp) as time, avg(v) FROM t WHERE 1m IS NOT NULL GROUP BY time"
+      );
+    });
+
+    it('does not leave a corrupted $__timeInterval when replacing $__interval', () => {
+      const sql = 'SELECT $__timeInterval(ts) AS time';
+      const expanded = expandGreptimeIntervalMacros(sql, '5m');
+      expect(expanded).toBe("SELECT date_bin('5m', ts) AS time");
+      expect(expanded).not.toContain('$__');
     });
   });
 
