@@ -346,8 +346,47 @@ describe('SQL Generator', () => {
     expect(sql).not.toContain("date_trunc('minute'");
     expect(sql).toContain('as "time"');
     expect(sql).toContain('GROUP BY time');
+    expect(sql).toContain('ORDER BY time ASC');
+    expect(sql).not.toContain('ORDER BY time_field');
     expect(sql).not.toContain('LIMIT');
     expect(sql).toContain('max(max_current_amps)');
+  });
+
+  it('Trend ORDER BY remaps raw time column name to time alias', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'public',
+      table: 'go_goroutines',
+      queryType: QueryType.TimeSeries,
+      mode: BuilderMode.Trend,
+      columns: [{ name: 'greptime_timestamp', type: 'TimestampMillisecond', hint: ColumnHint.Time }],
+      limit: 0,
+      aggregates: [{ aggregateType: AggregateType.Max, column: 'greptime_value' }],
+      // Saved without hint (e.g. Order By dropdown picked the physical column)
+      orderBy: [{ name: 'greptime_timestamp', dir: OrderByDirection.ASC }],
+    };
+
+    const sql = generateSql(opts);
+    expect(sql).toContain('ORDER BY time ASC');
+    expect(sql).not.toContain('ORDER BY greptime_timestamp');
+  });
+
+  it('Trend drops raw time column from groupBy dims', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'public',
+      table: 'go_goroutines',
+      queryType: QueryType.TimeSeries,
+      mode: BuilderMode.Trend,
+      columns: [{ name: 'greptime_timestamp', type: 'TimestampMillisecond', hint: ColumnHint.Time }],
+      limit: 0,
+      groupBy: ['greptime_timestamp', 'instance'],
+      aggregates: [{ aggregateType: AggregateType.Max, column: 'greptime_value' }],
+      orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }],
+    };
+
+    const sql = generateSql(opts);
+    expect(sql).toContain('instance');
+    expect(sql).toContain('GROUP BY instance, time');
+    expect(sql).not.toMatch(/SELECT.*, greptime_timestamp,/);
   });
 
   it('keeps an explicit LIMIT on Trend when the user sets one', () => {

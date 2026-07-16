@@ -124,7 +124,11 @@ export const TimeSeriesQueryBuilder = (props: TimeSeriesQueryBuilderProps) => {
       { builderState.isAggregateMode ? 
         <>
           <AggregateEditor allColumns={allColumns} aggregates={builderState.aggregates} onAggregatesChange={onOptionChange('aggregates')} />
-          <GroupByEditor groupBy={builderState.groupBy} onGroupByChange={onOptionChange('groupBy')} allColumns={allColumns} />
+          <GroupByEditor
+            groupBy={builderState.groupBy}
+            onGroupByChange={onOptionChange('groupBy')}
+            allColumns={allColumns.filter((c) => c.name !== builderState.timeColumn?.name)}
+          />
         </>
         :
         <ColumnsEditor

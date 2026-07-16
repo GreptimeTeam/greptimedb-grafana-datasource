@@ -2,6 +2,8 @@ import React from 'react';
 import { SelectableValue } from '@grafana/data';
 import { Button, InlineFormLabel, Select } from '@grafana/ui';
 import {
+  BuilderMode,
+  ColumnHint,
   OrderBy,
   OrderByDirection,
   QueryBuilderOptions,
@@ -141,6 +143,11 @@ export const getOrderByOptions = (builder: QueryBuilderOptions, allColumns: read
 
   if (isAggregateQuery(builder)) {
     builder.columns?.forEach(c => {
+      // Trend buckets time via date_bin AS time — Order By must use that alias.
+      if (builder.mode === BuilderMode.Trend && c.hint === ColumnHint.Time) {
+        allOptions.push({ label: 'time', value: 'time' });
+        return;
+      }
       allOptions.push({ label: c.alias || c.name, value: c.name });
     });
 
