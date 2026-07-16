@@ -456,6 +456,10 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
     queryParts.push(orderBy);
   }
 
+  // Trend/Aggregate: omit LIMIT by default. A global LIMIT applies across all
+  // series (not per series), so with GROUP BY dims + date_bin it truncates to
+  // the left edge of the time range (#62). Only emit LIMIT when the user set a
+  // positive value in the builder (0/undefined = no clause).
   const limit = getLimit(options.limit);
   if (limit !== '') {
     queryParts.push(limit);

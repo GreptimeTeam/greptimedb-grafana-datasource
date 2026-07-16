@@ -57,6 +57,7 @@ import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLink
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
 import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
+import { framesToMultiFrameTimeSeries } from '../greptimedb/longToMultiFrame';
 import { GreptimeResponse } from 'greptimedb/types';
 
 /** Prefer Greptime/Grafana fetch error bodies over an empty Error.message ("Unknown error"). */
@@ -971,7 +972,13 @@ export class Datasource
             
             return frames;
           } else {
-            return transformGreptimeResponseToGrafana(greptimeData, target.refId);
+            const frames = transformGreptimeResponseToGrafana(greptimeData, target.refId);
+            // Time Series: string dims → field.labels / multi-frame (Prepare time series equivalent).
+            // Table and other types keep long format.
+            if (queryType === QueryType.TimeSeries) {
+              return framesToMultiFrameTimeSeries(frames);
+            }
+            return frames;
           }
           
           

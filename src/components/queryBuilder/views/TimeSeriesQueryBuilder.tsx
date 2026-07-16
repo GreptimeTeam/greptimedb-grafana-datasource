@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ColumnsEditor } from '../ColumnsEditor';
 import { AggregateColumn, BuilderMode, Filter, OrderBy, QueryBuilderOptions, ColumnHint, SelectedColumn } from 'types/queryBuilder';
 import { OrderByEditor, getOrderByOptions } from '../OrderByEditor';
@@ -18,6 +18,8 @@ import { BuilderOptionsReducerAction, setOptions } from 'hooks/useBuilderOptions
 import { useDefaultFilters, useDefaultTimeColumn } from './timeSeriesQueryBuilderHooks';
 import useIsNewQuery from 'hooks/useIsNewQuery';
 
+/** Former builder default; clear on Trend so multi-series are not truncated (#62). */
+const LEGACY_DEFAULT_LIMIT = 1000;
 interface TimeSeriesQueryBuilderProps {
   datasource: Datasource;
   builderOptions: QueryBuilderOptions,
@@ -62,6 +64,16 @@ export const TimeSeriesQueryBuilder = (props: TimeSeriesQueryBuilderProps) => {
       nextColumns.push(next.timeColumn);
     }
 
+    const enteringAggregate = next.isAggregateMode && !builderState.isAggregateMode;
+    const leavingAggregate = !next.isAggregateMode && builderState.isAggregateMode;
+    let nextLimit = next.limit;
+    if (enteringAggregate) {
+      // Default: no LIMIT for Aggregate/Trend (avoids cross-series truncation).
+      nextLimit = 0;
+    } else if (leavingAggregate && (!next.limit || next.limit <= 0)) {
+      nextLimit = 1000;
+    }
+
     builderOptionsDispatch(setOptions({
       mode: next.isAggregateMode ? BuilderMode.Trend : BuilderMode.Aggregate,
       columns: nextColumns,
@@ -69,12 +81,22 @@ export const TimeSeriesQueryBuilder = (props: TimeSeriesQueryBuilderProps) => {
       groupBy: next.isAggregateMode ? next.groupBy : [],
       filters: next.filters,
       orderBy: next.orderBy,
-      limit: next.limit
+      limit: nextLimit
     }));
   }, builderState);
 
   useDefaultTimeColumn(allColumns, builderOptions.table, builderState.timeColumn, builderOptionsDispatch);
   useDefaultFilters(builderOptions.table, isNewQuery, builderOptionsDispatch);
+
+  // Clear the legacy default LIMIT 1000 on Aggregate/Trend panels (saved or inherited).
+  useEffect(() => {
+    if (
+      builderState.isAggregateMode &&
+      builderOptions.limit === LEGACY_DEFAULT_LIMIT
+    ) {
+      builderOptionsDispatch(setOptions({ limit: 0 }));
+    }
+  }, [builderState.isAggregateMode, builderOptions.limit, builderOptionsDispatch]);
 
   return (
     <div>

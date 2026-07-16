@@ -317,14 +317,15 @@ describe('SQL Generator', () => {
     expect(sql).toEqual(expectedSqlParts.join(' '));
   });
 
-  it('generates Trend aggregate time series with date_bin($__interval) for Greptime', () => {
+  it('generates Trend aggregate time series with date_bin($__interval) and no default LIMIT', () => {
     const opts: QueryBuilderOptions = {
       database: 'default',
       table: 'time_data',
       queryType: QueryType.TimeSeries,
       mode: BuilderMode.Trend,
       columns: [{ name: 'time_field', type: 'DateTime', hint: ColumnHint.Time }],
-      limit: 1000,
+      // 0/undefined: no LIMIT — avoids truncating multi-series to the left edge (#62)
+      limit: 0,
       aggregates: [{ aggregateType: AggregateType.Max, column: 'max_current_amps' }],
       filters: [
         {
@@ -345,8 +346,22 @@ describe('SQL Generator', () => {
     expect(sql).not.toContain("date_trunc('minute'");
     expect(sql).toContain('as "time"');
     expect(sql).toContain('GROUP BY time');
-    expect(sql).toContain('LIMIT 1000');
+    expect(sql).not.toContain('LIMIT');
     expect(sql).toContain('max(max_current_amps)');
+  });
+
+  it('keeps an explicit LIMIT on Trend when the user sets one', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'default',
+      table: 'time_data',
+      queryType: QueryType.TimeSeries,
+      mode: BuilderMode.Trend,
+      columns: [{ name: 'time_field', type: 'DateTime', hint: ColumnHint.Time }],
+      limit: 5000,
+      aggregates: [{ aggregateType: AggregateType.Max, column: 'v' }],
+      orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }],
+    };
+    expect(generateSql(opts)).toContain('LIMIT 5000');
   });
 
   it('generates Trend aggregate time series with groupBy dims and time alias', () => {
@@ -356,7 +371,7 @@ describe('SQL Generator', () => {
       queryType: QueryType.TimeSeries,
       mode: BuilderMode.Trend,
       columns: [{ name: 'greptime_timestamp', type: 'TimestampMillisecond', hint: ColumnHint.Time }],
-      limit: 1000,
+      limit: 0,
       groupBy: ['host'],
       aggregates: [{ aggregateType: AggregateType.Sum, column: 'cpu', alias: 'cpu' }],
       orderBy: [{ name: '', hint: ColumnHint.Time, dir: OrderByDirection.ASC }],
@@ -365,6 +380,7 @@ describe('SQL Generator', () => {
     const sql = generateSql(opts);
     expect(sql).toContain(`date_bin('$__interval', greptime_timestamp) as "time"`);
     expect(sql).toContain('GROUP BY host, time');
+    expect(sql).not.toContain('LIMIT');
   });
 
   it('generates trace ID query without OTel enabled', () => {
