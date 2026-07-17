@@ -411,15 +411,31 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
   if (timeColumn !== undefined) {
+    const rawTimeName = timeColumn.name;
     // Greptime-native preview: show date_bin so users can see how points are bucketed.
     // `$__interval` is expanded from Grafana's panel interval in CHDatasource before the query runs.
     // (ClickHouse uses $__timeInterval → toStartOfInterval; we keep expanding that macro too for hand-written SQL.)
-    timeColumn.name = `date_bin('$__interval', ${timeColumn.name})`;
+    timeColumn.name = `date_bin('$__interval', ${rawTimeName})`;
     timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
+
+    // Greptime requires ORDER BY columns to be in GROUP BY or aggregates. After date_bin,
+    // only the `time` alias is grouped — remap Order By that still points at the raw
+    // timestamp column (common when Order By was saved as a column name without hint).
+    if (options.orderBy?.length) {
+      options.orderBy = options.orderBy.map((o) => {
+        if (o.hint === ColumnHint.Time || o.name === rawTimeName) {
+          return { ...o, name: 'time', hint: ColumnHint.Time };
+        }
+        return o;
+      });
+    }
   }
 
-  options.groupBy?.forEach(g => selectParts.push(g));
+  // Time is already selected/grouped as date_bin alias; drop raw time column from dims.
+  const rawTimeForGroupBy = getColumnByHint(_options, ColumnHint.Time)?.name;
+  const safeGroupBy = (options.groupBy || []).filter((g) => g !== rawTimeForGroupBy);
+  safeGroupBy.forEach((g) => selectParts.push(g));
 
   options.aggregates?.forEach(agg => {
     const alias = agg.alias ? ` as ${agg.alias.replace(/ /g, '_')}` : '';
@@ -442,9 +458,9 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   // Same shape as ClickHouse: GROUP BY time alias (and optional dims)
   queryParts.push('GROUP BY');
-  if ((options.groupBy?.length || 0) > 0) {
+  if (safeGroupBy.length > 0) {
     const groupByTime = timeColumn !== undefined ? `, ${timeColumn.alias}` : '';
-    const escapedGroupBy = options.groupBy!.map(g => escapeIdentifierIfNeeded(g)).join(', ');
+    const escapedGroupBy = safeGroupBy.map((g) => escapeIdentifierIfNeeded(g)).join(', ');
     queryParts.push(`${escapedGroupBy}${groupByTime}`);
   } else if (timeColumn) {
     queryParts.push(timeColumn.alias!);
@@ -456,6 +472,10 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
     queryParts.push(orderBy);
   }
 
+  // Trend/Aggregate: omit LIMIT by default. A global LIMIT applies across all
+  // series (not per series), so with GROUP BY dims + date_bin it truncates to
+  // the left edge of the time range (#62). Only emit LIMIT when the user set a
+  // positive value in the builder (0/undefined = no clause).
   const limit = getLimit(options.limit);
   if (limit !== '') {
     queryParts.push(limit);

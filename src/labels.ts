@@ -288,7 +288,8 @@ export default {
     },
     LimitEditor: {
       label: 'Limit',
-      tooltip: 'Limits the number of rows returned by the query'
+      tooltip:
+        'Limits the number of rows returned. For Aggregate time series, leave empty (0) so date_bin can return the full range across all series; a fixed LIMIT applies to the whole result, not per series.',
     },
     SqlPreview: {
       label: 'SQL Preview',
