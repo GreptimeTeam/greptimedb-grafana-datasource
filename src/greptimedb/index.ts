@@ -76,9 +76,11 @@ export const greptimeTypeToGrafana: Record<GreptimeDataTypes, FieldType> = {
 };
 
 
-type GreptimeTimeType = GreptimeDataTypes.TimestampSecond | GreptimeDataTypes.TimestampMillisecond | GreptimeDataTypes.TimestampMicrosecond | GreptimeDataTypes.TimestampNanosecond
+type GreptimeTimeType = GreptimeDataTypes.Date | GreptimeDataTypes.TimestampSecond | GreptimeDataTypes.TimestampMillisecond | GreptimeDataTypes.TimestampMicrosecond | GreptimeDataTypes.TimestampNanosecond
 export function toMs(time: number, columnType: GreptimeTimeType) {
   switch (columnType) {
+    case GreptimeDataTypes.Date:
+      return time * 86400000
     case GreptimeDataTypes.TimestampSecond:
       return time * 1000
     case GreptimeDataTypes.TimestampMillisecond:
@@ -209,6 +211,187 @@ export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CH
   return result;
 }
 
+function getFieldValues(field: Field, rowCount: number): any[] {
+  const values = field.values as any;
+  if (values == null) {
+    return [];
+  }
+  if (typeof values.toArray === 'function') {
+    return values.toArray();
+  }
+  if (typeof values.get === 'function') {
+    return Array.from({ length: rowCount }, (_, i) => values.get(i));
+  }
+  return Array.from(values);
+}
+
+/** Converts a long backend DataFrame (M1 Go path) into a LogLines frame. */
+export function transformDataFrameToLogs(frame: DataFrame, query: CHQuery, contextColumns: string[]): DataFrame | null {
+  if (!frame?.fields?.length || !frame.length) {
+    return null;
+  }
+
+  const fieldByName = new Map(frame.fields.map((f) => [f.name.toLowerCase(), f]));
+  const timeAlias = logColumnHintsToAlias.get(ColumnHint.Time)?.toLowerCase();
+  const bodyAlias = logColumnHintsToAlias.get(ColumnHint.LogMessage)?.toLowerCase();
+  const levelAlias = logColumnHintsToAlias.get(ColumnHint.LogLevel)?.toLowerCase();
+
+  const timestampField = timeAlias ? fieldByName.get(timeAlias) : undefined;
+  const bodyField = bodyAlias ? fieldByName.get(bodyAlias) : undefined;
+  const severityField = levelAlias ? fieldByName.get(levelAlias) : undefined;
+
+  const timestamps: number[] = [];
+  const bodies: string[] = [];
+  const severities: string[] = [];
+  const labelsArray: Array<Record<string, any>> = [];
+  const contextColumnValues: Record<string, string[]> = {};
+
+  const labelFields = frame.fields.filter((f) => {
+    const lower = f.name.toLowerCase();
+    if (lower === timeAlias || lower === bodyAlias || lower === levelAlias) {
+      return false;
+    }
+    if (contextColumns.includes(f.name)) {
+      return false;
+    }
+    return f.type === FieldType.string;
+  });
+
+  const contextFields = frame.fields.filter((f) => contextColumns.includes(f.name));
+
+  for (let row = 0; row < frame.length; row++) {
+    const tsVal = timestampField ? getFieldValues(timestampField, frame.length)[row] : undefined;
+    timestamps.push(typeof tsVal === 'number' ? tsVal : new Date(tsVal).getTime());
+
+    if (bodyField) {
+      bodies.push(String(getFieldValues(bodyField, frame.length)[row] ?? ''));
+    }
+    if (severityField) {
+      severities.push(String(getFieldValues(severityField, frame.length)[row] ?? ''));
+    }
+
+    const labels: Record<string, any> = {};
+    for (const lf of labelFields) {
+      labels[lf.name] = getFieldValues(lf, frame.length)[row];
+    }
+    for (const cf of contextFields) {
+      if (!contextColumnValues[cf.name]) {
+        contextColumnValues[cf.name] = [];
+      }
+      const contextValue = getFieldValues(cf, frame.length)[row];
+      contextColumnValues[cf.name].push(String(contextValue ?? ''));
+      labels[cf.name] = contextValue;
+    }
+    labelsArray.push(labels);
+  }
+
+  const fields = [
+    { name: 'timestamp', type: FieldType.time, values: timestamps },
+    { name: 'body', type: FieldType.string, values: bodies },
+  ] as any;
+
+  if (severityField) {
+    fields.push({ name: 'severity', type: FieldType.string, values: severities });
+  }
+
+  for (const contextName in contextColumnValues) {
+    fields.push({ name: contextName, type: FieldType.string, values: contextColumnValues[contextName] });
+  }
+
+  fields.push({ name: 'labels', type: FieldType.other, values: labelsArray });
+
+  return createDataFrame({
+    refId: frame.refId,
+    fields,
+    meta: {
+      preferredVisualisationType: 'logs',
+      type: DataFrameType.LogLines,
+    },
+  });
+}
+
+/** Converts a long backend DataFrame (M1 Go path) into trace detail frames. */
+export function transformDataFrameToTraceDetails(frame: DataFrame, builderOptions: QueryBuilderOptions): DataFrame[] {
+  if (!frame?.fields?.length || !frame.length) {
+    return [];
+  }
+
+  const columns = builderOptions.columns || [];
+  const tagColumnNames = getColumnsByHint(builderOptions, ColumnHint.TraceTags)?.map((v) => v.name) || [];
+  const serviceTagColumnNames = getColumnsByHint(builderOptions, ColumnHint.TraceServiceTags)?.map((v) => v.name) || [];
+
+  const fieldMap = new Map(frame.fields.map((f) => [f.name, f]));
+  const rowCount = frame.length;
+
+  const spans: GrafanaTraceSpan[] = [];
+  for (let row = 0; row < rowCount; row++) {
+    const data: Record<string, any> = { span_attributes: [], service_attributes: [] };
+
+    columns.forEach((schema) => {
+      const field = fieldMap.get(schema.name);
+      const value = field ? getFieldValues(field, rowCount)[row] : undefined;
+      if (tagColumnNames.indexOf(schema.name) > -1) {
+        data.span_attributes.push({ key: schema.name, value });
+      } else if (serviceTagColumnNames.indexOf(schema.name) > -1) {
+        data.service_attributes.push({ key: schema.name, value });
+      } else {
+        data[schema.name] = value;
+      }
+    });
+
+    let logs: GrafanaTraceSpan['logs'] = [];
+    if (data.span_events) {
+      let events: any[] | null = null;
+      if (Array.isArray(data.span_events)) {
+        events = data.span_events;
+      } else if (typeof data.span_events === 'string' && data.span_events.trim()) {
+        try {
+          events = JSON.parse(data.span_events);
+        } catch (e) {
+          console.error('Failed to parse span_events from GreptimeDB:', data.span_events, e);
+          events = null;
+        }
+      }
+      if (Array.isArray(events) && events.length > 0) {
+        logs = transformGreptimeDBEvents(events);
+      }
+    }
+
+    spans.push({
+      traceId: data.trace_id,
+      spanId: data.span_id,
+      parentSpanId: data.parent_span_id || undefined,
+      operationName: data.span_name || 'unknown',
+      serviceName: data.service_name || 'unknown',
+      startTime: new Date(data.timestamp).getTime(),
+      duration: data.duration_nano,
+      tags: data.span_attributes,
+      serviceTags: data.service_attributes,
+      logs,
+    });
+  }
+
+  const traceFrame = createDataFrame({
+    refId: frame.refId || 'Trace ID',
+    name: 'Trace Details',
+    fields: [
+      { name: 'traceID', type: FieldType.string, values: spans.map((s) => s.traceId) },
+      { name: 'spanID', type: FieldType.string, values: spans.map((s) => s.spanId) },
+      { name: 'parentSpanID', type: FieldType.string, values: spans.map((s) => s.parentSpanId) },
+      { name: 'operationName', type: FieldType.string, values: spans.map((s) => s.operationName) },
+      { name: 'serviceName', type: FieldType.string, values: spans.map((s) => s.serviceName) },
+      { name: 'startTime', type: FieldType.time, values: spans.map((s) => s.startTime) },
+      { name: 'duration', type: FieldType.number, values: spans.map((s) => s.duration), config: { unit: 'ms' } },
+      { name: 'tags', type: FieldType.other, values: spans.map((s) => s.tags) },
+      { name: 'serviceTags', type: FieldType.other, values: spans.map((s) => s.serviceTags) },
+    ],
+    meta: {
+      preferredVisualisationType: 'trace',
+    },
+  });
+
+  return [traceFrame];
+}
 
 
 interface GrafanaTraceSpan {

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	if err := datasource.Manage("grafana-clickhouse-datasource", plugin.NewDatasource, datasource.ManageOpts{}); err != nil {
+	if err := datasource.Manage("info8fcc-greptimedb-datasource", plugin.NewDatasource, datasource.ManageOpts{}); err != nil {
 		log.DefaultLogger.Error(err.Error())
 		os.Exit(1)
 	}

@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
@@ -56,10 +54,11 @@ type CustomSetting struct {
 const secureHeaderKeyPrefix = "secureHttpHeaders."
 
 func (settings *Settings) isValid() (err error) {
-	if settings.Host == "" {
+	if strings.TrimSpace(settings.Host) == "" {
 		return backend.DownstreamError(ErrorMessageInvalidHost)
 	}
-	if settings.Port == 0 {
+	host := strings.TrimSpace(settings.Host)
+	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") && settings.Port == 0 {
 		return backend.DownstreamError(ErrorMessageInvalidPort)
 	}
 	return nil
@@ -221,9 +220,7 @@ func LoadSettings(ctx context.Context, config backend.DataSourceInstanceSettings
 		settings.TlsClientKey = tlsClientKey
 	}
 
-	if settings.Protocol == clickhouse.HTTP.String() {
-		settings.HttpHeaders = loadHttpHeaders(jsonData, config.DecryptedSecureJSONData)
-	}
+	settings.HttpHeaders = loadHttpHeaders(jsonData, config.DecryptedSecureJSONData)
 
 	proxyOpts, err := config.ProxyOptionsFromContext(ctx)
 

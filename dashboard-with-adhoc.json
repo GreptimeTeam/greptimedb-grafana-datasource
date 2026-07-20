@@ -1,0 +1,135 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "ffs657m4n6pz4a"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "columns": [
+              {
+                "hint": "time",
+                "name": "greptime_timestamp",
+                "type": "TimestampNanosecond"
+              },
+              {
+                "alias": "message",
+                "hint": "log_message",
+                "name": "message",
+                "type": "String"
+              }
+            ],
+            "database": "public",
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "log_level",
+                "key": "",
+                "operator": "IS ANYTHING",
+                "type": "string"
+              }
+            ],
+            "limit": 1000,
+            "meta": {
+              "logMessageLike": ""
+            },
+            "mode": "list",
+            "orderBy": [
+              {
+                "default": true,
+                "dir": "DESC",
+                "hint": "time",
+                "name": ""
+              }
+            ],
+            "queryType": "logs",
+            "table": "syslog"
+          },
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "ffs657m4n6pz4a"
+          },
+          "editorType": "builder",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "rawSql": "SELECT \"greptime_timestamp\" as \"timestamp\", \"message\" as \"body\" FROM \"public\".\"syslog\" ORDER BY timestamp DESC LIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Logs (with ad-hoc filter)",
+      "type": "logs"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "datasource": {
+          "type": "info8fcc-greptimedb-datasource",
+          "uid": "ffs657m4n6pz4a"
+        },
+        "filters": [],
+        "label": "Ad-hoc filters",
+        "name": "filters",
+        "type": "adhoc"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "New dashboard (with ad-hoc filter)",
+  "uid": "cfgh66bbxx001d",
+  "version": 1,
+  "weekStart": ""
+}
