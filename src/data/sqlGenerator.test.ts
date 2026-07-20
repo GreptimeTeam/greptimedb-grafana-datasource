@@ -116,6 +116,25 @@ describe('SQL Generator', () => {
     expect(sql).toEqual(expectedSqlParts.join(' '));
   });
 
+  it('skips hinted log columns without names', () => {
+    const opts: QueryBuilderOptions = {
+      database: 'public',
+      table: 'syslog',
+      queryType: QueryType.Logs,
+      columns: [
+        { name: '', hint: ColumnHint.Time },
+        { name: 'message', type: 'String', hint: ColumnHint.LogMessage },
+      ],
+      limit: 1000,
+      filters: [],
+      orderBy: [],
+    };
+
+    expect(generateSql(opts)).toEqual(
+      'SELECT "message" as "body" FROM "public"."syslog" LIMIT 1000'
+    );
+  });
+
   it('generates logs query with fulltext matches_term (@@) filter', () => {
     const opts: QueryBuilderOptions = {
       database: 'default',
@@ -646,6 +665,7 @@ describe('getColumnsByHints', () => {
 describe('getColumnIdentifier', () => {
   const cases: Array<{ input: SelectedColumn, expected: string }> = [
     { input: { name: '' }, expected: `` },
+    { input: { name: '', alias: 'timestamp' }, expected: `` },
     { input: { name: ' ' }, expected: `" "` },
     { input: { name: 'test' }, expected: `test` },
     { input: { name: 'test with space' }, expected: `"test with space"` },

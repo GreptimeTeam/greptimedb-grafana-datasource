@@ -37,14 +37,12 @@ import {
   TimeUnit,
   SelectedColumn,
 } from 'types/queryBuilder';
-import { AdHocFilter, AdHocVariableFilter } from './adHocFilter';
+import { AdHocFilter, AdHocVariableFilter, columnNameFromAdhocKey, tableAndColumnFromAdhocKey } from './adHocFilter';
 import { CHVariableSupport } from './CHVariableSupport';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
   getIntervalInfo,
-  expandGreptimeIntervalMacros,
-  resolveGreptimePanelInterval,
   getTimeFieldRoundingClause,
   LOG_LEVEL_TO_IN_CLAUSE,
   queryLogsVolume,
@@ -54,6 +52,8 @@ import { generateSql, getColumnByHint, logAliasToColumnHints } from './sqlGenera
 import otel from 'otel';
 import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
+import { replacePreservingBackendMacros } from './macroTemplate';
+import { prepareVariableQuerySql, interpolateDashboardVariables, filterEmptyScopedVars } from './variableQuerySql';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
 import { transformDataFrameToLogs, transformDataFrameToTraceDetails } from '../greptimedb';
@@ -127,7 +127,10 @@ export class Datasource
         continue;
       }
 
-      const key = f.key.includes('.') ? f.key.split('.')[1] : f.key;
+      const key = columnNameFromAdhocKey(f.key);
+      if (!key) {
+        continue;
+      }
       const condition: 'AND' | 'OR' = (f.condition as any) || 'AND';
       const isNullLiteral = typeof f.value === 'string' && f.value.trim().toLowerCase() === 'null';
 
@@ -294,7 +297,7 @@ export class Datasource
     
 
     const timeColumn = getColumnByHint(query.builderOptions, ColumnHint.Time);
-    if (timeColumn === undefined) {
+    if (timeColumn === undefined || !timeColumn.name?.trim()) {
       return undefined;
     }
 
@@ -361,20 +364,47 @@ export class Datasource
     return undefined;
   }
 
-  async metricFindQuery(query: CHQuery | string, options: any) {
+  async metricFindQuery(query: CHQuery | string, options: any = {}) {
     if (this.adHocFiltersStatus === AdHocFilterStatus.none) {
       this.adHocFiltersStatus = await this.canUseAdhocFilters();
     }
-    const chQuery = isString(query) ? { rawSql: query, editorType: EditorType.SQL } : query;
+
+    const sql = options?.variableQuery
+      ? prepareVariableQuerySql(options.variableQuery, this.getDefaultDatabase(), options.scopedVars)
+      : interpolateDashboardVariables(isString(query) ? query : query.rawSql || '', options?.scopedVars);
+    const rawSql = sql;
+
+    if (!rawSql) {
+      return [];
+    }
+
+    let chQuery: CHQuery = {
+      rawSql,
+      editorType: EditorType.SQL,
+      refId: 'metricFind',
+      pluginVersion,
+    };
 
     if (!(chQuery.editorType === EditorType.SQL || chQuery.editorType === EditorType.Builder || !chQuery.editorType)) {
       return [];
     }
 
-    if (!chQuery.rawSql) {
-      return [];
-    }
-    const frame = await this.runQuery(chQuery, options);
+    const frame = await this.runQuery(
+      {
+        ...chQuery,
+        meta: {
+          ...(chQuery.meta || {}),
+          skipAdHocFilters: options?.skipAdHocFilters ?? true,
+        },
+      },
+      {
+        ...options,
+        // Variable SQL is fully interpolated above. Do not pass scopedVars into
+        // super.query() — empty dependent entries override templateSrv global state
+        // (regression vs pre-Go-backend runQuery which never forwarded scopedVars).
+        scopedVars: undefined,
+      }
+    );
     if (frame.fields?.length === 0) {
       return [];
     }
@@ -540,10 +570,13 @@ export class Datasource
   }
 
   private replace(value?: string, scopedVars?: ScopedVars) {
-    if (value !== undefined) {
-      return getTemplateSrv().replace(value, scopedVars, this.format);
+    if (value === undefined) {
+      return value;
     }
-    return value;
+    const effectiveScopedVars = filterEmptyScopedVars(scopedVars);
+    return replacePreservingBackendMacros(value, (sql) =>
+      getTemplateSrv().replace(sql, effectiveScopedVars, this.format)
+    );
   }
 
   private format(value: any) {
@@ -901,7 +934,11 @@ export class Datasource
           const whereParts = adHocFilters
             .filter((f) => f.key && f.operator && f.value !== undefined && f.value !== null)
             .map((f, i) => {
-              const col = f.key.includes('.') ? `"${f.key.split('.')[1]}"` : `"${f.key}"`;
+              const colName = columnNameFromAdhocKey(f.key);
+              if (!colName) {
+                return '';
+              }
+              const col = `"${colName}"`;
               const connector = i === 0 ? '' : ` ${f.condition || 'AND'} `;
 
               const isNullLiteral = typeof f.value === 'string' && f.value.trim().toLowerCase() === 'null';
@@ -946,62 +983,16 @@ export class Datasource
         return next;
       })
       .filter((t) => t.rawSql);
-    const range = request.range
-
-    const getInterpolatedSql = (rawSql: string): string => {
-      const fromTimeISO = range?.from.toISOString();
-      const toTimeISO = range?.to.toISOString();
-      const rangeMs = range ? range.to.valueOf() - range.from.valueOf() : undefined;
-
-      // Resolve panel interval from Grafana's request (not logs-style 1s/1m/1h snap).
-      // Expand BEFORE templateSrv so `$__interval` inside date_bin() is not left to
-      // a mismatched Grafana variable replacement.
-      const scopedInterval =
-        typeof request.scopedVars?.__interval?.value === 'string'
-          ? request.scopedVars.__interval.value
-          : undefined;
-      const scopedIntervalMs =
-        typeof request.scopedVars?.__interval_ms?.value === 'number'
-          ? request.scopedVars.__interval_ms.value
-          : undefined;
-      const resolvedInterval = resolveGreptimePanelInterval({
-        interval: request.interval || scopedInterval,
-        intervalMs: request.intervalMs ?? scopedIntervalMs,
-        rangeMs,
-        maxDataPoints: request.maxDataPoints,
-      });
-
-      let interpolated = expandGreptimeIntervalMacros(rawSql, resolvedInterval);
-
-      // Dashboard template variables (not $__interval — already expanded above)
-      interpolated = getTemplateSrv().replace(interpolated, request.scopedVars);
-
-      // Expand custom time macros
-      if (fromTimeISO && toTimeISO) {
-        interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
-        interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
-
-        interpolated = interpolated.replace(/\$__timeFilter\(([^)]+)\)/g, (_match, col) => {
-          const column = String(col).trim();
-          return `${column} >= '${fromTimeISO}' AND ${column} <= '${toTimeISO}'`;
-        });
-      }
-
-      return interpolated;
-    };
-
-    const interpolatedTargets = targets.map((target) => ({
-      ...target,
-      rawSql: getInterpolatedSql(target.rawSql),
-    }));
 
     return super
       .query({
         ...request,
-        targets: interpolatedTargets,
+        // adhoc merged above; dashboard vars via applyTemplateVariables inside super.query();
+        // time macros ($__timeFilter, $__interval, …) expand in Go.
+        targets,
       })
       .pipe(
-        map((response) => this.postProcessBackendQueryResponse(response, request, interpolatedTargets)),
+        map((response) => this.postProcessBackendQueryResponse(response, request, targets)),
         catchError((error) => {
           console.error('Error executing backend query:', error);
           const errorFrame = new MutableDataFrame({
@@ -1062,9 +1053,11 @@ export class Datasource
       // VariableSupport often passes `{ range: undefined }`. Do not treat a present
       // but empty options object as having a valid range — fall back to dashboard time.
       const range = options?.range ?? (getTemplateSrv() as any).timeRange;
+      const scopedVars = options?.scopedVars;
       const req = {
         targets: [{ ...request, refId: String(Math.random()) }],
         range,
+        scopedVars,
       } as DataQueryRequest<CHQuery>;
       this.query(req).subscribe((res: DataQueryResponse) => {
         resolve(res.data[0] || { fields: [] });
@@ -1105,15 +1098,23 @@ export class Datasource
   }
 
   private async fetchTagValuesFromSchema(key: string): Promise<MetricFindValue[]> {
-    const { from } = this.getTagSource();
-    const [table, col] = key.split('.');
-    // Guard against invalid or undefined column names which can generate invalid SQL like
-    // `select distinct undefined from host limit 1000`
-    if (!table || !col || col === 'undefined') {
+    const parsed = tableAndColumnFromAdhocKey(key);
+    if (!parsed) {
       return [];
     }
-    const source = from?.includes('.') ? `${from.split('.')[0]}.${table}` : table;
-    const rawSql = `select distinct ${col} from ${source} limit 1000`;
+    const { table, col } = parsed;
+    const { from } = this.getTagSource();
+    let source: string;
+    if (from?.includes('.')) {
+      const [db] = from.split('.');
+      source = `"${db}"."${table}"`;
+    } else if (from) {
+      source = `"${from}"."${table}"`;
+    } else {
+      const defaultDb = this.getDefaultDatabase() || this.getDefaultLogsDatabase();
+      source = defaultDb ? `"${defaultDb}"."${table}"` : `"${table}"`;
+    }
+    const rawSql = `SELECT DISTINCT "${col}" FROM ${source} LIMIT 1000`;
     const frame = await this.runQuery({ rawSql, meta: { skipAdHocFilters: true } } as any);
     if (frame.fields?.length === 0) {
       return [];

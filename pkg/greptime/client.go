@@ -136,11 +136,6 @@ func (c *Client) Ping(ctx context.Context, forwarded http.Header) error {
 	return err
 }
 
-func LogQuery(sql string) {
-	const maxLen = 500
-	if len(sql) <= maxLen {
-		log.DefaultLogger.Debug("greptime sql", "query", sql)
-		return
-	}
-	log.DefaultLogger.Debug("greptime sql", "query", sql[:maxLen]+"...")
+func LogExecutedSQL(refID, sql string) {
+	log.DefaultLogger.Info("greptime executed sql", "refId", refID, "sql", sql)
 }

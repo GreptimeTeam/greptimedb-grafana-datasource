@@ -18,6 +18,15 @@ import { Datasource } from './CHDatasource';
 import { EditorType } from 'types/sql';
 import { QueryType } from 'types/queryBuilder';
 
+const templateSrvMock = {
+  replace: jest.fn((target: string) => target),
+  getVariables: jest.fn(() => [] as any[]),
+};
+jest.mock('@grafana/runtime', () => ({
+  ...(jest.requireActual('@grafana/runtime') as unknown as object),
+  getTemplateSrv: () => templateSrvMock,
+}));
+
 const baseQuery = (overrides: Partial<CHVariableQuery> = {}): CHVariableQuery => ({
   refId: 'v',
   queryType: 'sql',
@@ -232,7 +241,7 @@ describe('CHVariableSupport.query', () => {
     expect(ds.metricFindQuery).not.toHaveBeenCalled();
   });
 
-  it('runs metricFindQuery with rawSql and emits string text/value fields', async () => {
+  it('runs metricFindQuery with variableQuery and emits string text/value fields', async () => {
     const ds = buildDatasource();
     const support = new CHVariableSupport(ds);
     const response = await firstValueFrom(
@@ -241,7 +250,12 @@ describe('CHVariableSupport.query', () => {
         range: {} as any,
       } as DataQueryRequest<CHVariableQuery>)
     );
-    expect(ds.metricFindQuery).toHaveBeenCalledWith('SHOW DATABASES', expect.any(Object));
+    expect(ds.metricFindQuery).toHaveBeenCalledWith(
+      '',
+      expect.objectContaining({
+        variableQuery: expect.objectContaining({ rawSql: 'SHOW DATABASES' }),
+      })
+    );
     expect(response.data).toHaveLength(1);
     const frame = response.data[0];
     expect(frame.fields[0].name).toBe('text');
@@ -260,6 +274,39 @@ describe('CHVariableSupport.query', () => {
         range: {} as any,
       } as DataQueryRequest<CHVariableQuery>)
     );
-    expect(ds.metricFindQuery).toHaveBeenCalledWith('SELECT 1', expect.any(Object));
+    expect(ds.metricFindQuery).toHaveBeenCalledWith(
+      '',
+      expect.objectContaining({
+        variableQuery: expect.objectContaining({ rawSql: 'SELECT 1', queryType: 'sql' }),
+      })
+    );
+  });
+
+  it('forwards scopedVars to metricFindQuery', async () => {
+    const ds = buildDatasource();
+    const support = new CHVariableSupport(ds);
+    const scopedVars = { column: { value: 'service', text: 'service' } } as any;
+
+    await firstValueFrom(
+      support.query({
+        targets: [
+          baseQuery({
+            queryType: 'sql',
+            rawSql:
+              'SELECT DISTINCT "$column" AS value FROM "public"."syslog" WHERE "$column" IS NOT NULL ORDER BY value LIMIT 1000',
+          }),
+        ],
+        range: {} as any,
+        scopedVars,
+      } as DataQueryRequest<CHVariableQuery>)
+    );
+
+    expect(ds.metricFindQuery).toHaveBeenCalledWith(
+      '',
+      expect.objectContaining({
+        scopedVars,
+        variableQuery: expect.objectContaining({ queryType: 'sql' }),
+      })
+    );
   });
 });

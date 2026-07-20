@@ -16,22 +16,30 @@ import { styles } from 'styles';
 import { CHConfig } from 'types/config';
 import { CHQuery } from 'types/sql';
 import { Datasource } from './CHDatasource';
+import {
+  CHVariableQuery,
+  CHVariableQueryType,
+  generateVariableSql,
+  isCHVariableQueryType,
+  resolveVariableSql,
+} from './variableQuerySql';
+
+export type { CHVariableQuery, CHVariableQueryType };
+export {
+  escapeGreptimeIdentifier,
+  escapeGreptimeStringLiteral,
+  filterEmptyScopedVars,
+  generateVariableSql,
+  interpolateDashboardVariables,
+  isCHVariableQueryType,
+  prepareVariableQuerySql,
+  resolveVariableSql,
+} from './variableQuerySql';
 
 /**
  * Variable query types. Each one renders a different combination of pickers and
  * generates a default SQL query that the user can edit before saving.
  */
-export type CHVariableQueryType = 'sql' | 'databases' | 'tables' | 'columns' | 'columnValues';
-
-/** Variable query model. Persisted as part of the dashboard JSON. */
-export interface CHVariableQuery {
-  refId: string;
-  queryType: CHVariableQueryType;
-  rawSql?: string;
-  database?: string;
-  table?: string;
-  column?: string;
-}
 
 const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: CHVariableQueryType; description?: string }> = [
   { label: 'Custom SQL', value: 'sql', description: 'Write any SQL query, same as before' },
@@ -40,18 +48,6 @@ const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: CHVariableQueryType; 
   { label: 'List columns', value: 'columns', description: 'Columns inside a table' },
   { label: 'Column values', value: 'columnValues', description: 'Distinct values of a column' },
 ];
-
-const VARIABLE_QUERY_TYPES = new Set<CHVariableQueryType>([
-  'sql',
-  'databases',
-  'tables',
-  'columns',
-  'columnValues',
-]);
-
-export function isCHVariableQueryType(value: unknown): value is CHVariableQueryType {
-  return typeof value === 'string' && VARIABLE_QUERY_TYPES.has(value as CHVariableQueryType);
-}
 
 /** Returns which pickers a query type needs. */
 export type VariablePickerLevel = 'database' | 'table' | 'column' | null;
@@ -69,63 +65,6 @@ export function pickerLevelFor(queryType: CHVariableQueryType): VariablePickerLe
   }
 }
 
-/** Escape a Greptime/MySQL string literal for use inside single quotes. */
-export function escapeGreptimeStringLiteral(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "''");
-}
-
-/** Quote a Greptime identifier with doubled internal quotes. */
-export function escapeGreptimeIdentifier(id: string): string {
-  return id ? `"${id.replace(/"/g, '""')}"` : '';
-}
-
-/**
- * Generate the default SQL for a variable query. Pure function so the editor
- * preview and the unit tests use the same source of truth. At run time the
- * variable resolver only reads `rawSql`, so any manual edits to the SQL field
- * always win.
- */
-export function generateVariableSql(query: CHVariableQuery, defaultDatabase: string): string {
-  const db = query.database || defaultDatabase || '';
-  switch (query.queryType) {
-    case 'databases':
-      return 'SHOW DATABASES';
-    case 'tables':
-      return db ? `SHOW TABLES FROM ${escapeGreptimeIdentifier(db)}` : 'SHOW TABLES';
-    case 'columns':
-      if (!db || !query.table) {
-        return '';
-      }
-      return (
-        `SELECT column_name FROM information_schema.columns ` +
-        `WHERE table_schema = '${escapeGreptimeStringLiteral(db)}' ` +
-        `AND table_name = '${escapeGreptimeStringLiteral(query.table)}' ` +
-        `ORDER BY ordinal_position`
-      );
-    case 'columnValues': {
-      if (!db || !query.table || !query.column) {
-        return '';
-      }
-      const column = escapeGreptimeIdentifier(query.column);
-      const tableRef = `${escapeGreptimeIdentifier(db)}.${escapeGreptimeIdentifier(query.table)}`;
-      return (
-        `SELECT DISTINCT ${column} AS value FROM ${tableRef} ` +
-        `WHERE ${column} IS NOT NULL ORDER BY value LIMIT 1000`
-      );
-    }
-    case 'sql':
-    default:
-      return query.rawSql || '';
-  }
-}
-
-type EditorProps = QueryEditorProps<Datasource, CHQuery, CHConfig, CHVariableQuery>;
-
-/**
- * Normalize Grafana's variable query blob into CHVariableQuery.
- * Handles legacy plain strings and provisioned panel-style DataQuery objects
- * (which may carry QueryType.Table etc. on `queryType`).
- */
 export function normalizeVariableQuery(query: CHVariableQuery | CHQuery | string | undefined): CHVariableQuery {
   if (typeof query === 'string') {
     return { refId: 'var', queryType: 'sql', rawSql: query };
@@ -148,6 +87,8 @@ export function normalizeVariableQuery(query: CHVariableQuery | CHQuery | string
     column: (query as CHVariableQuery | undefined)?.column,
   };
 }
+
+type EditorProps = QueryEditorProps<Datasource, CHQuery, CHConfig, CHVariableQuery>;
 
 export const VariableQueryEditor = (props: EditorProps) => {
   const { query, onChange, datasource } = props;
@@ -312,17 +253,18 @@ export class CHVariableSupport extends CustomVariableSupport<Datasource, CHVaria
 
   query(request: DataQueryRequest<CHVariableQuery>): Observable<DataQueryResponse> {
     const target = request.targets[0];
-    // A saved variable query can be a legacy plain string or a provisioned
-    // DataQuery object; normalize both to rawSql.
     const normalized = normalizeVariableQuery(target as CHVariableQuery | string | undefined);
-    const rawSql = normalized.rawSql;
-    if (!rawSql) {
+    const defaultDatabase = this.datasource.getDefaultDatabase() || '';
+    if (!resolveVariableSql(normalized, defaultDatabase)) {
       return of({ data: [] });
     }
-    // Pass rawSql as a string. metricFindQuery accepts (CHQuery | string) and
-    // wraps a string into a minimal SQL-mode CHQuery internally.
     const promise = this.datasource
-      .metricFindQuery(rawSql, { range: request.range })
+      .metricFindQuery('', {
+        range: request.range,
+        scopedVars: request.scopedVars,
+        skipAdHocFilters: true,
+        variableQuery: normalized,
+      })
       .then((values: MetricFindValue[]) => ({
         // Emit text and value separately so a `SELECT value, label` query
         // substitutes the value while displaying the label. Force string typing:

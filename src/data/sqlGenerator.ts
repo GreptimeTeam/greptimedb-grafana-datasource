@@ -235,40 +235,40 @@ const generateLogsQuery = (_options: QueryBuilderOptions): string => {
   // TODO: these columns could be a map or some other convenience function
   const selectParts: string[] = [];
   const logTime = getColumnByHint(options, ColumnHint.Time);
-  if (logTime !== undefined) {
+  if (logTime?.name) {
     // Must be first column in list.
     logTime.alias = logColumnHintsToAlias.get(ColumnHint.Time);
     selectParts.push(getColumnIdentifier(logTime));
   }
 
   const logMessage = getColumnByHint(options, ColumnHint.LogMessage);
-  if (logMessage !== undefined) {
+  if (logMessage?.name) {
     // Must be second column in list.
     logMessage.alias = logColumnHintsToAlias.get(ColumnHint.LogMessage);
     selectParts.push(getColumnIdentifier(logMessage));
   }
 
   const logLevel = getColumnByHint(options, ColumnHint.LogLevel);
-  if (logLevel !== undefined) {
+  if (logLevel?.name) {
     // TODO: "severity" should be a number, but "level" can be a string? Perhaps we can check the column type here?
     logLevel.alias = logColumnHintsToAlias.get(ColumnHint.LogLevel);
     selectParts.push(getColumnIdentifier(logLevel));
   }
 
   const logLabels = getColumnByHint(options, ColumnHint.LogLabels);
-  if (logLabels !== undefined) {
+  if (logLabels?.name) {
     logLabels.alias = logColumnHintsToAlias.get(ColumnHint.LogLabels);
     selectParts.push(getColumnIdentifier(logLabels));
   }
 
   const traceId = getColumnByHint(options, ColumnHint.TraceId);
-  if (traceId !== undefined) {
+  if (traceId?.name) {
     traceId.alias = logColumnHintsToAlias.get(ColumnHint.TraceId);
     selectParts.push(getColumnIdentifier(traceId));
   }
 
   options.columns?.
-    filter(c => c.hint === undefined). // remove specialized columns
+    filter(c => c.hint === undefined && c.name?.trim()). // remove specialized columns
     forEach(c => selectParts.push(getColumnIdentifier(c)));
 
   const selectPartsSql = selectParts.join(', ');
@@ -290,7 +290,7 @@ const generateLogsQuery = (_options: QueryBuilderOptions): string => {
     queryParts.push(filterParts);
   }
 
-  if (hasLogMessageFilter) {
+  if (hasLogMessageFilter && logMessage?.name) {
     if (filterParts) {
       queryParts.push('AND');
     }
@@ -324,7 +324,7 @@ const generateSimpleTimeSeriesQuery = (_options: QueryBuilderOptions): string =>
   const selectParts: string[] = [];
   const selectNames = new Set<string>();
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
-  if (timeColumn !== undefined) {
+  if (timeColumn?.name) {
     timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
     selectNames.add(timeColumn.alias);
@@ -410,7 +410,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   const selectParts: string[] = [];
 
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
-  if (timeColumn !== undefined) {
+  if (timeColumn?.name) {
     const rawTimeName = timeColumn.name;
     // Greptime-native preview: show date_bin so users can see how points are bucketed.
     // `$__interval` is expanded from Grafana's panel interval in CHDatasource before the query runs.
@@ -569,6 +569,10 @@ export const getColumnsByHints = (options: QueryBuilderOptions, hints: readonly 
 }
 
 const getColumnIdentifier = (col: SelectedColumn): string => {
+  if (!col.name?.trim()) {
+    return '';
+  }
+
   let colName = col.name;
 
   // allow for functions like count() or already-qualified expressions;
@@ -702,7 +706,7 @@ const getOrderBy = (options: QueryBuilderOptions): string => {
         colName = hintedColumn.alias || hintedColumn.name;
       }
 
-      if (!colName) {
+      if (!colName?.trim()) {
         return;
       }
 
@@ -747,7 +751,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
       type = hintedColumn.type || type;
     }
 
-    if (!column) {
+    if (!column?.trim()) {
       continue;
     }
 

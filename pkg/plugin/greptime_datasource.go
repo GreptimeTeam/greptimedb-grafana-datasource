@@ -17,6 +17,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 
 	"github.com/grafana/clickhouse-datasource/pkg/greptime"
+	"github.com/grafana/clickhouse-datasource/pkg/macros"
 )
 
 type queryModel struct {
@@ -60,7 +61,13 @@ func (ds *GreptimeDatasource) QueryData(ctx context.Context, req *backend.QueryD
 			continue
 		}
 
-		greptime.LogQuery(sql)
+		sql, err = macros.InterpolateSQL(sql, query.TimeRange, query.Interval, query.MaxDataPoints)
+		if err != nil {
+			response.Responses[query.RefID] = backend.DataResponse{Error: err}
+			continue
+		}
+
+		greptime.LogExecutedSQL(query.RefID, sql)
 		greptimeResp, err := client.ExecuteSQL(ctx, sql, forwarded)
 		if err != nil {
 			response.Responses[query.RefID] = backend.DataResponse{Error: err}
@@ -72,11 +79,24 @@ func (ds *GreptimeDatasource) QueryData(ctx context.Context, req *backend.QueryD
 			response.Responses[query.RefID] = backend.DataResponse{Error: backend.DownstreamError(err)}
 			continue
 		}
+		setExecutedQueryString(frames, sql)
 
 		response.Responses[query.RefID] = backend.DataResponse{Frames: frames}
 	}
 
 	return response, nil
+}
+
+func setExecutedQueryString(frames []*data.Frame, sql string) {
+	for _, frame := range frames {
+		if frame == nil {
+			continue
+		}
+		if frame.Meta == nil {
+			frame.Meta = &data.FrameMeta{}
+		}
+		frame.Meta.ExecutedQueryString = sql
+	}
 }
 
 func (ds *GreptimeDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
@@ -88,6 +108,7 @@ func (ds *GreptimeDatasource) CheckHealth(ctx context.Context, req *backend.Chec
 		}, nil
 	}
 
+	greptime.LogExecutedSQL("health", "SELECT 1")
 	if err := client.Ping(ctx, req.GetHTTPHeaders()); err != nil {
 		log.DefaultLogger.Error("greptime health check failed", "error", err)
 		return &backend.CheckHealthResult{

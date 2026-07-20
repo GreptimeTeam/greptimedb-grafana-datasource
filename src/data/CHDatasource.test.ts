@@ -75,8 +75,22 @@ describe('ClickHouseDatasource', () => {
       const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation(() => rawSql);
       const query = { rawSql: 'select', editorType: EditorType.SQL } as CHQuery;
       const val = createInstance({}).applyTemplateVariables(query, {});
-      expect(spyOnReplace).toHaveBeenCalled();
+      expect(spyOnReplace).toHaveBeenCalledWith('select', undefined, expect.any(Function));
       expect(val).toEqual({ rawSql, editorType: EditorType.SQL });
+    });
+    it('strips empty scopedVars before templateSrv.replace', async () => {
+      const rawSql = 'SELECT DISTINCT "hostname" AS value';
+      const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation(() => rawSql);
+      const query = { rawSql: 'SELECT DISTINCT "$column" AS value', editorType: EditorType.SQL } as CHQuery;
+      createInstance({}).applyTemplateVariables(query, {
+        column: { value: '', text: '' },
+        table: { value: 'syslog', text: 'syslog' },
+      });
+      expect(spyOnReplace).toHaveBeenCalledWith(
+        'SELECT DISTINCT "$column" AS value',
+        { table: { value: 'syslog', text: 'syslog' } },
+        expect.any(Function)
+      );
     });
     it('should handle $__conditionalAll and not replace', async () => {
       const query = { rawSql: '$__conditionalAll(foo, $fieldVal)', editorType: EditorType.SQL } as CHQuery;
@@ -166,7 +180,7 @@ describe('ClickHouseDatasource', () => {
       const spyOnQuery = jest.spyOn(ds, 'query').mockImplementation((_request) => of({ data: [frame] }));
       const values = await ds.getTagValues({ key: 'foo.bar' });
       expect(spyOnReplace).toHaveBeenCalled();
-      const expected = { rawSql: 'select distinct bar from foo limit 1000' };
+      const expected = { rawSql: 'SELECT DISTINCT "bar" FROM "public"."foo" LIMIT 1000' };
 
       expect(spyOnQuery).toHaveBeenCalledWith(
         expect.objectContaining({ targets: expect.arrayContaining([expect.objectContaining(expected)]) })

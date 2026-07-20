@@ -1,4 +1,17 @@
-import { AdHocFilter, AdHocVariableFilter } from './adHocFilter';
+import { AdHocFilter, AdHocVariableFilter, columnNameFromAdhocKey, tableAndColumnFromAdhocKey } from './adHocFilter';
+
+describe('adhoc key parsing', () => {
+  it('extracts column name from table.column keys', () => {
+    expect(columnNameFromAdhocKey('syslog.message')).toBe('message');
+    expect(columnNameFromAdhocKey('message')).toBe('message');
+  });
+
+  it('parses table and column from getTagKeys format', () => {
+    expect(tableAndColumnFromAdhocKey('syslog.message')).toEqual({ table: 'syslog', col: 'message' });
+    expect(tableAndColumnFromAdhocKey('message')).toBeUndefined();
+    expect(tableAndColumnFromAdhocKey('syslog.undefined')).toBeUndefined();
+  });
+});
 
 describe('AdHocManager', () => {
   it('apply ad hoc filter with no inner query and existing WHERE', () => {

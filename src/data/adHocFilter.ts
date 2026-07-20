@@ -1,5 +1,25 @@
 import { getTable } from './ast';
 
+/** Grafana ad-hoc filter keys use `table.column`; return the column part for SQL. */
+export function columnNameFromAdhocKey(key: string): string {
+  const dot = key.lastIndexOf('.');
+  return dot >= 0 ? key.slice(dot + 1) : key;
+}
+
+/** Parse `table.column` ad-hoc keys returned by getTagKeys(). */
+export function tableAndColumnFromAdhocKey(key: string): { table: string; col: string } | undefined {
+  const dot = key.lastIndexOf('.');
+  if (dot <= 0) {
+    return undefined;
+  }
+  const table = key.slice(0, dot);
+  const col = key.slice(dot + 1);
+  if (!table || !col || col === 'undefined') {
+    return undefined;
+  }
+  return { table, col };
+}
+
 export class AdHocFilter {
   private _targetTable = '';
 
@@ -36,8 +56,9 @@ export class AdHocFilter {
         }
         return valid;
       })
+      .filter((f) => !!columnNameFromAdhocKey(f.key))
       .map((f, i) => {
-        const key = f.key.includes('.') ? f.key.split('.')[1] : f.key;
+        const key = columnNameFromAdhocKey(f.key);
         const value = escapeValueBasedOnOperator(f.value, f.operator);
         const condition = i !== adHocFilters.length - 1 ? (f.condition ? f.condition : 'AND') : '';
         const operator = convertOperatorToClickHouseOperator(f.operator);
