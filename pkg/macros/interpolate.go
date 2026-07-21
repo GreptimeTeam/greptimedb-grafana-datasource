@@ -12,10 +12,10 @@ import (
 
 var timeIntervalMacroPattern = regexp.MustCompile(`\$__timeInterval\(([^)]+)\)`)
 
-// expandGreptimeIntervalMacros mirrors src/data/logs.ts expandGreptimeIntervalMacros.
-// Run before sqlutil.Interpolate so date_bin('$__interval', col) is expanded even when
-// the macro token sits inside quotes (sqlutil only matches bare $__interval tokens).
-func expandGreptimeIntervalMacros(sql string, resolvedInterval string) string {
+// expandQuotedIntervalMacros expands $__interval inside quotes and bare tokens.
+// Needed because Greptime Builder emits date_bin('$__interval', col); sqlutil only
+// matches unquoted $__interval. ClickHouse avoids this by using $__timeInterval(col).
+func expandQuotedIntervalMacros(sql string, resolvedInterval string) string {
 	sql = timeIntervalMacroPattern.ReplaceAllStringFunc(sql, func(match string) string {
 		sub := timeIntervalMacroPattern.FindStringSubmatch(match)
 		if len(sub) < 2 {
@@ -31,9 +31,11 @@ func expandGreptimeIntervalMacros(sql string, resolvedInterval string) string {
 }
 
 // InterpolateSQL expands Grafana time macros in raw SQL using Greptime dialect.
+// Same role as sqlds.Interpolate + driver.Macros() in the ClickHouse plugin.
 func InterpolateSQL(rawSQL string, timeRange backend.TimeRange, interval time.Duration, maxDataPoints int64) (string, error) {
 	resolvedInterval := ResolveGreptimePanelInterval(interval, timeRange, maxDataPoints)
-	rawSQL = expandGreptimeIntervalMacros(rawSQL, resolvedInterval)
+	// Expand quoted/bare $__interval before sqlutil (see expandQuotedIntervalMacros).
+	rawSQL = expandQuotedIntervalMacros(rawSQL, resolvedInterval)
 
 	query := &sqlutil.Query{
 		RawSQL:        rawSQL,
@@ -41,11 +43,5 @@ func InterpolateSQL(rawSQL string, timeRange backend.TimeRange, interval time.Du
 		Interval:      interval,
 		MaxDataPoints: maxDataPoints,
 	}
-	sql, err := sqlutil.Interpolate(query, Macros)
-	if err != nil {
-		return "", err
-	}
-
-	// Safety net: expand any $__interval left after sqlutil (should be rare).
-	return expandGreptimeIntervalMacros(sql, resolvedInterval), nil
+	return sqlutil.Interpolate(query, Macros)
 }

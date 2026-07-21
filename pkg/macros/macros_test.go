@@ -11,6 +11,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTimeToDate(t *testing.T) {
+	d, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.371Z")
+	assert.Equal(t, "'2014-11-12'", timeToDate(d))
+}
+
+func TestTimeToDateTime(t *testing.T) {
+	dt, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.371Z")
+	assert.Equal(t, "'2014-11-12T11:45:26.371Z'", timeToDateTime(dt))
+}
+
 func TestMsToGreptimeDateBinInterval(t *testing.T) {
 	assert.Equal(t, "15s", MsToGreptimeDateBinInterval(15_000))
 	assert.Equal(t, "3m", MsToGreptimeDateBinInterval(172_800))
@@ -31,28 +41,78 @@ func TestResolveGreptimePanelInterval(t *testing.T) {
 }
 
 func TestMacroFromTimeFilter(t *testing.T) {
-	from, _ := time.Parse(time.RFC3339Nano, "2014-11-12T11:45:26.371Z")
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.371Z")
+	to, _ := time.Parse("2006-01-02T15:04:05.000Z", "2015-11-12T11:45:26.371Z")
 	query := sqlutil.Query{
-		TimeRange: backend.TimeRange{From: from, To: from},
+		TimeRange: backend.TimeRange{From: from, To: to},
+		RawSQL:    "select foo from foo where bar > $__fromTime",
 	}
-	got, err := FromTimeFilter(&query, nil)
+	got, err := FromTimeFilter(&query, []string{})
 	require.NoError(t, err)
 	assert.Equal(t, "'2014-11-12T11:45:26.371Z'", got)
 }
 
-func TestMacroTimeFilter(t *testing.T) {
-	from, _ := time.Parse(time.RFC3339Nano, "2014-11-12T11:45:26.123Z")
-	to, _ := time.Parse(time.RFC3339Nano, "2015-11-12T11:45:26.456Z")
+func TestMacroToTimeFilter(t *testing.T) {
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.371Z")
+	to, _ := time.Parse("2006-01-02T15:04:05.000Z", "2015-11-12T11:45:26.371Z")
 	query := sqlutil.Query{
 		TimeRange: backend.TimeRange{From: from, To: to},
 	}
+	got, err := ToTimeFilter(&query, []string{})
+	require.NoError(t, err)
+	assert.Equal(t, "'2015-11-12T11:45:26.371Z'", got)
+}
+
+func TestMacroFromTimeFilterMs(t *testing.T) {
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.371Z")
+	query := sqlutil.Query{TimeRange: backend.TimeRange{From: from, To: from}}
+	got, err := FromTimeFilterMs(&query, []string{})
+	require.NoError(t, err)
+	assert.Equal(t, "'2014-11-12T11:45:26.371Z'", got)
+}
+
+func TestMacroDateFilter(t *testing.T) {
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.371Z")
+	to, _ := time.Parse("2006-01-02T15:04:05.000Z", "2015-11-12T11:45:26.371Z")
+	query := sqlutil.Query{TimeRange: backend.TimeRange{From: from, To: to}}
+	got, err := DateFilter(&query, []string{"dateCol"})
+	require.NoError(t, err)
+	assert.Equal(t, "dateCol >= '2014-11-12' AND dateCol <= '2015-11-12'", got)
+}
+
+func TestMacroDateTimeFilter(t *testing.T) {
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.371Z")
+	to, _ := time.Parse("2006-01-02T15:04:05.000Z", "2015-11-12T11:45:26.371Z")
+	query := sqlutil.Query{TimeRange: backend.TimeRange{From: from, To: to}}
+	got, err := DateTimeFilter(&query, []string{"dateCol", "timeCol"})
+	require.NoError(t, err)
+	assert.Equal(t,
+		"(dateCol >= '2014-11-12' AND dateCol <= '2015-11-12') AND (timeCol >= '2014-11-12T11:45:26.371Z' AND timeCol <= '2015-11-12T11:45:26.371Z')",
+		got,
+	)
+}
+
+func TestMacroTimeFilter(t *testing.T) {
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.123Z")
+	to, _ := time.Parse("2006-01-02T15:04:05.000Z", "2015-11-12T11:45:26.456Z")
+	query := sqlutil.Query{TimeRange: backend.TimeRange{From: from, To: to}}
 	got, err := TimeFilter(&query, []string{"cast(sth as timestamp)"})
 	require.NoError(t, err)
 	assert.Equal(t, "cast(sth as timestamp) >= '2014-11-12T11:45:26.123Z' AND cast(sth as timestamp) <= '2015-11-12T11:45:26.456Z'", got)
 }
 
+func TestMacroTimeFilterMs(t *testing.T) {
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.123Z")
+	to, _ := time.Parse("2006-01-02T15:04:05.000Z", "2015-11-12T11:45:26.456Z")
+	query := sqlutil.Query{TimeRange: backend.TimeRange{From: from, To: to}}
+	got, err := TimeFilterMs(&query, []string{"col"})
+	require.NoError(t, err)
+	assert.Equal(t, "col >= '2014-11-12T11:45:26.123Z' AND col <= '2015-11-12T11:45:26.456Z'", got)
+}
+
 func TestMacroTimeInterval(t *testing.T) {
 	query := sqlutil.Query{
+		RawSQL:   "select $__timeInterval(col) from foo",
 		Interval: 20 * time.Second,
 	}
 	got, err := TimeInterval(&query, []string{"col"})
@@ -60,16 +120,30 @@ func TestMacroTimeInterval(t *testing.T) {
 	assert.Equal(t, "date_bin('20s', col)", got)
 }
 
-func TestMacroInterval(t *testing.T) {
-	query := sqlutil.Query{Interval: 5 * time.Minute}
-	got, err := IntervalMacro(&query, nil)
+func TestMacroTimeIntervalMs(t *testing.T) {
+	query := sqlutil.Query{
+		RawSQL:   "select $__timeInterval_ms(col) from foo",
+		Interval: 20 * time.Second,
+	}
+	got, err := TimeIntervalMs(&query, []string{"col"})
 	require.NoError(t, err)
-	assert.Equal(t, "5m", got)
+	assert.Equal(t, "date_bin('20s', col)", got)
 }
 
-func TestInterpolateGreptimeMacros(t *testing.T) {
-	from, _ := time.Parse(time.RFC3339Nano, "2014-11-12T11:45:26.123Z")
-	to, _ := time.Parse(time.RFC3339Nano, "2015-11-12T11:45:26.456Z")
+func TestMacroIntervalSeconds(t *testing.T) {
+	query := sqlutil.Query{
+		RawSQL:   "select date_bin(INTERVAL $__interval_s second, col) AS time from foo",
+		Interval: 20 * time.Second,
+	}
+	got, err := IntervalSeconds(&query, []string{})
+	require.NoError(t, err)
+	assert.Equal(t, "20", got)
+}
+
+// TestInterpolate mirrors ClickHouse's TestInterpolate: end-to-end macro expansion.
+func TestInterpolate(t *testing.T) {
+	from, _ := time.Parse("2006-01-02T15:04:05.000Z", "2014-11-12T11:45:26.123Z")
+	to, _ := time.Parse("2006-01-02T15:04:05.000Z", "2015-11-12T11:45:26.456Z")
 	tr := backend.TimeRange{From: from, To: to}
 	interval := 20 * time.Second
 
@@ -89,38 +163,26 @@ func TestInterpolateGreptimeMacros(t *testing.T) {
 			output: "select * from foo where ( date >= '2014-11-12T11:45:26.123Z' and date <= '2015-11-12T11:45:26.456Z' ) limit 100",
 		},
 		{
-			name:   "timeInterval before interval",
-			input:  "SELECT $__timeInterval(greptime_timestamp) as time, avg(v) FROM t WHERE $__interval IS NOT NULL GROUP BY time",
-			output: "SELECT date_bin('20s', greptime_timestamp) as time, avg(v) FROM t WHERE 20s IS NOT NULL GROUP BY time",
+			name:   "timeInterval",
+			input:  "SELECT $__timeInterval(greptime_timestamp) as time FROM t",
+			output: "SELECT date_bin('20s', greptime_timestamp) as time FROM t",
 		},
 		{
-			name:   "date_bin with interval macro",
+			name:   "date_bin with quoted interval (Greptime Builder)",
 			input:  "SELECT date_bin('$__interval', greptime_timestamp) AS time FROM t",
 			output: "SELECT date_bin('20s', greptime_timestamp) AS time FROM t",
 		},
 		{
-			name:   "user aggregate query",
+			name:   "aggregate with timeFilter",
 			input:  `SELECT date_bin('$__interval', ts) as "time", max(cpu_usage) FROM "public"."cpu_metrics_30" WHERE $__timeFilter(ts) GROUP BY time ORDER BY time ASC`,
-			output: "", // filled below with dynamic ISO bounds check via substrings
-		},
-		{
-			name:   "user aggregate query without where",
-			input:  `SELECT date_bin('$__interval', ts) as "time", max(cpu_usage) FROM "public"."cpu_metrics_30" GROUP BY time ORDER BY time ASC`,
-			output: `SELECT date_bin('20s', ts) as "time", max(cpu_usage) FROM "public"."cpu_metrics_30" GROUP BY time ORDER BY time ASC`,
+			output: `SELECT date_bin('20s', ts) as "time", max(cpu_usage) FROM "public"."cpu_metrics_30" WHERE ts >= '2014-11-12T11:45:26.123Z' AND ts <= '2015-11-12T11:45:26.456Z' GROUP BY time ORDER BY time ASC`,
 		},
 	}
 
 	for i, tc := range tests {
-		t.Run(fmt.Sprintf("[%d] %s", i+1, tc.name), func(t *testing.T) {
+		t.Run(fmt.Sprintf("[%d/%d] %s", i+1, len(tests), tc.name), func(t *testing.T) {
 			got, err := InterpolateSQL(tc.input, tr, interval, 1000)
 			require.NoError(t, err)
-			if tc.name == "user aggregate query" {
-				assert.Contains(t, got, "date_bin('20s', ts)")
-				assert.Contains(t, got, "ts >= '2014-11-12T11:45:26.123Z'")
-				assert.Contains(t, got, "ts <= '2015-11-12T11:45:26.456Z'")
-				assert.NotContains(t, got, "$__")
-				return
-			}
 			assert.Equal(t, tc.output, got)
 		})
 	}
