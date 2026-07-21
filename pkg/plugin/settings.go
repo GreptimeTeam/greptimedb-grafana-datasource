@@ -32,6 +32,9 @@ type Settings struct {
 
 	DefaultDatabase string `json:"defaultDatabase,omitempty"`
 
+	// LogsContextColumns are datasource-config columns copied into LogLines labels.
+	LogsContextColumns []string `json:"-"`
+
 	ConnMaxLifetime string `json:"connMaxLifetime,omitempty"`
 	DialTimeout     string `json:"dialTimeout,omitempty"`
 	QueryTimeout    string `json:"queryTimeout,omitempty"`
@@ -142,6 +145,16 @@ func LoadSettings(ctx context.Context, config backend.DataSourceInstanceSettings
 	}
 	if jsonData["defaultDatabase"] != nil {
 		settings.DefaultDatabase = jsonData["defaultDatabase"].(string)
+	}
+
+	if logsRaw, ok := jsonData["logs"].(map[string]interface{}); ok {
+		if cols, ok := logsRaw["contextColumns"].([]interface{}); ok {
+			for _, c := range cols {
+				if s, ok := c.(string); ok && s != "" {
+					settings.LogsContextColumns = append(settings.LogsContextColumns, s)
+				}
+			}
+		}
 	}
 
 	// Deprecated: Replaced with DialTimeout for v4. Deserializes "timeout" field for old v3 configs.

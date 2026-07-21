@@ -56,8 +56,6 @@ import { replacePreservingBackendMacros } from './macroTemplate';
 import { prepareVariableQuerySql, interpolateDashboardVariables, filterEmptyScopedVars } from './variableQuerySql';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
-import { transformDataFrameToLogs, transformDataFrameToTraceDetails } from '../greptimedb';
-import { framesToMultiFrameTimeSeries } from '../greptimedb/longToMultiFrame';
 
 /** Prefer Greptime/Grafana fetch error bodies over an empty Error.message ("Unknown error"). */
 function formatQueryError(error: any): string {
@@ -1007,45 +1005,11 @@ export class Datasource
   private postProcessBackendQueryResponse(
     response: DataQueryResponse,
     request: DataQueryRequest<CHQuery>,
-    targets: CHQuery[]
+    _targets: CHQuery[]
   ): DataQueryResponse {
-    const targetByRefId = new Map(targets.map((t) => [t.refId, t]));
-    const processedFrames: DataFrame[] = [];
-
-    for (const frame of response.data) {
-      const target = targetByRefId.get(frame.refId || '') ?? targets[0];
-      processedFrames.push(...this.transformBackendFrame(frame, target));
-    }
-
-    return transformQueryResponseWithTraceAndLogLinks(this, request, { data: processedFrames });
-  }
-
-  private transformBackendFrame(frame: DataFrame, target: CHQuery): DataFrame[] {
-    if (frame.fields?.some((f) => f.name === 'Error')) {
-      return [frame];
-    }
-
-    const editorType = target.editorType;
-    const builderOptions: QueryBuilderOptions =
-      editorType === EditorType.SQL
-        ? (target.meta?.builderOptions as QueryBuilderOptions) || ({} as QueryBuilderOptions)
-        : target.builderOptions || ({} as QueryBuilderOptions);
-    const queryType = target.refId === 'Trace ID' ? 'Trace' : builderOptions.queryType || target.queryType;
-
-    if (queryType === QueryType.Logs) {
-      const logFrame = transformDataFrameToLogs(frame, target, this.getLogContextColumnNames());
-      return logFrame ? [logFrame] : [];
-    }
-
-    if (queryType === 'Trace') {
-      return transformDataFrameToTraceDetails(frame, builderOptions as QueryBuilderOptions);
-    }
-
-    if (queryType === QueryType.TimeSeries) {
-      return framesToMultiFrameTimeSeries([frame]);
-    }
-
-    return [frame];
+    // Multi-frame / logs / traces frames are shaped in Go (pkg/greptime.FormatFrames).
+    // Frontend only attaches Explore data links between logs and traces.
+    return transformQueryResponseWithTraceAndLogLinks(this, request, response);
   }
 
   private runQuery(request: Partial<CHQuery>, options?: any): Promise<DataFrame> {

@@ -20,9 +20,7 @@ import (
 	"github.com/grafana/clickhouse-datasource/pkg/macros"
 )
 
-type queryModel struct {
-	RawSQL string `json:"rawSql"`
-}
+type queryModel = greptime.QueryModel
 
 // GreptimeDatasource implements Grafana backend query handling for GreptimeDB.
 type GreptimeDatasource struct {
@@ -52,6 +50,7 @@ func (ds *GreptimeDatasource) QueryData(ctx context.Context, req *backend.QueryD
 			response.Responses[query.RefID] = backend.DataResponse{Error: backend.DownstreamError(err)}
 			continue
 		}
+		model.RefID = query.RefID
 
 		sql := strings.TrimSpace(model.RawSQL)
 		if sql == "" {
@@ -79,6 +78,12 @@ func (ds *GreptimeDatasource) QueryData(ctx context.Context, req *backend.QueryD
 			response.Responses[query.RefID] = backend.DataResponse{Error: backend.DownstreamError(err)}
 			continue
 		}
+
+		frames = greptime.FormatFrames(frames, greptime.FormatOptions{
+			QueryType:      greptime.ResolveQueryType(model),
+			ContextColumns: ds.settings.LogsContextColumns,
+			TraceDetail:    greptime.IsTraceDetailQuery(model),
+		})
 		setExecutedQueryString(frames, sql)
 
 		response.Responses[query.RefID] = backend.DataResponse{Frames: frames}
