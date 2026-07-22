@@ -35,22 +35,22 @@ const generateTraceSearchQuery = (options: QueryBuilderOptions): string => {
   const selectParts: string[] = [];
   const traceId = getColumnByHint(options, ColumnHint.TraceId);
   if (traceId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceId.name)} as traceID`);
+    selectParts.push(`${escapeIdentifier(traceId.name)} as "traceID"`);
   }
 
   const traceServiceName = getColumnByHint(options, ColumnHint.TraceServiceName);
   if (traceServiceName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceServiceName.name)} as serviceName`);
+    selectParts.push(`${escapeIdentifier(traceServiceName.name)} as "serviceName"`);
   }
 
   const traceOperationName = getColumnByHint(options, ColumnHint.TraceOperationName);
   if (traceOperationName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceOperationName.name)} as operationName`);
+    selectParts.push(`${escapeIdentifier(traceOperationName.name)} as "operationName"`);
   }
 
   const traceStartTime = getColumnByHint(options, ColumnHint.Time);
   if (traceStartTime !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceStartTime.name)} as startTime`);
+    selectParts.push(`${escapeIdentifier(traceStartTime.name)} as "startTime"`);
   }
 
   const traceDurationTime = getColumnByHint(options, ColumnHint.TraceDurationTime);
@@ -101,32 +101,32 @@ const generateTraceIdQuery = (options: QueryBuilderOptions): string => {
   const selectParts: string[] = [];
   const traceId = getColumnByHint(options, ColumnHint.TraceId);
   if (traceId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceId.name)} as traceID`);
+    selectParts.push(`${escapeIdentifier(traceId.name)} as "traceID"`);
   }
 
   const traceSpanId = getColumnByHint(options, ColumnHint.TraceSpanId);
   if (traceSpanId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceSpanId.name)} as spanID`);
+    selectParts.push(`${escapeIdentifier(traceSpanId.name)} as "spanID"`);
   }
 
   const traceParentSpanId = getColumnByHint(options, ColumnHint.TraceParentSpanId);
   if (traceParentSpanId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceParentSpanId.name)} as parentSpanID`);
+    selectParts.push(`${escapeIdentifier(traceParentSpanId.name)} as "parentSpanID"`);
   }
 
   const traceServiceName = getColumnByHint(options, ColumnHint.TraceServiceName);
   if (traceServiceName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceServiceName.name)} as serviceName`);
+    selectParts.push(`${escapeIdentifier(traceServiceName.name)} as "serviceName"`);
   }
 
   const traceOperationName = getColumnByHint(options, ColumnHint.TraceOperationName);
   if (traceOperationName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceOperationName.name)} as operationName`);
+    selectParts.push(`${escapeIdentifier(traceOperationName.name)} as "operationName"`);
   }
 
   const traceStartTime = getColumnByHint(options, ColumnHint.Time);
   if (traceStartTime !== undefined) {
-    selectParts.push(`${convertTimeFieldToMilliseconds(escapeIdentifier(traceStartTime.name))} as startTime`);
+    selectParts.push(`${convertTimeFieldToMilliseconds(escapeIdentifier(traceStartTime.name))} as "startTime"`);
   }
 
   const traceDurationTime = getColumnByHint(options, ColumnHint.TraceDurationTime);
@@ -152,7 +152,7 @@ const generateTraceIdQuery = (options: QueryBuilderOptions): string => {
 
   const traceStatusCode = getColumnByHint(options, ColumnHint.TraceStatusCode);
   if (traceStatusCode !== undefined) {
-    selectParts.push(`if(${escapeIdentifier(traceStatusCode.name)} IN ('Error', 'STATUS_CODE_ERROR'), 2, 0) as statusCode`);
+    selectParts.push(`CASE WHEN ${escapeIdentifier(traceStatusCode.name)} IN ('Error', 'STATUS_CODE_ERROR') THEN 2 ELSE 0 END as "statusCode"`);
   }
   const traceEventsPrefix = getColumnByHint(options, ColumnHint.TraceEventsPrefix);
   if (traceEventsPrefix !== undefined) {
@@ -413,7 +413,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   if (timeColumn?.name) {
     const rawTimeName = timeColumn.name;
     // Greptime-native preview: show date_bin so users can see how points are bucketed.
-    // `$__interval` is expanded from Grafana's panel interval in CHDatasource before the query runs.
+    // `$__interval` is expanded from Grafana's panel interval before the query runs.
     // (ClickHouse uses $__timeInterval → toStartOfInterval; we keep expanding that macro too for hand-written SQL.)
     timeColumn.name = `date_bin('$__interval', ${rawTimeName})`;
     timeColumn.alias = 'time';
@@ -654,7 +654,7 @@ const escapeValue = (value: string): string => {
 // }
 
 const getTraceDurationSelectSqlGreptimeDB = (columnIdentifier: string, timeUnit?: TimeUnit): string => {
-  const alias = 'duration';
+  const alias = '"duration"';
   switch (timeUnit) {
     case TimeUnit.Seconds:
       return `${columnIdentifier} * 1000 AS ${alias}`;

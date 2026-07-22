@@ -1,37 +1,37 @@
 import React, { ChangeEvent, useMemo, useState } from 'react';
 import { ConfigSection } from 'components/experimental/ConfigSection';
 import { Input, Field, HorizontalGroup, Switch, SecretInput, Button } from '@grafana/ui';
-import { CHHttpHeader } from 'types/config';
+import { GreptimeHttpHeader } from 'types/config';
 import allLabels from 'labels';
 import { styles } from 'styles';
 import { selectors as allSelectors } from 'selectors';
 import { KeyValue } from '@grafana/data';
 
 interface HttpHeadersConfigProps {
-  headers?: CHHttpHeader[];
+  headers?: GreptimeHttpHeader[];
   forwardGrafanaHeaders?: boolean;
   secureFields: KeyValue<boolean>;
-  onHttpHeadersChange: (v: CHHttpHeader[]) => void;
+  onHttpHeadersChange: (v: GreptimeHttpHeader[]) => void;
   onForwardGrafanaHeadersChange: (v: boolean) => void;
 }
 
 export const HttpHeadersConfig = (props: HttpHeadersConfigProps) => {
   const { secureFields, onHttpHeadersChange } = props;
   const configuredSecureHeaders = useConfiguredSecureHttpHeaders(secureFields);
-  const [headers, setHeaders] = useState<CHHttpHeader[]>(props.headers || []);
+  const [headers, setHeaders] = useState<GreptimeHttpHeader[]>(props.headers || []);
   const [forwardGrafanaHeaders, setForwardGrafanaHeaders] = useState<boolean>(props.forwardGrafanaHeaders || false);
   const labels = allLabels.components.Config.HttpHeadersConfig;
   const selectors = allSelectors.components.Config.HttpHeaderConfig;
 
   const addHeader = () => setHeaders([...headers, { name: '', value: '', secure: false }]);
   const removeHeader = (index: number) => {
-    const nextHeaders: CHHttpHeader[] = headers.slice();
+    const nextHeaders: GreptimeHttpHeader[] = headers.slice();
     nextHeaders.splice(index, 1);
     setHeaders(nextHeaders);
     onHttpHeadersChange(nextHeaders);
   };
-  const updateHeader = (index: number, header: CHHttpHeader) => {
-    const nextHeaders: CHHttpHeader[] = headers.slice();
+  const updateHeader = (index: number, header: GreptimeHttpHeader) => {
+    const nextHeaders: GreptimeHttpHeader[] = headers.slice();
     header.name = header.name.trim();
     nextHeaders[index] = header;
     setHeaders(nextHeaders);
@@ -88,7 +88,7 @@ interface HttpHeaderEditorProps {
   value: string;
   secure: boolean;
   isSecureConfigured: boolean;
-  onHeaderChange: (v: CHHttpHeader) => void;
+  onHeaderChange: (v: GreptimeHttpHeader) => void;
   onRemove?: () => void;
 }
 

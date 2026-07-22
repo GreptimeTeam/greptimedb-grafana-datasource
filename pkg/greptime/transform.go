@@ -1,6 +1,7 @@
 package greptime
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,7 +11,7 @@ import (
 
 func mapGreptimeTypeToGrafana(greptimeType string) data.FieldType {
 	if greptimeType == "" {
-		return data.FieldTypeUnknown
+		return data.FieldTypeString
 	}
 
 	lower := strings.ToLower(greptimeType)
@@ -23,10 +24,41 @@ func mapGreptimeTypeToGrafana(greptimeType string) data.FieldType {
 	case strings.Contains(lower, "bool"):
 		return data.FieldTypeBool
 	case strings.Contains(lower, "string"), strings.Contains(lower, "varchar"), strings.Contains(lower, "text"),
-		strings.Contains(lower, "binary"):
+		strings.Contains(lower, "binary"),
+		// JSON / List decode to map/slice; Grafana Arrow rejects []interface{} fields.
+		strings.Contains(lower, "json"), strings.Contains(lower, "list"):
 		return data.FieldTypeString
 	default:
-		return data.FieldTypeUnknown
+		// Prefer string over Unknown so complex cells never become []interface{} fields.
+		return data.FieldTypeString
+	}
+}
+
+// stringifyCell turns JSON objects/arrays (and other values) into a string Grafana can store.
+func stringifyCell(value any) *string {
+	if value == nil {
+		return nil
+	}
+	switch v := value.(type) {
+	case string:
+		return &v
+	case json.RawMessage:
+		s := string(v)
+		return &s
+	case []byte:
+		s := string(v)
+		return &s
+	case map[string]any, []any:
+		raw, err := json.Marshal(v)
+		if err != nil {
+			s := fmt.Sprint(v)
+			return &s
+		}
+		s := string(raw)
+		return &s
+	default:
+		s := fmt.Sprint(v)
+		return &s
 	}
 }
 
@@ -182,15 +214,16 @@ func newField(name string, fieldType data.FieldType, values []any) *data.Field {
 	case data.FieldTypeString:
 		strs := make([]*string, len(values))
 		for i, v := range values {
-			if v == nil {
-				continue
-			}
-			s := fmt.Sprint(v)
-			strs[i] = &s
+			strs[i] = stringifyCell(v)
 		}
 		return data.NewField(name, nil, strs)
 	default:
-		return data.NewField(name, nil, values)
+		// Never pass raw []any (may contain nested slices/maps) — Grafana panics on []interface{}.
+		strs := make([]*string, len(values))
+		for i, v := range values {
+			strs[i] = stringifyCell(v)
+		}
+		return data.NewField(name, nil, strs)
 	}
 }
 

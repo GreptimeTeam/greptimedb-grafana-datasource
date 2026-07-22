@@ -1,6 +1,6 @@
 import { DataSourceJsonData, KeyValue } from '@grafana/data';
 
-export interface CHConfig extends DataSourceJsonData {
+export interface GreptimeConfig extends DataSourceJsonData {
   /**
    * The version of the plugin this config was saved with
    */
@@ -33,39 +33,39 @@ export interface CHConfig extends DataSourceJsonData {
    */
   filterValidationEnabled?: boolean;
 
-  logs?: CHLogsConfig;
-  traces?: CHTracesConfig;
+  logs?: GreptimeLogsConfig;
+  traces?: GreptimeTracesConfig;
 
   aliasTables?: AliasTableEntry[];
 
-  httpHeaders?: CHHttpHeader[];
+  httpHeaders?: GreptimeHttpHeader[];
   forwardGrafanaHeaders?: boolean;
 
-  customSettings?: CHCustomSetting[];
+  customSettings?: GreptimeCustomSetting[];
   enableSecureSocksProxy?: boolean;
 }
 
-interface CHSecureConfigProperties {
+interface GreptimeSecureConfigProperties {
   password?: string;
 
   tlsCACert?: string;
   tlsClientCert?: string;
   tlsClientKey?: string;
 }
-export type CHSecureConfig = CHSecureConfigProperties | KeyValue<string>;
+export type GreptimeSecureConfig = GreptimeSecureConfigProperties | KeyValue<string>;
 
-export interface CHHttpHeader {
+export interface GreptimeHttpHeader {
   name: string;
   value: string;
   secure: boolean;
 }
 
-export interface CHCustomSetting {
+export interface GreptimeCustomSetting {
   setting: string;
   value: string;
 }
 
-export interface CHLogsConfig {
+export interface GreptimeLogsConfig {
   defaultDatabase?: string;
   defaultTable?: string;
 
@@ -81,7 +81,7 @@ export interface CHLogsConfig {
   contextColumns?: string[];
 }
 
-export interface CHTracesConfig {
+export interface GreptimeTracesConfig {
   defaultDatabase?: string;
   defaultTable?: string;
 

@@ -10,10 +10,10 @@ import {
 } from '@grafana/data';
 import { Observable, of } from 'rxjs';
 import { mockDatasource } from '__mocks__/datasource';
-import { CHBuilderQuery, CHQuery, CHSqlQuery, EditorType } from 'types/sql';
+import { GreptimeBuilderQuery, GreptimeQuery, GreptimeSqlQuery, EditorType } from 'types/sql';
 import { ColumnHint, QueryType, BuilderMode, QueryBuilderOptions} from 'types/queryBuilder';
 import { cloneDeep } from 'lodash';
-import { Datasource } from './CHDatasource';
+import { Datasource } from './GreptimeDatasource';
 import * as logs from './logs';
 
 jest.mock('./logs', () => ({
@@ -42,7 +42,7 @@ const createInstance = ({ queryResponse }: Partial<InstanceConfig> = {}) => {
   return instance;
 };
 
-describe('ClickHouseDatasource', () => {
+describe('GreptimeDatasource', () => {
   describe('metricFindQuery', () => {
     it('fetches values', async () => {
       const mockedValues = [1, 100];
@@ -73,7 +73,7 @@ describe('ClickHouseDatasource', () => {
     it('interpolates', async () => {
       const rawSql = 'foo';
       const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation(() => rawSql);
-      const query = { rawSql: 'select', editorType: EditorType.SQL } as CHQuery;
+      const query = { rawSql: 'select', editorType: EditorType.SQL } as GreptimeQuery;
       const val = createInstance({}).applyTemplateVariables(query, {});
       expect(spyOnReplace).toHaveBeenCalledWith('select', undefined, expect.any(Function));
       expect(val).toEqual({ rawSql, editorType: EditorType.SQL });
@@ -81,7 +81,7 @@ describe('ClickHouseDatasource', () => {
     it('strips empty scopedVars before templateSrv.replace', async () => {
       const rawSql = 'SELECT DISTINCT "hostname" AS value';
       const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation(() => rawSql);
-      const query = { rawSql: 'SELECT DISTINCT "$column" AS value', editorType: EditorType.SQL } as CHQuery;
+      const query = { rawSql: 'SELECT DISTINCT "$column" AS value', editorType: EditorType.SQL } as GreptimeQuery;
       createInstance({}).applyTemplateVariables(query, {
         column: { value: '', text: '' },
         table: { value: 'syslog', text: 'syslog' },
@@ -93,7 +93,7 @@ describe('ClickHouseDatasource', () => {
       );
     });
     it('should handle $__conditionalAll and not replace', async () => {
-      const query = { rawSql: '$__conditionalAll(foo, $fieldVal)', editorType: EditorType.SQL } as CHQuery;
+      const query = { rawSql: '$__conditionalAll(foo, $fieldVal)', editorType: EditorType.SQL } as GreptimeQuery;
       const vars = [{ current: { value: `'val1', 'val2'` }, name: 'fieldVal' }] as TypedVariableModel[];
       const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation((x) => x);
       const spyOnGetVars = jest.spyOn(templateSrvMock, 'getVariables').mockImplementation(() => vars);
@@ -103,7 +103,7 @@ describe('ClickHouseDatasource', () => {
       expect(val).toEqual({ rawSql: `foo`, editorType: EditorType.SQL });
     });
     it('should handle $__conditionalAll and replace', async () => {
-      const query = { rawSql: '$__conditionalAll(foo, $fieldVal)', editorType: EditorType.SQL } as CHQuery;
+      const query = { rawSql: '$__conditionalAll(foo, $fieldVal)', editorType: EditorType.SQL } as GreptimeQuery;
       const vars = [{ current: { value: '$__all' }, name: 'fieldVal' }] as TypedVariableModel[];
       const spyOnReplace = jest.spyOn(templateSrvMock, 'replace').mockImplementation((x) => x);
       const spyOnGetVars = jest.spyOn(templateSrvMock, 'getVariables').mockImplementation(() => vars);
@@ -124,7 +124,10 @@ describe('ClickHouseDatasource', () => {
 
       const keys = await ds.getTagKeys();
       expect(spyOnReplace).toHaveBeenCalled();
-      const expected = { rawSql: 'SELECT name, type, table FROM system.columns' };
+      const expected = {
+        rawSql:
+          'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS',
+      };
 
       expect(spyOnQuery).toHaveBeenCalledWith(
         expect.objectContaining({ targets: expect.arrayContaining([expect.objectContaining(expected)]) })
@@ -141,7 +144,10 @@ describe('ClickHouseDatasource', () => {
 
       const keys = await ds.getTagKeys();
       expect(spyOnReplace).toHaveBeenCalled();
-      const expected = { rawSql: "SELECT name, type, table FROM system.columns WHERE database IN ('foo')" };
+      const expected = {
+        rawSql:
+          "SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema IN ('foo')",
+      };
 
       expect(spyOnQuery).toHaveBeenCalledWith(
         expect.objectContaining({ targets: expect.arrayContaining([expect.objectContaining(expected)]) })
@@ -385,7 +391,7 @@ describe('ClickHouseDatasource', () => {
   });
 
   describe('SupplementaryQueriesSupport', () => {
-    const query: CHBuilderQuery = {
+    const query: GreptimeBuilderQuery = {
       pluginVersion: '',
       refId: '42',
       editorType: EditorType.Builder,
@@ -401,7 +407,7 @@ describe('ClickHouseDatasource', () => {
         ]
       },
     };
-    const request: DataQueryRequest<CHQuery> = {
+    const request: DataQueryRequest<GreptimeQuery> = {
       app: CoreApp.Explore,
       interval: '1s',
       intervalMs: 1000,
@@ -527,7 +533,7 @@ describe('ClickHouseDatasource', () => {
         const range = ['from', 'to'];
         const supplementaryQuery = {
           rawSql: 'supplementaryQuery',
-        } as CHSqlQuery;
+        } as GreptimeSqlQuery;
         jest.spyOn(Datasource.prototype, 'getSupplementaryLogsVolumeQuery').mockReturnValue(supplementaryQuery);
         jest.spyOn(logs, 'getIntervalInfo').mockReturnValue({ interval: '1d' });
         const queryLogsVolumeSpy = jest

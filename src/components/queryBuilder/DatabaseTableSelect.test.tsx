@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import { DatabaseSelect, TableSelect, DatabaseTableSelect } from './DatabaseTableSelect';
-import { Datasource } from '../../data/CHDatasource';
+import { Datasource } from '../../data/GreptimeDatasource';
 
 const defaultDB = 'default';
 const testTable = 'samples';

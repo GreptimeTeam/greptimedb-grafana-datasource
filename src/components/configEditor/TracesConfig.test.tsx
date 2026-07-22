@@ -94,7 +94,8 @@ describe('TracesConfig', () => {
     expect(onDefaultTableChange).toHaveBeenCalledWith('changed');
   });
 
-  it('should call onOtelEnabled when changed', () => {
+  it.skip('should call onOtelEnabled when changed', () => {
+    // OtelVersionSelect UI is currently commented out (docs/03-otel-support.md).
     const onOtelEnabledChange = jest.fn();
     const result = render(
       <TracesConfig
@@ -125,7 +126,8 @@ describe('TracesConfig', () => {
     expect(onOtelEnabledChange).toHaveBeenCalledWith(true);
   });
 
-  it('should call onOtelVersionChange when changed', () => {
+  it.skip('should call onOtelVersionChange when changed', () => {
+    // OtelVersionSelect UI is currently commented out (docs/03-otel-support.md).
     const onOtelVersionChange = jest.fn();
     const result = render(
       <TracesConfig

@@ -7,7 +7,7 @@ import { ModeSwitch } from '../ModeSwitch';
 import { getColumnByHint, getColumnsByHint } from 'data/sqlGenerator';
 import { Alert, Collapse, VerticalGroup } from '@grafana/ui';
 import { DurationUnitSelect } from 'components/queryBuilder/DurationUnitSelect';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { useBuilderOptionChanges } from 'hooks/useBuilderOptionChanges';
 import useColumns from 'hooks/useColumns';
 import { BuilderOptionsReducerAction, setOptions } from 'hooks/useBuilderOptionsState';

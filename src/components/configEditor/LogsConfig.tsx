@@ -4,13 +4,13 @@ import { Input, Field, InlineFormLabel, TagsInput } from '@grafana/ui';
 import { ColumnHint } from 'types/queryBuilder';
 import otel, { defaultLogsTable } from 'otel';
 import { LabeledInput } from './LabeledInput';
-import { CHLogsConfig } from 'types/config';
+import { GreptimeLogsConfig } from 'types/config';
 import allLabels from 'labels';
 import { columnLabelToPlaceholder } from 'data/utils';
 import { Switch } from 'components/queryBuilder/Switch';
 
 interface LogsConfigProps {
-  logsConfig?: CHLogsConfig;
+  logsConfig?: GreptimeLogsConfig;
   onDefaultDatabaseChange: (v: string) => void;
   onDefaultTableChange: (v: string) => void;
   onOtelEnabledChange: (v: boolean) => void;

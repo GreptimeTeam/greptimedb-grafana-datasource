@@ -7,11 +7,11 @@ import {  Switch, Input,  Button, Field, HorizontalGroup, Alert, VerticalGroup }
 import { Auth, convertLegacyAuthProps, AuthMethod } from '@grafana/experimental';
 
 import {
-  CHConfig,
-  CHCustomSetting,
-  CHSecureConfig,
-  CHLogsConfig,
-  CHTracesConfig,
+  GreptimeConfig,
+  GreptimeCustomSetting,
+  GreptimeSecureConfig,
+  GreptimeLogsConfig,
+  GreptimeTracesConfig,
   AliasTableEntry
 } from 'types/config';
 import { gte as versionGte } from 'semver';
@@ -24,10 +24,10 @@ import { LogsConfig } from 'components/configEditor/LogsConfig';
 import { TracesConfig } from 'components/configEditor/TracesConfig';
 import { QuerySettingsConfig } from 'components/configEditor/QuerySettingsConfig';
 import allLabels from 'labels';
-import {  useConfigDefaults } from './CHConfigEditorHooks';
+import {  useConfigDefaults } from './GreptimeConfigEditorHooks';
 import {AliasTableConfig} from "../components/configEditor/AliasTableConfig";
 
-export interface ConfigEditorProps extends DataSourcePluginOptionsEditorProps<CHConfig, CHSecureConfig> {}
+export interface ConfigEditorProps extends DataSourcePluginOptionsEditorProps<GreptimeConfig, GreptimeSecureConfig> {}
 
 export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   const { options, onOptionsChange } = props;
@@ -36,7 +36,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
 
   useConfigDefaults(options, onOptionsChange);
   const onSwitchToggle = (
-    key: keyof Pick<CHConfig, 'secure' | 'validateSql' | 'enableSecureSocksProxy' | 'forwardGrafanaHeaders' | 'filterValidationEnabled'>,
+    key: keyof Pick<GreptimeConfig, 'secure' | 'validateSql' | 'enableSecureSocksProxy' | 'forwardGrafanaHeaders' | 'filterValidationEnabled'>,
     value: boolean
   ) => {
     onOptionsChange({
@@ -49,7 +49,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
   };
 
 
-  const onCustomSettingsChange = (customSettings: CHCustomSetting[]) => {
+  const onCustomSettingsChange = (customSettings: GreptimeCustomSetting[]) => {
     onOptionsChange({
       ...options,
       jsonData: {
@@ -58,7 +58,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
       },
     });
   };
-  const onLogsConfigChange = (key: keyof CHLogsConfig, value: string | boolean | string[]) => {
+  const onLogsConfigChange = (key: keyof GreptimeLogsConfig, value: string | boolean | string[]) => {
     onOptionsChange({
       ...options,
       jsonData: {
@@ -70,7 +70,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
       }
     });
   };
-  const onTracesConfigChange = (key: keyof CHTracesConfig, value: string | boolean) => {
+  const onTracesConfigChange = (key: keyof GreptimeTracesConfig, value: string | boolean) => {
     onOptionsChange({
       ...options,
       jsonData: {
@@ -134,7 +134,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
     onChange: onOptionsChange,
   });
 
-  console.log(newAuthProps)
   function returnSelectedMethod() {
 
     return newAuthProps.selectedMethod;

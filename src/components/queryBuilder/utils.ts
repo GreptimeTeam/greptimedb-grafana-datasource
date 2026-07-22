@@ -27,13 +27,13 @@ import {
   OrderBy,
   QueryBuilderOptions,
   ColumnHint,
-  SelectedColumn as CHSelectedColumn,
+  SelectedColumn as QuerySelectedColumn,
   StringFilter,
   QueryType,
 } from 'types/queryBuilder';
 import { sqlToStatement } from 'data/ast';
 import { getColumnByHint, logColumnHintsToAlias } from 'data/sqlGenerator';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { tryApplyColumnHints } from 'data/utils';
 
 
@@ -351,12 +351,12 @@ function selectCallFunc(s: SelectedColumn): [AggregateColumn | string, string | 
   return [fields[0], s.alias?.name];
 }
 
-function getAggregatesFromAst(selectClauses: SelectedColumn[] | null): { columns: CHSelectedColumn[]; aggregates: AggregateColumn[]; } {
+function getAggregatesFromAst(selectClauses: SelectedColumn[] | null): { columns: QuerySelectedColumn[]; aggregates: AggregateColumn[]; } {
   if (!selectClauses) {
     return { columns: [], aggregates: [] };
   }
 
-  const columns: CHSelectedColumn[] = [];
+  const columns: QuerySelectedColumn[] = [];
   const aggregates: AggregateColumn[] = [];
 
   for (let s of selectClauses) {

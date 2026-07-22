@@ -1,6 +1,6 @@
 import { Reducer, useReducer } from "react";
 import { QueryBuilderOptions, QueryType, SelectedColumn } from "types/queryBuilder";
-import { defaultCHBuilderQuery } from "types/sql";
+import { defaultGreptimeBuilderQuery } from "types/sql";
 
 enum BuilderOptionsActionType {
   SetOptions = 'set_options',
@@ -125,7 +125,7 @@ const actions = new Map<BuilderOptionsActionType, Reducer<QueryBuilderOptions, B
 ]);
 
 const buildInitialState = (savedOptions?: Partial<QueryBuilderOptions>): QueryBuilderOptions => {
-  const defaultOptions = defaultCHBuilderQuery.builderOptions;
+  const defaultOptions = defaultGreptimeBuilderQuery.builderOptions;
   const initialState = {
     ...defaultOptions,
     ...savedOptions,

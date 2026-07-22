@@ -52,3 +52,38 @@ func TestResponseToFrames_Error(t *testing.T) {
 	require.Len(t, frames, 1)
 	require.Equal(t, "Error", frames[0].Fields[0].Name)
 }
+
+func TestResponseToFrames_JSONColumnAsString(t *testing.T) {
+	raw := `{
+		"code": 0,
+		"output": [{
+			"records": {
+				"schema": {
+					"column_schemas": [
+						{"name": "finish_reason", "data_type": "Json"},
+						{"name": "tags", "data_type": "Json"}
+					]
+				},
+				"rows": [
+					[["stop"], {"k": "v"}],
+					[null, null]
+				]
+			}
+		}]
+	}`
+
+	var response Response
+	require.NoError(t, json.Unmarshal([]byte(raw), &response))
+
+	frames, err := ResponseToFrames(&response, "A")
+	require.NoError(t, err)
+	require.Len(t, frames, 1)
+
+	frame := frames[0]
+	require.Equal(t, data.FieldTypeNullableString, frame.Fields[0].Type())
+	require.Equal(t, data.FieldTypeNullableString, frame.Fields[1].Type())
+
+	require.Equal(t, `["stop"]`, *frame.Fields[0].At(0).(*string))
+	require.Equal(t, `{"k":"v"}`, *frame.Fields[1].At(0).(*string))
+	require.Nil(t, frame.Fields[0].At(1))
+}

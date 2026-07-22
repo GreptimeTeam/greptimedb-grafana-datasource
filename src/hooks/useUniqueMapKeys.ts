@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 
 export default (datasource: Datasource, mapColumn: string, database: string, table: string): readonly string[] => {
   const [keys, setKeys] = useState<string[]>([]); 

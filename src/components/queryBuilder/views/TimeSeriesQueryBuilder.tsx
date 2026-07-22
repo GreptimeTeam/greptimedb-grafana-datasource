@@ -11,7 +11,7 @@ import { GroupByEditor } from '../GroupByEditor';
 import { ColumnSelect } from '../ColumnSelect';
 import { getColumnByHint } from 'data/sqlGenerator';
 import { columnFilterDateTime } from 'data/columnFilters';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { useBuilderOptionChanges } from 'hooks/useBuilderOptionChanges';
 import useColumns from 'hooks/useColumns';
 import { BuilderOptionsReducerAction, setOptions } from 'hooks/useBuilderOptionsState';

@@ -7,12 +7,12 @@ import { ColumnHint, TimeUnit } from 'types/queryBuilder';
 import otel, { defaultTraceTable } from 'otel';
 import { LabeledInput } from './LabeledInput';
 import { DurationUnitSelect } from 'components/queryBuilder/DurationUnitSelect';
-import { CHTracesConfig } from 'types/config';
+import { GreptimeTracesConfig } from 'types/config';
 import allLabels from 'labels';
 import { columnLabelToPlaceholder } from 'data/utils';
 
 interface TraceConfigProps {
-  tracesConfig?: CHTracesConfig;
+  tracesConfig?: GreptimeTracesConfig;
   onDefaultDatabaseChange: (v: string) => void;
   onDefaultTableChange: (v: string) => void;
   onOtelEnabledChange: (v: boolean) => void;
@@ -43,7 +43,7 @@ export const TracesConfig = (props: TraceConfigProps) => {
     otelEnabled, otelVersion,
     traceIdColumn, spanIdColumn, operationNameColumn, parentSpanIdColumn, serviceNameColumn,
     durationColumn, durationUnit, startTimeColumn, tagsColumn, serviceTagsColumn, eventsColumnPrefix
-  } = (props.tracesConfig || {}) as CHTracesConfig;
+  } = (props.tracesConfig || {}) as GreptimeTracesConfig;
   const labels = allLabels.components.Config.TracesConfig;
 
   const otelConfig = otel.getVersion(otelVersion);

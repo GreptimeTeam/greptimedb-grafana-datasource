@@ -9,7 +9,7 @@ import { FiltersEditor } from '../FilterEditor';
 import allLabels from 'labels';
 import { getColumnByHint } from 'data/sqlGenerator';
 import { columnFilterDateTime, columnFilterString } from 'data/columnFilters';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { useBuilderOptionChanges } from 'hooks/useBuilderOptionChanges';
 import { Alert, Button, InlineFormLabel, Input, VerticalGroup } from '@grafana/ui';
 import useColumns from 'hooks/useColumns';

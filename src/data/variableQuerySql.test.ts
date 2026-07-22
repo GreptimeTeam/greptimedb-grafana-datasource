@@ -4,7 +4,7 @@ import {
   prepareVariableQuerySql,
   resolveVariableSql,
 } from './variableQuerySql';
-import { CHVariableQuery } from './variableQuerySql';
+import { GreptimeVariableQuery } from './variableQuerySql';
 
 const templateSrvMock = {
   replace: jest.fn((target: string) => target),
@@ -14,7 +14,7 @@ jest.mock('@grafana/runtime', () => ({
   getTemplateSrv: () => templateSrvMock,
 }));
 
-const baseQuery = (overrides: Partial<CHVariableQuery> = {}): CHVariableQuery => ({
+const baseQuery = (overrides: Partial<GreptimeVariableQuery> = {}): GreptimeVariableQuery => ({
   refId: 'v',
   queryType: 'sql',
   ...overrides,

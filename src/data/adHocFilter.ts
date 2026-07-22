@@ -61,7 +61,7 @@ export class AdHocFilter {
         const key = columnNameFromAdhocKey(f.key);
         const value = escapeValueBasedOnOperator(f.value, f.operator);
         const condition = i !== adHocFilters.length - 1 ? (f.condition ? f.condition : 'AND') : '';
-        const operator = convertOperatorToClickHouseOperator(f.operator);
+        const operator = convertAdHocOperator(f.operator);
         return ` ${key} ${operator} ${value} ${condition}`;
       })
       .join('');
@@ -92,7 +92,7 @@ function escapeValueBasedOnOperator(s: string, operator: AdHocVariableFilterOper
   }
 }
 
-function convertOperatorToClickHouseOperator(operator: AdHocVariableFilterOperator): string {
+function convertAdHocOperator(operator: AdHocVariableFilterOperator): string {
   if (operator === '=~') {
     return 'ILIKE';
   }

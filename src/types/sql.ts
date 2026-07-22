@@ -9,7 +9,7 @@ export enum EditorType {
   Builder = 'builder',
 }
 
-export interface CHQueryBase extends DataQuery {
+export interface GreptimeQueryBase extends DataQuery {
   pluginVersion: string,
   editorType: EditorType;
   rawSql: string;
@@ -22,18 +22,20 @@ export interface CHQueryBase extends DataQuery {
   format?: number;
 }
 
-export interface CHSqlQuery extends CHQueryBase {
+export interface GreptimeSqlQuery extends GreptimeQueryBase {
   editorType: EditorType.SQL;
   queryType?: QueryType; // only used in explore view
   meta?: {
     timezone?: string;
     // meta fields to be used just for building builder options when migrating back to EditorType.Builder
     builderOptions?: QueryBuilderOptions;
+    /** When true, panel/variable query path skips ad-hoc filter injection. */
+    skipAdHocFilters?: boolean;
   };
   expand?: boolean;
 }
 
-export interface CHBuilderQuery extends CHQueryBase {
+export interface GreptimeBuilderQuery extends GreptimeQueryBase {
   editorType: EditorType.Builder;
   builderOptions: QueryBuilderOptions;
   meta?: {
@@ -41,11 +43,11 @@ export interface CHBuilderQuery extends CHQueryBase {
   };
 }
 
-export type CHQuery = CHSqlQuery | CHBuilderQuery;
+export type GreptimeQuery = GreptimeSqlQuery | GreptimeBuilderQuery;
 
 // TODO: these aren't really types
 export const defaultEditorType: EditorType = EditorType.Builder;
-export const defaultCHBuilderQuery: Omit<CHBuilderQuery, 'refId'> = {
+export const defaultGreptimeBuilderQuery: Omit<GreptimeBuilderQuery, 'refId'> = {
   pluginVersion: '',
   editorType: EditorType.Builder,
   rawSql: '',
@@ -59,7 +61,7 @@ export const defaultCHBuilderQuery: Omit<CHBuilderQuery, 'refId'> = {
     limit: 1000
   },
 };
-export const defaultCHSqlQuery: Omit<CHSqlQuery, 'refId'> = {
+export const defaultGreptimeSqlQuery: Omit<GreptimeSqlQuery, 'refId'> = {
   pluginVersion: '',
   editorType: EditorType.SQL,
   rawSql: '',

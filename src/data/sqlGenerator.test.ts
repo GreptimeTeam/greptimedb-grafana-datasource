@@ -471,14 +471,13 @@ describe('SQL Generator', () => {
       orderBy: []
     };
     const expectedSqlParts = [
-      'SELECT "TraceId" as traceID, "SpanId" as spanID, "ParentSpanId" as parentSpanID,',
-      '"ServiceName" as serviceName, "SpanName" as operationName, multiply(toUnixTimestamp64Nano("Timestamp"), 0.000001) as startTime,',
-      'multiply("Duration", 0.000001) as duration,',
-      `arrayMap(key -> map('key', key, 'value',"SpanAttributes"[key]),`,
-      `mapKeys("SpanAttributes")) as tags,`,
-      `arrayMap(key -> map('key', key, 'value',"ResourceAttributes"[key]), mapKeys("ResourceAttributes")) as serviceTags,`,
-      `if("StatusCode" IN ('Error', 'STATUS_CODE_ERROR'), 2, 0) as statusCode`,
-      `FROM "default"."otel_traces" WHERE traceID = 'abcdefg'`,
+      'SELECT "TraceId" as "traceID", "SpanId" as "spanID", "ParentSpanId" as "parentSpanID",',
+      '"ServiceName" as "serviceName", "SpanName" as "operationName", CAST(to_unixtime("Timestamp") * 1000 AS BIGINT) as "startTime",',
+      'FLOOR("Duration" * 0.000001) AS "duration",',
+      '"SpanAttributes",',
+      '"ResourceAttributes",',
+      `CASE WHEN "StatusCode" IN ('Error', 'STATUS_CODE_ERROR') THEN 2 ELSE 0 END as "statusCode"`,
+      `FROM "default"."otel_traces" WHERE trace_id = 'abcdefg'`,
       'LIMIT 1000'
     ];
 
@@ -518,13 +517,12 @@ describe('SQL Generator', () => {
     const expectedSqlParts = [
       `WITH 'abcdefg' as trace_id, (SELECT min(Start) FROM "default"."otel_traces_trace_id_ts" WHERE TraceId = trace_id) as trace_start,`,
       `(SELECT max(End) + 1 FROM "default"."otel_traces_trace_id_ts" WHERE TraceId = trace_id) as trace_end`,
-      'SELECT "TraceId" as traceID, "SpanId" as spanID, "ParentSpanId" as parentSpanID,',
-      '"ServiceName" as serviceName, "SpanName" as operationName, multiply(toUnixTimestamp64Nano("Timestamp"), 0.000001) as startTime,',
-      'multiply("Duration", 0.000001) as duration,',
-      `arrayMap(key -> map('key', key, 'value',"SpanAttributes"[key]),`,
-      `mapKeys("SpanAttributes")) as tags,`,
-      `arrayMap(key -> map('key', key, 'value',"ResourceAttributes"[key]), mapKeys("ResourceAttributes")) as serviceTags,`,
-      `if("StatusCode" IN ('Error', 'STATUS_CODE_ERROR'), 2, 0) as statusCode`,
+      'SELECT "TraceId" as "traceID", "SpanId" as "spanID", "ParentSpanId" as "parentSpanID",',
+      '"ServiceName" as "serviceName", "SpanName" as "operationName", CAST(to_unixtime("Timestamp") * 1000 AS BIGINT) as "startTime",',
+      'FLOOR("Duration" * 0.000001) AS "duration",',
+      '"SpanAttributes",',
+      '"ResourceAttributes",',
+      `CASE WHEN "StatusCode" IN ('Error', 'STATUS_CODE_ERROR') THEN 2 ELSE 0 END as "statusCode"`,
       `FROM "default"."otel_traces" WHERE traceID = trace_id AND "Timestamp" >= trace_start AND "Timestamp" <= trace_end`,
       'LIMIT 1000'
     ];
@@ -598,10 +596,10 @@ describe('SQL Generator', () => {
       ]
     };
     const expectedSqlParts = [
-      'SELECT "TraceId" as traceID, "ServiceName" as serviceName, "SpanName" as operationName,',
-      '"Timestamp" as startTime, multiply("Duration", 0.000001) as duration',
-      'FROM "default"."otel_traces" WHERE ( Timestamp >= $__fromTime AND Timestamp <= $__toTime )',
-      'AND ( ParentSpanId = \'\' ) AND ( Duration > 0 ) ORDER BY Timestamp DESC, Duration DESC LIMIT 1000'
+      'SELECT "TraceId" as "traceID", "ServiceName" as "serviceName", "SpanName" as "operationName",',
+      '"Timestamp" as "startTime", FLOOR("Duration" * 0.000001) AS "duration"',
+      'FROM "default"."otel_traces" WHERE ( "Timestamp" >= $__fromTime AND "Timestamp" <= $__toTime )',
+      'AND ( "ParentSpanId" = \'\' ) AND ( "Duration" > 0 ) ORDER BY "Timestamp" DESC, "Duration" DESC LIMIT 1000'
     ];
 
     const sql = generateSql(opts);

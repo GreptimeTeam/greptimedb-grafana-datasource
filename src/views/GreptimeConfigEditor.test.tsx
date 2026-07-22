@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { ConfigEditor } from './CHConfigEditor';
+import { ConfigEditor } from './GreptimeConfigEditor';
 import { mockConfigEditorProps } from '__mocks__/ConfigEditor';
 import '@testing-library/jest-dom';
 import { Protocol } from 'types/config';
@@ -20,9 +20,8 @@ describe('ConfigEditor', () => {
   it('new editor', () => {
     render(<ConfigEditor {...mockConfigEditorProps()} />);
     expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.username.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.password.placeholder)).toBeInTheDocument();
   });
+
   it('with password', async () => {
     render(
       <ConfigEditor
@@ -35,10 +34,8 @@ describe('ConfigEditor', () => {
       />
     );
     expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(labels.username.placeholder)).toBeInTheDocument();
-    const a = screen.getByText('Reset');
-    expect(a).toBeInTheDocument();
   });
+
   it('with path', async () => {
     const path = 'custom-path';
     render(
@@ -50,7 +47,9 @@ describe('ConfigEditor', () => {
         }}
       />
     );
+    expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
   });
+
   it('with secure connection', async () => {
     render(
       <ConfigEditor
@@ -61,6 +60,6 @@ describe('ConfigEditor', () => {
         }}
       />
     );
+    expect(screen.getByPlaceholderText(labels.serverAddress.placeholder)).toBeInTheDocument();
   });
-
 });

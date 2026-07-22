@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { CHQueryEditor } from './CHQueryEditor';
+import { GreptimeQueryEditor } from './GreptimeQueryEditor';
 import * as ui from '@grafana/ui';
 import { mockDatasource } from '__mocks__/datasource';
 import { EditorType } from 'types/sql';
@@ -24,7 +24,7 @@ describe('Query Editor', () => {
   it('Should display sql in the editor', () => {
     const rawSql = 'foo';
     render(
-      <CHQueryEditor
+      <GreptimeQueryEditor
         query={{ pluginVersion: '', rawSql, refId: 'A', editorType: EditorType.SQL }}
         onChange={jest.fn()}
         onRunQuery={jest.fn()}

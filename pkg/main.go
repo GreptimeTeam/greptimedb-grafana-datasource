@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/grafana/clickhouse-datasource/pkg/plugin"
+	"github.com/GreptimeTeam/greptimedb-grafana-datasource/pkg/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )

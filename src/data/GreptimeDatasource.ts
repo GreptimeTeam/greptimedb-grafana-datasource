@@ -21,8 +21,8 @@ import {
 } from '@grafana/data';
 import {  BackendSrvRequest, DataSourceWithBackend, FetchResponse, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { Observable, map, firstValueFrom, catchError, of } from 'rxjs';
-import { CHConfig } from 'types/config';
-import { EditorType, CHQuery } from 'types/sql';
+import { GreptimeConfig } from 'types/config';
+import { EditorType, GreptimeQuery, GreptimeSqlQuery } from 'types/sql';
 import {
   QueryType,
   AggregateColumn,
@@ -38,7 +38,7 @@ import {
   SelectedColumn,
 } from 'types/queryBuilder';
 import { AdHocFilter, AdHocVariableFilter, columnNameFromAdhocKey, tableAndColumnFromAdhocKey } from './adHocFilter';
-import { CHVariableSupport } from './CHVariableSupport';
+import { GreptimeVariableSupport } from './GreptimeVariableSupport';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
@@ -98,23 +98,22 @@ function createMultiSearchAnyEquivalent(llfColumn: string, searchTermsString: st
 }
 
 export class Datasource
-  extends DataSourceWithBackend<CHQuery, CHConfig>
-  implements DataSourceWithSupplementaryQueriesSupport<CHQuery>,
-  DataSourceWithLogsContextSupport<CHQuery>
+  extends DataSourceWithBackend<GreptimeQuery, GreptimeConfig>
+  implements DataSourceWithSupplementaryQueriesSupport<GreptimeQuery>,
+  DataSourceWithLogsContextSupport<GreptimeQuery>
 {
   // This enables default annotation support for 7.2+
   annotations = {};
-  settings: DataSourceInstanceSettings<CHConfig>;
+  settings: DataSourceInstanceSettings<GreptimeConfig>;
   adHocFilter: AdHocFilter;
   skipAdHocFilter = false; // don't apply adhoc filters to the query
-  adHocFiltersStatus = AdHocFilterStatus.none; // ad hoc filters only work with CH 22.7+
-  adHocCHVerReq = { major: 22, minor: 7 };
+  adHocFiltersStatus = AdHocFilterStatus.none;
 
-  constructor(instanceSettings: DataSourceInstanceSettings<CHConfig>) {
+  constructor(instanceSettings: DataSourceInstanceSettings<GreptimeConfig>) {
     super(instanceSettings);
     this.settings = instanceSettings;
     this.adHocFilter = new AdHocFilter();
-    this.variables = new CHVariableSupport(this);
+    this.variables = new GreptimeVariableSupport(this);
   }
   
   private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[]): Filter[] {
@@ -231,7 +230,7 @@ export class Datasource
 
   getDataProvider(
     type: SupplementaryQueryType,
-    request: DataQueryRequest<CHQuery>
+    request: DataQueryRequest<GreptimeQuery>
   ): Observable<DataQueryResponse> | undefined {
     if (!this.getSupportedSupplementaryQueryTypes().includes(type)) {
       return undefined;
@@ -252,7 +251,7 @@ export class Datasource
           };
         }
 
-        const targets: CHQuery[] = [];
+        const targets: GreptimeQuery[] = [];
         logsVolumeRequest.targets.forEach((target) => {
           const supplementaryQuery = this.getSupplementaryLogsVolumeQuery(logsVolumeRequest, target);
           if (supplementaryQuery !== undefined) {
@@ -281,7 +280,7 @@ export class Datasource
     return [SupplementaryQueryType.LogsVolume];
   }
 
-  getSupplementaryLogsVolumeQuery(logsVolumeRequest: DataQueryRequest<CHQuery>, query: CHQuery): CHQuery | undefined {
+  getSupplementaryLogsVolumeQuery(logsVolumeRequest: DataQueryRequest<GreptimeQuery>, query: GreptimeQuery): GreptimeQuery | undefined {
     if (
       query.editorType !== EditorType.Builder ||
       query.builderOptions.queryType !== QueryType.Logs ||
@@ -358,11 +357,11 @@ export class Datasource
     };
   }
 
-  getSupplementaryQuery(options: SupplementaryQueryOptions, originalQuery: CHQuery): CHQuery | undefined {
+  getSupplementaryQuery(options: SupplementaryQueryOptions, originalQuery: GreptimeQuery): GreptimeQuery | undefined {
     return undefined;
   }
 
-  async metricFindQuery(query: CHQuery | string, options: any = {}) {
+  async metricFindQuery(query: GreptimeQuery | string, options: any = {}) {
     if (this.adHocFiltersStatus === AdHocFilterStatus.none) {
       this.adHocFiltersStatus = await this.canUseAdhocFilters();
     }
@@ -376,33 +375,23 @@ export class Datasource
       return [];
     }
 
-    let chQuery: CHQuery = {
+    const greptimeQuery: GreptimeSqlQuery = {
       rawSql,
       editorType: EditorType.SQL,
       refId: 'metricFind',
       pluginVersion,
+      meta: {
+        skipAdHocFilters: options?.skipAdHocFilters ?? true,
+      },
     };
 
-    if (!(chQuery.editorType === EditorType.SQL || chQuery.editorType === EditorType.Builder || !chQuery.editorType)) {
-      return [];
-    }
-
-    const frame = await this.runQuery(
-      {
-        ...chQuery,
-        meta: {
-          ...(chQuery.meta || {}),
-          skipAdHocFilters: options?.skipAdHocFilters ?? true,
-        },
-      },
-      {
-        ...options,
-        // Variable SQL is fully interpolated above. Do not pass scopedVars into
-        // super.query() — empty dependent entries override templateSrv global state
-        // (regression vs pre-Go-backend runQuery which never forwarded scopedVars).
-        scopedVars: undefined,
-      }
-    );
+    const frame = await this.runQuery(greptimeQuery, {
+      ...options,
+      // Variable SQL is fully interpolated above. Do not pass scopedVars into
+      // super.query() — empty dependent entries override templateSrv global state
+      // (regression vs pre-Go-backend runQuery which never forwarded scopedVars).
+      scopedVars: undefined,
+    });
     if (frame.fields?.length === 0) {
       return [];
     }
@@ -414,7 +403,7 @@ export class Datasource
     return frame?.fields[1]?.values.map((text, i) => ({ text, value: ids.get(i) }));
   }
 
-  applyTemplateVariables(query: CHQuery, scoped: ScopedVars): CHQuery {
+  applyTemplateVariables(query: GreptimeQuery, scoped: ScopedVars): GreptimeQuery {
     let rawQuery = query.rawSql || '';
     rawQuery = this.applyConditionalAll(rawQuery, getTemplateSrv().getVariables());
     return {
@@ -453,7 +442,7 @@ export class Datasource
   }
 
   // Support filtering by field value in Explore
-  modifyQuery(query: CHQuery, action: QueryFixAction): CHQuery {
+  modifyQuery(query: GreptimeQuery, action: QueryFixAction): GreptimeQuery {
     if (query.editorType !== EditorType.Builder || !action.options || !action.options.key || !action.options.value) {
       return query;
     }
@@ -844,7 +833,7 @@ export class Datasource
     return this.values(frame);
   }
 
-  private getTimezone(request: DataQueryRequest<CHQuery>): string | undefined {
+  private getTimezone(request: DataQueryRequest<GreptimeQuery>): string | undefined {
     // timezone specified in the time picker
     if (request.timezone && request.timezone !== 'browser') {
       return request.timezone;
@@ -854,7 +843,7 @@ export class Datasource
     return localTimezoneInfo?.ianaName;
   }
 
-  query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
+  query(request: DataQueryRequest<GreptimeQuery>): Observable<DataQueryResponse> {
     const templateSrv = getTemplateSrv() as any;
     // Grafana stores adhoc filters scoped by datasource identity.
     // Using uid is more stable than name (name can be empty/changed).
@@ -891,7 +880,7 @@ export class Datasource
       .filter((t) => t.hide !== true)
       // attach timezone information and merge ad-hoc filters for builder queries
       .map((t) => {
-        let next: CHQuery = {
+        let next: GreptimeQuery = {
           ...t,
           meta: {
             ...t?.meta,
@@ -1004,15 +993,15 @@ export class Datasource
 
   private postProcessBackendQueryResponse(
     response: DataQueryResponse,
-    request: DataQueryRequest<CHQuery>,
-    _targets: CHQuery[]
+    request: DataQueryRequest<GreptimeQuery>,
+    _targets: GreptimeQuery[]
   ): DataQueryResponse {
     // Multi-frame / logs / traces frames are shaped in Go (pkg/greptime.FormatFrames).
     // Frontend only attaches Explore data links between logs and traces.
     return transformQueryResponseWithTraceAndLogLinks(this, request, response);
   }
 
-  private runQuery(request: Partial<CHQuery>, options?: any): Promise<DataFrame> {
+  private runQuery(request: Partial<GreptimeQuery>, options?: any): Promise<DataFrame> {
     return new Promise((resolve) => {
       // VariableSupport often passes `{ range: undefined }`. Do not treat a present
       // but empty options object as having a valid range — fall back to dashboard time.
@@ -1022,7 +1011,7 @@ export class Datasource
         targets: [{ ...request, refId: String(Math.random()) }],
         range,
         scopedVars,
-      } as DataQueryRequest<CHQuery>;
+      } as DataQueryRequest<GreptimeQuery>;
       this.query(req).subscribe((res: DataQueryResponse) => {
         resolve(res.data[0] || { fields: [] });
       });
@@ -1127,13 +1116,26 @@ export class Datasource
 
   private getTagSource() {
     // @todo https://github.com/grafana/grafana/issues/13109
-    const ADHOC_VAR = '$clickhouse_adhoc_query';
+    // Prefer Greptime name; keep ClickHouse legacy variable for existing dashboards.
+    const ADHOC_VARS = ['$greptime_adhoc_query', '$clickhouse_adhoc_query'];
+    const unresolvedNames = new Set(ADHOC_VARS);
     const defaultDatabase = this.getDefaultDatabase();
-    let source = getTemplateSrv().replace(ADHOC_VAR);
-    if (source === ADHOC_VAR && isEmpty(defaultDatabase)) {
+    let source = '';
+    let unresolved = true;
+    for (const name of ADHOC_VARS) {
+      const replaced = getTemplateSrv().replace(name);
+      if (!unresolvedNames.has(replaced)) {
+        source = replaced;
+        unresolved = false;
+        break;
+      }
+    }
+    if (unresolved && isEmpty(defaultDatabase)) {
       return { type: TagType.schema, source: undefined };
     }
-    source = source === ADHOC_VAR ? defaultDatabase! : source;
+    if (unresolved) {
+      source = defaultDatabase!;
+    }
     if (source.toLowerCase().startsWith('select')) {
       return { type: TagType.query, source };
     }
@@ -1146,23 +1148,10 @@ export class Datasource
     return { type: TagType.schema, source: sql, from: source };
   }
 
-  // Returns true if ClickHouse's version is greater than or equal to 22.7
-  // 22.7 added 'settings additional_table_filters' which is used for ad hoc filters
+  // Ad-hoc filters are always enabled for GreptimeDB.
   private async canUseAdhocFilters(): Promise<AdHocFilterStatus> {
     this.skipAdHocFilter = false;
     return Promise.resolve(AdHocFilterStatus.enabled);
-    // const data = await this.fetchData(`SELECT version()`);
-    // try {
-    //   const verString = (data[0] as unknown as string).split('.');
-    //   const ver = { major: Number.parseInt(verString[0], 10), minor: Number.parseInt(verString[1], 10) };
-    //   return ver.major > this.adHocCHVerReq.major ||
-    //     (ver.major === this.adHocCHVerReq.major && ver.minor >= this.adHocCHVerReq.minor)
-    //     ? AdHocFilterStatus.enabled
-    //     : AdHocFilterStatus.disabled;
-    // } catch (err) {
-    //   console.error(`Unable to parse ClickHouse version: ${err}`);
-    //   throw err;
-    // }
   }
 
   private injectAdHocWhere(sql: string, conditions: string): string {
@@ -1317,7 +1306,7 @@ export class Datasource
    * 
    * If no context columns can be matched from the selected data frame, then the query is not run.
    */
-  async getLogRowContext(row: LogRowModel, options?: LogRowContextOptions, query?: CHQuery | undefined, cacheFilters?: boolean): Promise<DataQueryResponse> {
+  async getLogRowContext(row: LogRowModel, options?: LogRowContextOptions, query?: GreptimeQuery | undefined, cacheFilters?: boolean): Promise<DataQueryResponse> {
     if (!query) {
       throw new Error('Missing query for log context');
     } else if (!options || !options.direction || options.limit === undefined) {
@@ -1398,7 +1387,7 @@ export class Datasource
     contextQuery.rawSql = generateSql(builderOptions);
     const req = {
       targets: [contextQuery],
-    } as DataQueryRequest<CHQuery>;
+    } as DataQueryRequest<GreptimeQuery>;
 
     // Do NOT toggle this.skipAdHocFilter here: concurrent dashboard/log queries on the same
     // datasource instance would skip ad hoc filters. Per-target meta.skipAdHocFilters is enough.
@@ -1416,7 +1405,7 @@ export class Datasource
   /**
    * Returns a React component that is displayed in the top portion of the log context panel
    */
-  getLogRowContextUi(row: LogRowModel, runContextQuery?: (() => void) | undefined, query?: CHQuery | undefined): ReactNode {
+  getLogRowContextUi(row: LogRowModel, runContextQuery?: (() => void) | undefined, query?: GreptimeQuery | undefined): ReactNode {
     const contextColumns = this.getLogContextColumnsFromLogRow(row);
     return createReactElement(LogsContextPanel, { columns: contextColumns, datasourceUid: this.uid });
   }

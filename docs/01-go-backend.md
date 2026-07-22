@@ -119,9 +119,9 @@ SELECT $__timeInterval(greptime_timestamp) AS time, count(*) ...
 - [ ] Explore 与 Alert rule preview 宏结果一致  
 - [ ] Public dashboard（可测时）出图  
 - [ ] 多 label Time series / Logs / Traces 回归  
-- [ ] 无 clickhouse-go；公共命名无 `CH`（或仅兼容 alias）  
-- [ ] `alerting: true`，至少一条规则可评估  
-- [ ] `pkg/macros` + fake HTTP DataFrame 单测  
+- [x] 无 clickhouse-go；公共命名无 `CH`（或仅兼容 alias）  
+- [x] `alerting: true`，至少一条规则可评估  
+- [x] `pkg/macros` + fake HTTP DataFrame 单测  
 
 ---
 

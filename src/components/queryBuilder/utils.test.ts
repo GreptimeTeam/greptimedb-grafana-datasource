@@ -1,7 +1,7 @@
 import { generateSql } from 'data/sqlGenerator';
 import { getQueryOptionsFromSql, isDateTimeType, isDateType, isNumberType } from './utils';
 import { AggregateType, BuilderMode, ColumnHint, DateFilterWithoutValue, FilterOperator, MultiFilter, OrderByDirection, QueryBuilderOptions, QueryType } from 'types/queryBuilder';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import otel from 'otel';
 
 describe('isDateType', () => {

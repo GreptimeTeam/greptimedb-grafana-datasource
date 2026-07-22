@@ -5,19 +5,19 @@ import { getTemplateSrv } from '@grafana/runtime';
  * Variable query types. Each one renders a different combination of pickers and
  * generates a default SQL query that the user can edit before saving.
  */
-export type CHVariableQueryType = 'sql' | 'databases' | 'tables' | 'columns' | 'columnValues';
+export type GreptimeVariableQueryType = 'sql' | 'databases' | 'tables' | 'columns' | 'columnValues';
 
 /** Variable query model. Persisted as part of the dashboard JSON. */
-export interface CHVariableQuery {
+export interface GreptimeVariableQuery {
   refId: string;
-  queryType: CHVariableQueryType;
+  queryType: GreptimeVariableQueryType;
   rawSql?: string;
   database?: string;
   table?: string;
   column?: string;
 }
 
-const VARIABLE_QUERY_TYPES = new Set<CHVariableQueryType>([
+const VARIABLE_QUERY_TYPES = new Set<GreptimeVariableQueryType>([
   'sql',
   'databases',
   'tables',
@@ -25,8 +25,8 @@ const VARIABLE_QUERY_TYPES = new Set<CHVariableQueryType>([
   'columnValues',
 ]);
 
-export function isCHVariableQueryType(value: unknown): value is CHVariableQueryType {
-  return typeof value === 'string' && VARIABLE_QUERY_TYPES.has(value as CHVariableQueryType);
+export function isGreptimeVariableQueryType(value: unknown): value is GreptimeVariableQueryType {
+  return typeof value === 'string' && VARIABLE_QUERY_TYPES.has(value as GreptimeVariableQueryType);
 }
 
 /** Escape a Greptime/MySQL string literal for use inside single quotes. */
@@ -39,7 +39,7 @@ export function escapeGreptimeIdentifier(id: string): string {
   return id ? `"${id.replace(/"/g, '""')}"` : '';
 }
 
-export function generateVariableSql(query: CHVariableQuery, defaultDatabase: string): string {
+export function generateVariableSql(query: GreptimeVariableQuery, defaultDatabase: string): string {
   const db = query.database || defaultDatabase || '';
   switch (query.queryType) {
     case 'databases':
@@ -109,7 +109,7 @@ export function interpolateDashboardVariables(sql: string, scopedVars?: ScopedVa
 }
 
 /** Resolve SQL for a variable query. Guided types regenerate from pickers at runtime. */
-export function resolveVariableSql(query: CHVariableQuery, defaultDatabase: string): string {
+export function resolveVariableSql(query: GreptimeVariableQuery, defaultDatabase: string): string {
   if (query.queryType !== 'sql') {
     const generated = generateVariableSql(query, defaultDatabase);
     if (generated) {
@@ -120,7 +120,7 @@ export function resolveVariableSql(query: CHVariableQuery, defaultDatabase: stri
 }
 
 export function prepareVariableQuerySql(
-  query: CHVariableQuery,
+  query: GreptimeVariableQuery,
   defaultDatabase: string,
   requestScopedVars?: ScopedVars
 ): string {

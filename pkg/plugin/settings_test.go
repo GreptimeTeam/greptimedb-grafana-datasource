@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +61,7 @@ func TestLoadSettings(t *testing.T) {
 					Host:               "foo",
 					Port:               443,
 					Path:               "custom-path",
-					Protocol:           clickhouse.HTTP.String(),
+					Protocol:           "http",
 					Username:           "baz",
 					DefaultDatabase:    "example",
 					InsecureSkipVerify: true,

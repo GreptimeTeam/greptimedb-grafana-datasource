@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import otel from 'otel';
 import { ColumnHint, DateFilterWithoutValue, Filter, FilterOperator, NumberFilter, OrderBy, OrderByDirection, QueryBuilderOptions, SelectedColumn, StringFilter } from 'types/queryBuilder';
 import { BuilderOptionsReducerAction, setOptions } from 'hooks/useBuilderOptionsState';

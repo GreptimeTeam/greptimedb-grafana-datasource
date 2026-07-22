@@ -16,8 +16,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 
-	"github.com/grafana/clickhouse-datasource/pkg/greptime"
-	"github.com/grafana/clickhouse-datasource/pkg/macros"
+	"github.com/GreptimeTeam/greptimedb-grafana-datasource/pkg/greptime"
+	"github.com/GreptimeTeam/greptimedb-grafana-datasource/pkg/macros"
 )
 
 type queryModel = greptime.QueryModel
@@ -79,11 +79,18 @@ func (ds *GreptimeDatasource) QueryData(ctx context.Context, req *backend.QueryD
 			continue
 		}
 
-		frames = greptime.FormatFrames(frames, greptime.FormatOptions{
+		formatOpts := greptime.FormatOptions{
 			QueryType:      greptime.ResolveQueryType(model),
 			ContextColumns: ds.settings.LogsContextColumns,
 			TraceDetail:    greptime.IsTraceDetailQuery(model),
-		})
+		}
+		if builderOpts := greptime.ResolveBuilderOptions(model); builderOpts != nil {
+			formatOpts.TraceColumns = builderOpts.Columns
+			if builderOpts.Meta != nil {
+				formatOpts.TraceDuration = builderOpts.Meta.TraceDurationUnit
+			}
+		}
+		frames = greptime.FormatFrames(frames, formatOpts)
 		setExecutedQueryString(frames, sql)
 
 		response.Responses[query.RefID] = backend.DataResponse{Frames: frames}

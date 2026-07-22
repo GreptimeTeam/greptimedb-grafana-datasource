@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { QueryType, QueryBuilderOptions, ColumnHint, StringFilter } from 'types/queryBuilder';
 import { CoreApp } from '@grafana/data';
 import { LogsQueryBuilder } from './views/LogsQueryBuilder';

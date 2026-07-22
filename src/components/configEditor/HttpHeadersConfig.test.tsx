@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, renderHook } from '@testing-library/react';
 import { HttpHeadersConfig, useConfiguredSecureHttpHeaders } from './HttpHeadersConfig';
 import { selectors as allSelectors } from 'selectors';
-import { CHHttpHeader } from 'types/config';
+import { GreptimeHttpHeader } from 'types/config';
 import { KeyValue } from '@grafana/data';
 
 describe('HttpHeadersConfig', () => {
@@ -73,7 +73,7 @@ describe('HttpHeadersConfig', () => {
     fireEvent.blur(headerSecureSwitch);
     expect(onHttpHeadersChange).toHaveBeenCalledTimes(3);
 
-    const expected: CHHttpHeader[] = [
+    const expected: GreptimeHttpHeader[] = [
       { name: 'x-test', value: 'test value', secure: true } // without space in name
     ];
     expect(onHttpHeadersChange).toHaveBeenCalledWith(expect.objectContaining(expected));
@@ -99,7 +99,7 @@ describe('HttpHeadersConfig', () => {
     expect(removeHeaderButton).toBeInTheDocument();
     fireEvent.click(removeHeaderButton);
     
-    const expected: CHHttpHeader[] = [
+    const expected: GreptimeHttpHeader[] = [
       { name: 'x-test-2', value: 'test value 2', secure: false }
     ];
     expect(onHttpHeadersChange).toHaveBeenCalledTimes(1);

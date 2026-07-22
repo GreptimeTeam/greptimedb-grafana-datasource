@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { QueryEditorProps } from '@grafana/data';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { EditorTypeSwitcher } from 'components/queryBuilder/EditorTypeSwitcher';
 import { styles } from 'styles';
 import { Button } from '@grafana/ui';
-import { CHBuilderQuery, CHQuery, EditorType } from 'types/sql';
-import { CHConfig } from 'types/config';
+import { GreptimeBuilderQuery, GreptimeQuery, EditorType } from 'types/sql';
+import { GreptimeConfig } from 'types/config';
 import { QueryBuilder } from 'components/queryBuilder/QueryBuilder';
 import { generateSql } from 'data/sqlGenerator';
 import { SqlEditor } from 'components/SqlEditor';
@@ -13,12 +13,12 @@ import { isBuilderOptionsRunnable, mapQueryBuilderOptionsToGrafanaFormat } from 
 import { setAllOptions, useBuilderOptionsState } from 'hooks/useBuilderOptionsState';
 import { pluginVersion } from 'utils/version';
 
-export type CHQueryEditorProps = QueryEditorProps<Datasource, CHQuery, CHConfig>;
+export type GreptimeQueryEditorProps = QueryEditorProps<Datasource, GreptimeQuery, GreptimeConfig>;
 
 /**
  * Top level query editor component
  */
-export const CHQueryEditor = (props: CHQueryEditorProps) => {
+export const GreptimeQueryEditor = (props: GreptimeQueryEditorProps) => {
   const { datasource, query: savedQuery, onRunQuery } = props;
   const query = savedQuery;
 
@@ -28,14 +28,14 @@ export const CHQueryEditor = (props: CHQueryEditorProps) => {
         <EditorTypeSwitcher {...props} query={query} datasource={datasource} />
         <Button onClick={() => onRunQuery()}>Run Query</Button>
       </div>
-      <CHEditorByType {...props} query={query} />
+      <EditorByType {...props} query={query} />
     </>
   );
 };
 
-const CHEditorByType = (props: CHQueryEditorProps) => {
+const EditorByType = (props: GreptimeQueryEditorProps) => {
   const { query, onChange, app } = props;
-  const [builderOptions, builderOptionsDispatch] = useBuilderOptionsState((query as CHBuilderQuery).builderOptions);
+  const [builderOptions, builderOptionsDispatch] = useBuilderOptionsState((query as GreptimeBuilderQuery).builderOptions);
 
   /**
    * Grafana will sometimes replace the builder options directly, so we need to sync in both directions.
@@ -45,7 +45,7 @@ const CHEditorByType = (props: CHQueryEditorProps) => {
   const queryKey = query.key || ''
   const lastKey = useRef<string>(queryKey);
   if (queryKey !== lastKey.current && query.editorType === EditorType.Builder) {
-    builderOptionsDispatch(setAllOptions((query as CHBuilderQuery).builderOptions || {}));
+    builderOptionsDispatch(setAllOptions((query as GreptimeBuilderQuery).builderOptions || {}));
     lastKey.current = queryKey;
   }
 
@@ -54,7 +54,7 @@ const CHEditorByType = (props: CHQueryEditorProps) => {
    */
   const lastEditorType = useRef<EditorType>();
   if (query.editorType !== lastEditorType.current && query.editorType === EditorType.Builder) {
-    builderOptionsDispatch(setAllOptions((query as CHBuilderQuery).builderOptions || {}));
+    builderOptionsDispatch(setAllOptions((query as GreptimeBuilderQuery).builderOptions || {}));
     lastEditorType.current = query.editorType;
   }
 

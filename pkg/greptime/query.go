@@ -13,7 +13,7 @@ const (
 	QueryTypeTraces     = "traces"
 )
 
-// QueryModel is the subset of CHQuery JSON needed for response formatting.
+// QueryModel is the subset of GreptimeQuery JSON needed for response formatting.
 type QueryModel struct {
 	RawSQL         string          `json:"rawSql"`
 	EditorType     string          `json:"editorType,omitempty"`
@@ -30,12 +30,19 @@ type QueryMeta struct {
 
 type BuilderOptions struct {
 	QueryType string             `json:"queryType,omitempty"`
+	Columns   []BuilderColumn    `json:"columns,omitempty"`
 	Meta      *BuilderOptionsMeta `json:"meta,omitempty"`
 }
 
+type BuilderColumn struct {
+	Name string `json:"name"`
+	Hint string `json:"hint,omitempty"`
+}
+
 type BuilderOptionsMeta struct {
-	IsTraceIdMode bool   `json:"isTraceIdMode,omitempty"`
-	TraceId       string `json:"traceId,omitempty"`
+	IsTraceIdMode     bool   `json:"isTraceIdMode,omitempty"`
+	TraceId           string `json:"traceId,omitempty"`
+	TraceDurationUnit string `json:"traceDurationUnit,omitempty"`
 }
 
 // FormatOptions controls post-processing after ResponseToFrames.
@@ -43,6 +50,8 @@ type FormatOptions struct {
 	QueryType      string
 	ContextColumns []string
 	TraceDetail    bool // Trace ID waterfall (vs traces search table)
+	TraceColumns   []BuilderColumn
+	TraceDuration  string
 }
 
 // ResolveQueryType mirrors frontend transformBackendFrame query-type resolution.

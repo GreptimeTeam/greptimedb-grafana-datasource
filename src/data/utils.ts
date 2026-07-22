@@ -1,7 +1,7 @@
 import { CoreApp, DataFrame, DataQueryRequest, DataQueryResponse } from "@grafana/data";
 import { ColumnHint, FilterOperator, OrderByDirection, QueryBuilderOptions, QueryType, SelectedColumn, StringFilter } from "types/queryBuilder"
-import { CHBuilderQuery, CHQuery, EditorType } from "types/sql";
-import { Datasource } from "./CHDatasource";
+import { GreptimeBuilderQuery, GreptimeQuery, EditorType } from "types/sql";
+import { Datasource } from "./GreptimeDatasource";
 import { pluginVersion } from "utils/version";
 import { logColumnHintsToAlias, getColumnByHint } from "./sqlGenerator";
 
@@ -144,9 +144,9 @@ const applyTraceLogsQueryDefaults = (datasource: Datasource, builderOptions: Que
  * 
  * Requires defaults to be configured when crossing query types.
  */
-export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasource, req: DataQueryRequest<CHQuery>, res: DataQueryResponse): DataQueryResponse => {
+export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasource, req: DataQueryRequest<GreptimeQuery>, res: DataQueryResponse): DataQueryResponse => {
   res.data.forEach((frame: DataFrame) => {
-    const originalQuery = req.targets.find(t => t.refId === frame.refId) as CHBuilderQuery;
+    const originalQuery = req.targets.find(t => t.refId === frame.refId) as GreptimeBuilderQuery;
     if (!originalQuery) {
       return;
     }
@@ -156,7 +156,7 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
       return;
     }
 
-    const traceIdQuery: CHBuilderQuery = {
+    const traceIdQuery: GreptimeBuilderQuery = {
       datasource: datasource,
       editorType: EditorType.Builder,
       /**
@@ -214,7 +214,7 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
       traceIdQuery.builderOptions = options;
     }
 
-    const traceLogsQuery: CHBuilderQuery = {
+    const traceLogsQuery: GreptimeBuilderQuery = {
       datasource: datasource,
       editorType: EditorType.Builder,
       rawSql: '',

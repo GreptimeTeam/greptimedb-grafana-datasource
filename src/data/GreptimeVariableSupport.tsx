@@ -13,25 +13,25 @@ import { Observable, from, of } from 'rxjs';
 import { DatabaseSelect, TableSelect } from 'components/queryBuilder/DatabaseTableSelect';
 import useColumns from 'hooks/useColumns';
 import { styles } from 'styles';
-import { CHConfig } from 'types/config';
-import { CHQuery } from 'types/sql';
-import { Datasource } from './CHDatasource';
+import { GreptimeConfig } from 'types/config';
+import { GreptimeQuery } from 'types/sql';
+import { Datasource } from './GreptimeDatasource';
 import {
-  CHVariableQuery,
-  CHVariableQueryType,
+  GreptimeVariableQuery,
+  GreptimeVariableQueryType,
   generateVariableSql,
-  isCHVariableQueryType,
+  isGreptimeVariableQueryType,
   resolveVariableSql,
 } from './variableQuerySql';
 
-export type { CHVariableQuery, CHVariableQueryType };
+export type { GreptimeVariableQuery, GreptimeVariableQueryType };
 export {
   escapeGreptimeIdentifier,
   escapeGreptimeStringLiteral,
   filterEmptyScopedVars,
   generateVariableSql,
   interpolateDashboardVariables,
-  isCHVariableQueryType,
+  isGreptimeVariableQueryType,
   prepareVariableQuerySql,
   resolveVariableSql,
 } from './variableQuerySql';
@@ -41,7 +41,7 @@ export {
  * generates a default SQL query that the user can edit before saving.
  */
 
-const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: CHVariableQueryType; description?: string }> = [
+const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: GreptimeVariableQueryType; description?: string }> = [
   { label: 'Custom SQL', value: 'sql', description: 'Write any SQL query, same as before' },
   { label: 'List databases', value: 'databases', description: 'All databases on the server' },
   { label: 'List tables', value: 'tables', description: 'Tables inside a database' },
@@ -52,7 +52,7 @@ const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: CHVariableQueryType; 
 /** Returns which pickers a query type needs. */
 export type VariablePickerLevel = 'database' | 'table' | 'column' | null;
 
-export function pickerLevelFor(queryType: CHVariableQueryType): VariablePickerLevel {
+export function pickerLevelFor(queryType: GreptimeVariableQueryType): VariablePickerLevel {
   switch (queryType) {
     case 'tables':
       return 'database';
@@ -65,30 +65,30 @@ export function pickerLevelFor(queryType: CHVariableQueryType): VariablePickerLe
   }
 }
 
-export function normalizeVariableQuery(query: CHVariableQuery | CHQuery | string | undefined): CHVariableQuery {
+export function normalizeVariableQuery(query: GreptimeVariableQuery | GreptimeQuery | string | undefined): GreptimeVariableQuery {
   if (typeof query === 'string') {
     return { refId: 'var', queryType: 'sql', rawSql: query };
   }
 
   const rawSql =
-    typeof (query as CHVariableQuery | undefined)?.rawSql === 'string'
-      ? (query as CHVariableQuery).rawSql
+    typeof (query as GreptimeVariableQuery | undefined)?.rawSql === 'string'
+      ? (query as GreptimeVariableQuery).rawSql
       : undefined;
-  const queryType = isCHVariableQueryType((query as CHVariableQuery | undefined)?.queryType)
-    ? ((query as CHVariableQuery).queryType as CHVariableQueryType)
+  const queryType = isGreptimeVariableQueryType((query as GreptimeVariableQuery | undefined)?.queryType)
+    ? ((query as GreptimeVariableQuery).queryType as GreptimeVariableQueryType)
     : 'sql';
 
   return {
     refId: query?.refId || 'var',
     queryType,
     rawSql,
-    database: (query as CHVariableQuery | undefined)?.database,
-    table: (query as CHVariableQuery | undefined)?.table,
-    column: (query as CHVariableQuery | undefined)?.column,
+    database: (query as GreptimeVariableQuery | undefined)?.database,
+    table: (query as GreptimeVariableQuery | undefined)?.table,
+    column: (query as GreptimeVariableQuery | undefined)?.column,
   };
 }
 
-type EditorProps = QueryEditorProps<Datasource, CHQuery, CHConfig, CHVariableQuery>;
+type EditorProps = QueryEditorProps<Datasource, GreptimeQuery, GreptimeConfig, GreptimeVariableQuery>;
 
 export const VariableQueryEditor = (props: EditorProps) => {
   const { query, onChange, datasource } = props;
@@ -103,8 +103,8 @@ export const VariableQueryEditor = (props: EditorProps) => {
   );
 
   const onTypeChange = useCallback(
-    (queryType: CHVariableQueryType) => {
-      const next: CHVariableQuery = { ...safeQuery, queryType };
+    (queryType: GreptimeVariableQueryType) => {
+      const next: GreptimeVariableQuery = { ...safeQuery, queryType };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -113,7 +113,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
 
   const onDatabaseChange = useCallback(
     (database: string) => {
-      const next: CHVariableQuery = { ...safeQuery, database, table: '', column: '' };
+      const next: GreptimeVariableQuery = { ...safeQuery, database, table: '', column: '' };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -122,7 +122,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
 
   const onTableChange = useCallback(
     (table: string) => {
-      const next: CHVariableQuery = { ...safeQuery, table, column: '' };
+      const next: GreptimeVariableQuery = { ...safeQuery, table, column: '' };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -131,7 +131,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
 
   const onColumnChange = useCallback(
     (column: string) => {
-      const next: CHVariableQuery = { ...safeQuery, column };
+      const next: GreptimeVariableQuery = { ...safeQuery, column };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -162,7 +162,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
           width={40}
           options={VARIABLE_TYPE_OPTIONS}
           value={safeQuery.queryType}
-          onChange={(v) => onTypeChange((v.value as CHVariableQueryType) || 'sql')}
+          onChange={(v) => onTypeChange((v.value as GreptimeVariableQueryType) || 'sql')}
           aria-label="Variable type"
         />
       </InlineField>
@@ -244,16 +244,16 @@ function toVariableString(value: unknown): string | null {
  * macro expansion (template variables, time filter, ad-hoc filters) stays in
  * one place.
  */
-export class CHVariableSupport extends CustomVariableSupport<Datasource, CHVariableQuery> {
+export class GreptimeVariableSupport extends CustomVariableSupport<Datasource, GreptimeVariableQuery> {
   constructor(private readonly datasource: Datasource) {
     super();
   }
 
   editor = VariableQueryEditor;
 
-  query(request: DataQueryRequest<CHVariableQuery>): Observable<DataQueryResponse> {
+  query(request: DataQueryRequest<GreptimeVariableQuery>): Observable<DataQueryResponse> {
     const target = request.targets[0];
-    const normalized = normalizeVariableQuery(target as CHVariableQuery | string | undefined);
+    const normalized = normalizeVariableQuery(target as GreptimeVariableQuery | string | undefined);
     const defaultDatabase = this.datasource.getDefaultDatabase() || '';
     if (!resolveVariableSql(normalized, defaultDatabase)) {
       return of({ data: [] });

@@ -1,4 +1,4 @@
-import { Datasource } from "data/CHDatasource";
+import { Datasource } from "data/GreptimeDatasource";
 import { columnFilterDateTime } from "data/columnFilters";
 import { BuilderOptionsReducerAction, setColumnByHint, setOptions } from "hooks/useBuilderOptionsState";
 import { useEffect, useMemo, useRef } from "react";

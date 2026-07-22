@@ -9,7 +9,7 @@ import {
 import { GreptimeDataTypes, GreptimeResponse } from './types';
 import { getColumnsByHint, logColumnHintsToAlias } from 'data/sqlGenerator';
 import { ColumnHint, QueryBuilderOptions } from 'types/queryBuilder';
-import { CHQuery } from 'types/sql';
+import { GreptimeQuery } from 'types/sql';
 
 /**
  * Maps GreptimeDB data type strings to Grafana FieldType enums.
@@ -96,7 +96,7 @@ export function toMs(time: number, columnType: GreptimeTimeType) {
 }
 
 
-export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: CHQuery, contextColumns: string[]) {
+export function transformGreptimeDBLogs(sqlResponse: GreptimeResponse, query: GreptimeQuery, contextColumns: string[]) {
   if (!sqlResponse.output || sqlResponse.output.length === 0) {
     console.error('GreptimeDB query failed or returned no data:', sqlResponse.error);
     return null; // Or handle the error as needed
@@ -226,7 +226,7 @@ function getFieldValues(field: Field, rowCount: number): any[] {
 }
 
 /** Converts a long backend DataFrame (M1 Go path) into a LogLines frame. */
-export function transformDataFrameToLogs(frame: DataFrame, query: CHQuery, contextColumns: string[]): DataFrame | null {
+export function transformDataFrameToLogs(frame: DataFrame, query: GreptimeQuery, contextColumns: string[]): DataFrame | null {
   if (!frame?.fields?.length || !frame.length) {
     return null;
   }

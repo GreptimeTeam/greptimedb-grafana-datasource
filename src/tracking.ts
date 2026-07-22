@@ -1,12 +1,12 @@
 import { reportInteraction } from '@grafana/runtime';
-import { CHQuery, EditorType } from 'types/sql';
+import { GreptimeQuery, EditorType } from 'types/sql';
 import { QueryType, BuilderMode } from 'types/queryBuilder';
 
-export const trackClickhouseDashboardLoaded = (props: ClickhouseDashboardLoadedProps) => {
-  reportInteraction('grafana_ds_clickhouse_dashboard_loaded', props);
+export const trackGreptimeDashboardLoaded = (props: GreptimeDashboardLoadedProps) => {
+  reportInteraction('grafana_ds_greptime_dashboard_loaded', props);
 };
 
-export type ClickhouseCounters = {
+export type GreptimeCounters = {
   sql_queries: number;
   sql_query_type_table: number;
   sql_query_type_logs: number;
@@ -28,16 +28,16 @@ export type ClickhouseCounters = {
   builder_otel_queries: number;
 };
 
-export interface ClickhouseDashboardLoadedProps extends ClickhouseCounters {
-  clickhouse_plugin_version?: string;
+export interface GreptimeDashboardLoadedProps extends GreptimeCounters {
+  greptime_plugin_version?: string;
   grafana_version?: string;
   dashboard_id: string;
   org_id?: number;
   [key: string]: any;
 }
 
-export const analyzeQueries = (queries: CHQuery[]): ClickhouseCounters => {
-  const c: ClickhouseCounters = {
+export const analyzeQueries = (queries: GreptimeQuery[]): GreptimeCounters => {
+  const c: GreptimeCounters = {
     sql_queries: 0,
     sql_query_type_table: 0,
     sql_query_type_logs: 0,
