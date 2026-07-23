@@ -21,7 +21,8 @@
         "name": "trace_id",
         "label": "Trace ID",
         "type": "textbox",
-        "hide": 0
+        "hide": 0,
+        "refresh": 2
       }
     ]
   },

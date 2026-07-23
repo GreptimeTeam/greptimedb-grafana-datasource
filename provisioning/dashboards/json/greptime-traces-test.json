@@ -17,7 +17,8 @@
         "current": {
           "text": "",
           "value": ""
-        }
+        },
+        "refresh": 2
       },
       {
         "name": "span_name_filter",
@@ -27,7 +28,8 @@
         "current": {
           "text": "",
           "value": ""
-        }
+        },
+        "refresh": 2
       }
     ]
   },

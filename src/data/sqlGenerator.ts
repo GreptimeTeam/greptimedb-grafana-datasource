@@ -643,7 +643,7 @@ const getOrderBy = (options: QueryBuilderOptions): string => {
         return;
       }
 
-      orderByParts.push(`${escapeIdentifierIfNeeded(colName)} ${o.dir}`);
+      orderByParts.push(`${escapeIdentifier(colName)} ${o.dir}`);
     });
   }
 
@@ -850,7 +850,7 @@ const logAliasToColumnHintsEntries: ReadonlyArray<[string, ColumnHint]> = [
   ['body', ColumnHint.LogMessage],
   ['level', ColumnHint.LogLevel],
   ['labels', ColumnHint.LogLabels],
-  ['traceID', ColumnHint.TraceId],
+  ['trace_id', ColumnHint.TraceId],
 ];
 export const logAliasToColumnHints: Map<string, ColumnHint> = new Map(logAliasToColumnHintsEntries);
 export const logColumnHintsToAlias: Map<ColumnHint, string> = new Map(logAliasToColumnHintsEntries.map(e => [e[1], e[0]]));

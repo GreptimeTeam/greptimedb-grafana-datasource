@@ -1032,6 +1032,972 @@
         "colorMode": "background_solid",
         "graphMode": "none"
       }
+    },
+    {
+      "type": "row",
+      "title": "Filter Tests",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: host = 'host-a'",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 34
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "host",
+                "type": "string",
+                "operator": "=",
+                "value": "host-a",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"host\" = 'host-a') GROUP BY time, \"host\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: host != 'host-a'",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 34
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "host",
+                "type": "string",
+                "operator": "!=",
+                "value": "host-a",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"host\" != 'host-a') GROUP BY time, \"host\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: region LIKE 'us-%'",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 34
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "region"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "region"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "region",
+                "type": "string",
+                "operator": "LIKE",
+                "value": "us-%",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"region\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"region\" LIKE 'us-%') GROUP BY time, \"region\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: host IN ('host-a','host-b')",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 42
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "host",
+                "type": "multi",
+                "operator": "IN",
+                "value": [
+                  "host-a",
+                  "host-b"
+                ],
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"host\" IN ('host-a', 'host-b')) GROUP BY time, \"host\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: host='host-a' AND region='us-east'",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 42
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              },
+              {
+                "name": "region"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host",
+              "region"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "host",
+                "type": "string",
+                "operator": "=",
+                "value": "host-a",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
+                "key": "region",
+                "type": "string",
+                "operator": "=",
+                "value": "us-east",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", \"region\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"host\" = 'host-a' AND \"region\" = 'us-east') GROUP BY time, \"host\", \"region\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: host='host-a' OR host='host-b'",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 42
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "host",
+                "type": "string",
+                "operator": "=",
+                "value": "host-a",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
+                "key": "host",
+                "type": "string",
+                "operator": "=",
+                "value": "host-b",
+                "condition": "OR"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"host\" = 'host-a' OR \"host\" = 'host-b') GROUP BY time, \"host\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: cpu_usage > 50",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 50
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "cpu_usage",
+                "type": "number",
+                "operator": ">",
+                "value": 50,
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"cpu_usage\" > 50) GROUP BY time, \"host\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: region IS NOT NULL",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 50
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "region"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "region"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "region",
+                "type": "string",
+                "operator": "IS NOT NULL",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"region\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"region\" IS NOT NULL) GROUP BY time, \"region\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: host LIKE 'host-%'",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 50
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "host",
+                "type": "string",
+                "operator": "LIKE",
+                "value": "host-%",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"host\" LIKE 'host-%') GROUP BY time, \"host\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: CPU>30 AND region='us-east'",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 58
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              },
+              {
+                "name": "region"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host",
+              "region"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "cpu_usage",
+                "type": "number",
+                "operator": ">",
+                "value": 30,
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
+                "key": "region",
+                "type": "string",
+                "operator": "=",
+                "value": "us-east",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", \"region\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"cpu_usage\" > 30 AND \"region\" = 'us-east') GROUP BY time, \"host\", \"region\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Filter: CPU>60 OR CPU<30",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 58
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "cpu_usage",
+                "type": "number",
+                "operator": ">",
+                "value": 60,
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
+                "key": "cpu_usage",
+                "type": "number",
+                "operator": "<",
+                "value": 30,
+                "condition": "OR"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") AND (\"cpu_usage\" > 60 OR \"cpu_usage\" < 30) GROUP BY time, \"host\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
     }
   ]
 }

@@ -5,14 +5,48 @@
   "editable": true,
   "links": [],
   "time": {
-    "from": "2026-07-21T07:00:00",
-    "to": "2026-07-21T09:00:00"
+    "from": "2026-07-21T07:45:00",
+    "to": "2026-07-21T17:50:00"
   },
   "title": "GreptimeDB - Builder Logs Test",
   "uid": "greptime-builder-logs",
   "schemaVersion": 39,
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "search",
+        "label": "Search",
+        "type": "textbox",
+        "hide": 0,
+        "refresh": 2
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "level_filter",
+        "label": "Level",
+        "type": "textbox",
+        "hide": 0,
+        "refresh": 2
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "trace_id",
+        "label": "Trace ID",
+        "type": "textbox",
+        "hide": 0,
+        "refresh": 2
+      }
+    ]
   },
   "panels": [
     {
@@ -30,7 +64,7 @@
       "type": "logs",
       "title": "All Logs",
       "gridPos": {
-        "h": 12,
+        "h": 20,
         "w": 24,
         "x": 0,
         "y": 1
@@ -70,6 +104,12 @@
               {
                 "name": "trace_id",
                 "hint": "trace_id"
+              },
+              {
+                "name": "scope_name"
+              },
+              {
+                "name": "span_id"
               }
             ],
             "filters": [],
@@ -83,7 +123,7 @@
             "limit": 200,
             "meta": {}
           },
-          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name AS service, trace_id FROM genai_conversations WHERE $__timeFilter(timestamp) AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 200"
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name, trace_id, span_id FROM genai_conversations WHERE $__timeFilter(timestamp) AND ('${search}' = '' OR matches_term(body, '${search}')) AND ('${level_filter}' = '' OR severity_text = '${level_filter}') AND ('${trace_id}' = '' OR trace_id = '${trace_id}') AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 200"
         }
       ],
       "options": {

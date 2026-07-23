@@ -77,7 +77,7 @@ func TestMacroDateFilter(t *testing.T) {
 	query := sqlutil.Query{TimeRange: backend.TimeRange{From: from, To: to}}
 	got, err := DateFilter(&query, []string{"dateCol"})
 	require.NoError(t, err)
-	assert.Equal(t, "dateCol >= '2014-11-12' AND dateCol <= '2015-11-12'", got)
+	assert.Equal(t, "\"dateCol\" >= '2014-11-12' AND \"dateCol\" <= '2015-11-12'", got)
 }
 
 func TestMacroDateTimeFilter(t *testing.T) {
@@ -87,7 +87,7 @@ func TestMacroDateTimeFilter(t *testing.T) {
 	got, err := DateTimeFilter(&query, []string{"dateCol", "timeCol"})
 	require.NoError(t, err)
 	assert.Equal(t,
-		"(dateCol >= '2014-11-12' AND dateCol <= '2015-11-12') AND (timeCol >= '2014-11-12T11:45:26.371Z' AND timeCol <= '2015-11-12T11:45:26.371Z')",
+		"(\"dateCol\" >= '2014-11-12' AND \"dateCol\" <= '2015-11-12') AND (\"timeCol\" >= '2014-11-12T11:45:26.371Z' AND \"timeCol\" <= '2015-11-12T11:45:26.371Z')",
 		got,
 	)
 }
@@ -107,7 +107,7 @@ func TestMacroTimeFilterMs(t *testing.T) {
 	query := sqlutil.Query{TimeRange: backend.TimeRange{From: from, To: to}}
 	got, err := TimeFilterMs(&query, []string{"col"})
 	require.NoError(t, err)
-	assert.Equal(t, "col >= '2014-11-12T11:45:26.123Z' AND col <= '2015-11-12T11:45:26.456Z'", got)
+	assert.Equal(t, "\"col\" >= '2014-11-12T11:45:26.123Z' AND \"col\" <= '2015-11-12T11:45:26.456Z'", got)
 }
 
 func TestMacroTimeInterval(t *testing.T) {
@@ -117,7 +117,7 @@ func TestMacroTimeInterval(t *testing.T) {
 	}
 	got, err := TimeInterval(&query, []string{"col"})
 	require.NoError(t, err)
-	assert.Equal(t, "date_bin('20s', col)", got)
+	assert.Equal(t, "date_bin('20s', \"col\")", got)
 }
 
 func TestMacroTimeIntervalMs(t *testing.T) {
@@ -127,7 +127,7 @@ func TestMacroTimeIntervalMs(t *testing.T) {
 	}
 	got, err := TimeIntervalMs(&query, []string{"col"})
 	require.NoError(t, err)
-	assert.Equal(t, "date_bin('20s', col)", got)
+	assert.Equal(t, "date_bin('20s', \"col\")", got)
 }
 
 func TestMacroIntervalSeconds(t *testing.T) {
@@ -175,12 +175,12 @@ func TestInterpolate(t *testing.T) {
 		{
 			name:   "aggregate with timeFilter",
 			input:  `SELECT date_bin('$__interval', ts) as "time", max(cpu_usage) FROM "public"."cpu_metrics_30" WHERE $__timeFilter(ts) GROUP BY time ORDER BY time ASC`,
-			output: `SELECT date_bin('20s', ts) as "time", max(cpu_usage) FROM "public"."cpu_metrics_30" WHERE ts >= '2014-11-12T11:45:26.123Z' AND ts <= '2015-11-12T11:45:26.456Z' GROUP BY time ORDER BY time ASC`,
+			output: `SELECT date_bin('20s', ts) as "time", max(cpu_usage) FROM "public"."cpu_metrics_30" WHERE "ts" >= '2014-11-12T11:45:26.123Z' AND "ts" <= '2015-11-12T11:45:26.456Z' GROUP BY time ORDER BY time ASC`,
 		},
 		{
 			name:   "timeFilter_ms",
 			input:  "SELECT * FROM foo WHERE $__timeFilter_ms(col)",
-			output: "SELECT * FROM foo WHERE col >= '2014-11-12T11:45:26.123Z' AND col <= '2015-11-12T11:45:26.456Z'",
+			output: "SELECT * FROM foo WHERE \"col\" >= '2014-11-12T11:45:26.123Z' AND \"col\" <= '2015-11-12T11:45:26.456Z'",
 		},
 		{
 			name:   "toTime_ms standalone",
@@ -190,7 +190,7 @@ func TestInterpolate(t *testing.T) {
 		{
 			name:   "dt alias for dateTimeFilter",
 			input:  "SELECT * FROM foo WHERE $__dt(dateCol, timeCol)",
-			output: "SELECT * FROM foo WHERE (dateCol >= '2014-11-12' AND dateCol <= '2015-11-12') AND (timeCol >= '2014-11-12T11:45:26.123Z' AND timeCol <= '2015-11-12T11:45:26.456Z')",
+			output: "SELECT * FROM foo WHERE (\"dateCol\" >= '2014-11-12' AND \"dateCol\" <= '2015-11-12') AND (\"timeCol\" >= '2014-11-12T11:45:26.123Z' AND \"timeCol\" <= '2015-11-12T11:45:26.456Z')",
 		},
 		{
 			name:   "interval_s in CTE",
@@ -237,7 +237,7 @@ func TestMacroTimeInterval_ZeroInterval(t *testing.T) {
 	}
 	got, err := TimeInterval(&query, []string{"col"})
 	require.NoError(t, err)
-	assert.Equal(t, "date_bin('1s', col)", got)
+	assert.Equal(t, "date_bin('1s', \"col\")", got)
 }
 
 func TestMacroDateTimeFilter_ErrorWrongArgs(t *testing.T) {
@@ -262,7 +262,7 @@ func TestMacroDt(t *testing.T) {
 	got, err := DateTimeFilter(&query, []string{"dateCol", "timeCol"})
 	require.NoError(t, err)
 	assert.Equal(t,
-		"(dateCol >= '2014-11-12' AND dateCol <= '2015-11-12') AND (timeCol >= '2014-11-12T11:45:26.371Z' AND timeCol <= '2015-11-12T11:45:26.371Z')",
+		"(\"dateCol\" >= '2014-11-12' AND \"dateCol\" <= '2015-11-12') AND (\"timeCol\" >= '2014-11-12T11:45:26.371Z' AND \"timeCol\" <= '2015-11-12T11:45:26.371Z')",
 		got,
 	)
 }

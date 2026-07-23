@@ -45,7 +45,8 @@
         "options": [],
         "query": "",
         "skipUrlSync": false,
-        "type": "textbox"
+        "type": "textbox",
+        "refresh": 2
       },
       {
         "current": {
@@ -58,7 +59,8 @@
         "options": [],
         "query": "",
         "skipUrlSync": false,
-        "type": "textbox"
+        "type": "textbox",
+        "refresh": 2
       },
       {
         "current": {
@@ -71,7 +73,8 @@
         "options": [],
         "query": "",
         "skipUrlSync": false,
-        "type": "textbox"
+        "type": "textbox",
+        "refresh": 2
       }
     ]
   },

@@ -28,7 +28,7 @@ datasources:
         selectContextColumns: true
         contextColumns:
           - "scope_name"
-          - "span_id"
+          - "trace_id"
       traces:
         defaultDatabase: "public"
         defaultTable: "opentelemetry_traces"

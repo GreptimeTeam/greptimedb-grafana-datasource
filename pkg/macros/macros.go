@@ -54,7 +54,7 @@ func TimeFilter(query *sqlutil.Query, args []string) (string, error) {
 	}
 
 	var (
-		column = args[0]
+		column = quoteIdentifier(args[0])
 		from   = query.TimeRange.From
 		to     = query.TimeRange.To
 	)
@@ -68,7 +68,7 @@ func TimeFilterMs(query *sqlutil.Query, args []string) (string, error) {
 	}
 
 	var (
-		column = args[0]
+		column = quoteIdentifier(args[0])
 		from   = query.TimeRange.From
 		to     = query.TimeRange.To
 	)
@@ -81,7 +81,7 @@ func DateFilter(query *sqlutil.Query, args []string) (string, error) {
 		return "", backend.DownstreamError(fmt.Errorf("%w: expected 1 argument, received %d", sqlutil.ErrorBadArgumentCount, len(args)))
 	}
 	var (
-		column = args[0]
+		column = quoteIdentifier(args[0])
 		from   = query.TimeRange.From
 		to     = query.TimeRange.To
 	)
@@ -94,8 +94,8 @@ func DateTimeFilter(query *sqlutil.Query, args []string) (string, error) {
 		return "", backend.DownstreamError(fmt.Errorf("%w: expected 2 arguments, received %d", sqlutil.ErrorBadArgumentCount, len(args)))
 	}
 	var (
-		dateColumn = args[0]
-		timeColumn = args[1]
+		dateColumn = quoteIdentifier(args[0])
+		timeColumn = quoteIdentifier(args[1])
 		from       = query.TimeRange.From
 		to         = query.TimeRange.To
 	)
@@ -114,7 +114,7 @@ func TimeInterval(query *sqlutil.Query, args []string) (string, error) {
 
 	seconds := math.Max(query.Interval.Seconds(), 1)
 	interval := MsToGreptimeDateBinInterval(int64(seconds) * 1000)
-	return fmt.Sprintf("date_bin('%s', %s)", interval, strings.TrimSpace(args[0])), nil
+	return fmt.Sprintf("date_bin('%s', %s)", interval, quoteIdentifier(strings.TrimSpace(args[0]))), nil
 }
 
 // TimeIntervalMs expands $__timeInterval_ms(col) to Greptime date_bin.
@@ -126,12 +126,23 @@ func TimeIntervalMs(query *sqlutil.Query, args []string) (string, error) {
 
 	milliseconds := math.Max(float64(query.Interval.Milliseconds()), 1)
 	interval := MsToGreptimeDateBinInterval(int64(milliseconds))
-	return fmt.Sprintf("date_bin('%s', %s)", interval, strings.TrimSpace(args[0])), nil
+	return fmt.Sprintf("date_bin('%s', %s)", interval, quoteIdentifier(strings.TrimSpace(args[0]))), nil
 }
 
 func IntervalSeconds(query *sqlutil.Query, args []string) (string, error) {
 	seconds := math.Max(query.Interval.Seconds(), 1)
 	return fmt.Sprintf("%d", int(seconds)), nil
+}
+
+// quoteIdentifier wraps a column name in double quotes unless it is a
+// SQL expression (contains parentheses). Existing quotes are stripped first
+// so both $__timeFilter(col) and $__timeFilter("col") produce "col".
+func quoteIdentifier(col string) string {
+	col = strings.ReplaceAll(col, "\"", "")
+	if strings.Contains(col, "(") || strings.Contains(col, ")") {
+		return col
+	}
+	return fmt.Sprintf("\"%s\"", col)
 }
 
 // RemoveQuotesInArgs remove all quotes from macro arguments and return

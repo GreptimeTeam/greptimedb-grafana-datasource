@@ -1265,7 +1265,7 @@ export class Datasource
         }
       } else if (isMapKey) {
         continue;
-      } else {
+       } else {
         // LogLines: Grafana dataplane only uses `labels` for extra metadata in the logs UI;
         // context columns may only exist on each row's labels object.
         const labelsField = row.dataFrame.fields.find(f => f.name === 'labels');
@@ -1387,6 +1387,7 @@ export class Datasource
     contextQuery.rawSql = generateSql(builderOptions);
     const req = {
       targets: [contextQuery],
+      range,
     } as DataQueryRequest<GreptimeQuery>;
 
     // Do NOT toggle this.skipAdHocFilter here: concurrent dashboard/log queries on the same
