@@ -266,3 +266,23 @@ func TestMacroDt(t *testing.T) {
 		got,
 	)
 }
+
+func TestQuoteIdentifier(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"timestamp", "\"timestamp\""},
+		{"ts", "\"ts\""},
+		{"col", "\"col\""},
+		{"\"timestamp\"", "\"timestamp\""},
+		{"\"col\"", "\"col\""},
+		{"cast(sth as timestamp)", "cast(sth as timestamp)"},
+		{"date_bin('1m', ts)", "date_bin('1m', ts)"},
+		{"", "\"\""},
+	}
+	for _, tc := range tests {
+		assert.Equal(t, tc.expected, quoteIdentifier(tc.input),
+			"quoteIdentifier(%q)", tc.input)
+	}
+}

@@ -664,11 +664,11 @@ describe('getColumnIdentifier', () => {
   const cases: Array<{ input: SelectedColumn, expected: string }> = [
     { input: { name: '' }, expected: `` },
     { input: { name: '', alias: 'timestamp' }, expected: `` },
-    { input: { name: ' ' }, expected: `" "` },
-    { input: { name: 'test' }, expected: `test` },
+    { input: { name: ' ' }, expected: `` },
+    { input: { name: 'test' }, expected: `"test"` },
     { input: { name: 'test with space' }, expected: `"test with space"` },
     { input: { name: 'test with alias', alias: 'a' }, expected: `"test with alias" as "a"` },
-    { input: { name: 'test_with_alias', alias: 'b' }, expected: `test_with_alias as "b"` },
+    { input: { name: 'test_with_alias', alias: 'b' }, expected: `"test_with_alias" as "b"` },
     { input: { name: '"test" as a', alias: '' }, expected: `"test" as a` },
   ];
 
@@ -697,6 +697,8 @@ describe('escapeIdentifier', () => {
     { input: 'x', expected: `"x"` },
     { input: 'x x x', expected: `"x x x"` },
     { input: undefined as any as string, expected: `` },
+    { input: '*', expected: '*' },
+    { input: 'timestamp', expected: `"timestamp"` },
   ];
 
   it.each(cases)('returns escaped identifier (case %#)', (c) => {

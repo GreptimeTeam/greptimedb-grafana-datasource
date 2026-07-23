@@ -5,8 +5,8 @@
   "editable": true,
   "links": [],
   "time": {
-    "from": "2026-05-22T00:00:00",
-    "to": "2026-05-22T03:00:00"
+    "from": "2026-01-01T00:00:00",
+    "to": "2026-12-31T23:59:59"
   },
   "refresh": "30s",
   "title": "GreptimeDB - Builder Time Series Test",
@@ -1998,6 +1998,167 @@
         },
         "overrides": []
       }
+    },
+    {
+      "type": "row",
+      "title": "Escape Test (reserved word: timestamp)",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 67
+      },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Timestamp Quoting: count(*) from genai_conversations",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 68
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "genai_conversations",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "timestamp",
+                "alias": "count"
+              }
+            ],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": []
+          },
+          "rawSql": "SELECT date_bin('$__interval', timestamp) AS time, COUNT(\"timestamp\") AS \"count\" FROM public.genai_conversations WHERE $__timeFilter(\"timestamp\") GROUP BY time ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "type": "timeseries",
+      "title": "Timestamp Quoting: multi aggregate",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 68
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "genai_conversations",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "scope_name"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "timestamp",
+                "alias": "log_count"
+              },
+              {
+                "aggregateType": "avg",
+                "column": "severity_number",
+                "alias": "avg_severity"
+              }
+            ],
+            "groupBy": [
+              "scope_name"
+            ],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": []
+          },
+          "rawSql": "SELECT date_bin('$__interval', timestamp) AS time, \"scope_name\", COUNT(\"timestamp\") AS \"log_count\", AVG(\"severity_number\") AS \"avg_severity\" FROM public.genai_conversations WHERE $__timeFilter(\"timestamp\") GROUP BY time, \"scope_name\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {}
     }
   ]
 }

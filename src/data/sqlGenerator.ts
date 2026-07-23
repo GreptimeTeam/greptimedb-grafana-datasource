@@ -353,7 +353,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   options.aggregates?.forEach(agg => {
     const alias = agg.alias ? ` as ${agg.alias.replace(/ /g, '_')}` : '';
-    const name = `${agg.aggregateType}(${agg.column})`;
+    const name = `${agg.aggregateType}(${escapeIdentifier(agg.column)})`;
     selectParts.push(`${name}${alias}`);
   });
 
@@ -420,8 +420,8 @@ const generateTableQuery = (options: QueryBuilderOptions): string => {
 
   if (isAggregateMode) {
     options.aggregates?.forEach(agg => {
-      const alias = agg.alias ? ` as ${agg.alias.replace(/ /g, '_')}` : '';
-      const name = `${agg.aggregateType}(${agg.column})`;
+    const alias = agg.alias ? ` as ${agg.alias.replace(/ /g, '_')}` : '';
+    const name = `${agg.aggregateType}(${escapeIdentifier(agg.column)})`;
       selectParts.push(`${name}${alias}`);
       selectNames.add(alias ? alias.substring(4) : name);
     });
