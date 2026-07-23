@@ -86,7 +86,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -165,7 +165,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", MAX(\"cpu_usage\") AS \"max_cpu\", MIN(\"cpu_usage\") AS \"min_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", MAX(\"cpu_usage\") AS \"max_cpu\", MIN(\"cpu_usage\") AS \"min_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -244,7 +244,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"region\", SUM(\"cpu_usage\") AS \"sum_cpu\", COUNT(\"cpu_usage\") AS \"rows\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"region\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"region\", SUM(\"cpu_usage\") AS \"sum_cpu\", COUNT(\"cpu_usage\") AS \"rows\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"region\" ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -261,7 +261,7 @@
     },
     {
       "type": "row",
-      "title": "Aggregate Mode (GROUP BY, no date_bin)",
+      "title": "Trend Mode 2 (More Aggregates)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -272,7 +272,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Aggregate: AVG by Host",
+      "title": "Trend: AVG by Host (2)",
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -298,7 +298,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -329,7 +329,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\", \"host\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -346,7 +346,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Aggregate: ALL Aggregates",
+      "title": "Trend: ALL Aggregates (2)",
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -372,7 +372,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -413,7 +413,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, \"host\", AVG(\"cpu_usage\") AS \"avg\", MAX(\"cpu_usage\") AS \"max\", MIN(\"cpu_usage\") AS \"min\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\", \"host\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg\", MAX(\"cpu_usage\") AS \"max\", MIN(\"cpu_usage\") AS \"min\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -430,7 +430,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Aggregate: COUNT+ANY by Host+Region",
+      "title": "Trend: COUNT+AVG by Host+Region (2)",
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -456,7 +456,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -497,7 +497,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, \"host\", \"region\", COUNT(\"cpu_usage\") AS \"count\", AVG(\"cpu_usage\") AS \"avg_sample\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\", \"host\", \"region\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", \"region\", COUNT(\"cpu_usage\") AS \"count\", AVG(\"cpu_usage\") AS \"avg_sample\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\", \"region\" ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -578,7 +578,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, \"host\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT \"ts\" AS time, \"host\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -652,7 +652,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, \"host\", \"region\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT \"ts\" AS time, \"host\", \"region\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -706,7 +706,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -731,7 +731,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, AVG(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, AVG(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -777,7 +777,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -802,7 +802,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, MAX(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, MAX(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -848,7 +848,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -873,7 +873,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, MIN(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, MIN(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -919,7 +919,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -944,7 +944,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, SUM(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, SUM(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
       ],
       "fieldConfig": {
@@ -990,7 +990,7 @@
             "database": "public",
             "table": "cpu_metrics_30",
             "queryType": "timeseries",
-            "mode": "aggregate",
+            "mode": "trend",
             "columns": [
               {
                 "name": "ts",
@@ -1015,7 +1015,7 @@
             "limit": 1000,
             "meta": {}
           },
-          "rawSql": "SELECT \"ts\" AS time, COUNT(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, COUNT(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
       ],
       "fieldConfig": {
