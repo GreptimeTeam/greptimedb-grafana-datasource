@@ -37,7 +37,7 @@ import {
   TimeUnit,
   SelectedColumn,
 } from 'types/queryBuilder';
-import { AdHocFilter, AdHocVariableFilter, columnNameFromAdhocKey, tableAndColumnFromAdhocKey } from './adHocFilter';
+import { AdHocVariableFilter, columnNameFromAdhocKey, tableAndColumnFromAdhocKey } from './adHocFilter';
 import { GreptimeVariableSupport } from './GreptimeVariableSupport';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
@@ -105,22 +105,26 @@ export class Datasource
   // This enables default annotation support for 7.2+
   annotations = {};
   settings: DataSourceInstanceSettings<GreptimeConfig>;
-  adHocFilter: AdHocFilter;
   skipAdHocFilter = false; // don't apply adhoc filters to the query
   adHocFiltersStatus = AdHocFilterStatus.none;
+  lastTimeRange?: { from: string; to: string };
 
   constructor(instanceSettings: DataSourceInstanceSettings<GreptimeConfig>) {
     super(instanceSettings);
     this.settings = instanceSettings;
-    this.adHocFilter = new AdHocFilter();
     this.variables = new GreptimeVariableSupport(this);
   }
   
-  private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[]): Filter[] {
+  private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[], targetTable: string): Filter[] {
     const result: Filter[] = [];
 
     for (const f of adHocFilters) {
       if (!f || !f.key || !f.operator || f.value === undefined || f.value === null) {
+        continue;
+      }
+
+      const tc = tableAndColumnFromAdhocKey(f.key);
+      if (tc && targetTable && tc.table !== targetTable) {
         continue;
       }
 
@@ -844,6 +848,10 @@ export class Datasource
   }
 
   query(request: DataQueryRequest<GreptimeQuery>): Observable<DataQueryResponse> {
+    this.lastTimeRange = request.range
+      ? { from: request.range.from.valueOf().toString(), to: request.range.to.valueOf().toString() }
+      : undefined;
+
     const templateSrv = getTemplateSrv() as any;
     // Grafana stores adhoc filters scoped by datasource identity.
     // Using uid is more stable than name (name can be empty/changed).
@@ -896,7 +904,7 @@ export class Datasource
           next.editorType === EditorType.Builder &&
           next.builderOptions
         ) {
-          const extraFilters = this.buildFiltersFromAdhoc(adHocFilters);
+          const extraFilters = this.buildFiltersFromAdhoc(adHocFilters, next.builderOptions.table);
           if (extraFilters.length) {
             const mergedFilters = [
               ...(next.builderOptions.filters || []),
@@ -911,59 +919,6 @@ export class Datasource
               builderOptions: nextBuilderOptions,
               rawSql: generateSql(nextBuilderOptions),
             };
-          }
-        } else if (
-          adHocFilters.length &&
-          !this.skipAdHocFilter &&
-          !skipAdHocForTarget &&
-          next.rawSql
-        ) {
-          const whereParts = adHocFilters
-            .filter((f) => f.key && f.operator && f.value !== undefined && f.value !== null)
-            .map((f, i) => {
-              const colName = columnNameFromAdhocKey(f.key);
-              if (!colName) {
-                return '';
-              }
-              const col = `"${colName}"`;
-              const connector = i === 0 ? '' : ` ${f.condition || 'AND'} `;
-
-              const isNullLiteral = typeof f.value === 'string' && f.value.trim().toLowerCase() === 'null';
-              if (f.operator === '=' && isNullLiteral) {
-                return `${connector}${col} IS NULL`;
-              }
-              if (f.operator === '!=' && isNullLiteral) {
-                return `${connector}${col} IS NOT NULL`;
-              }
-
-              if (f.operator === '=~') {
-                const escapedVal = String(f.value).replace(/'/g, "''");
-                return `${connector}${col} LIKE '${escapedVal}'`;
-              }
-              if (f.operator === '!~') {
-                const escapedVal = String(f.value).replace(/'/g, "''");
-                return `${connector}${col} NOT LIKE '${escapedVal}'`;
-              }
-              if (f.operator === 'IN') {
-                const parts = String(f.value)
-                  .replace(/^\(|\)$/g, '')
-                  .split(',')
-                  .map((s) => `'${s.trim().replace(/'/g, "''")}'`)
-                  .filter((s) => s.length > 2)
-                  .join(',');
-                if (!parts) {
-                  return '';
-                }
-                return `${connector}${col} IN (${parts})`;
-              }
-
-              const escapedVal = String(f.value).replace(/'/g, "''");
-              return `${connector}${col} ${f.operator} '${escapedVal}'`;
-            })
-            .filter((s) => s.length > 0);
-
-          if (whereParts.length) {
-            next.rawSql = this.injectAdHocWhere(next.rawSql, whereParts.join(''));
           }
         }
 
@@ -1058,16 +1013,32 @@ export class Datasource
     const { table, col } = parsed;
     const { from } = this.getTagSource();
     let source: string;
+    let db: string | undefined;
     if (from?.includes('.')) {
-      const [db] = from.split('.');
+      [db] = from.split('.');
       source = `"${db}"."${table}"`;
     } else if (from) {
+      db = from;
       source = `"${from}"."${table}"`;
     } else {
-      const defaultDb = this.getDefaultDatabase() || this.getDefaultLogsDatabase();
-      source = defaultDb ? `"${defaultDb}"."${table}"` : `"${table}"`;
+      db = this.getDefaultDatabase() || this.getDefaultLogsDatabase();
+      source = db ? `"${db}"."${table}"` : `"${table}"`;
     }
-    const rawSql = `SELECT DISTINCT "${col}" FROM ${source} LIMIT 1000`;
+
+    let rawSql: string;
+    if (this.lastTimeRange && db) {
+      const timeColName = await this.fetchTimeColumn(db, table);
+      if (timeColName) {
+        const fromISO = new Date(Number(this.lastTimeRange.from)).toISOString();
+        const toISO = new Date(Number(this.lastTimeRange.to)).toISOString();
+        rawSql = `SELECT DISTINCT "${col}" FROM ${source} WHERE "${timeColName}" >= '${fromISO}' AND "${timeColName}" <= '${toISO}' LIMIT 1000`;
+      } else {
+        rawSql = `SELECT DISTINCT "${col}" FROM ${source} LIMIT 1000`;
+      }
+    } else {
+      rawSql = `SELECT DISTINCT "${col}" FROM ${source} LIMIT 1000`;
+    }
+
     const frame = await this.runQuery({ rawSql, meta: { skipAdHocFilters: true } } as any);
     if (frame.fields?.length === 0) {
       return [];
@@ -1079,6 +1050,19 @@ export class Datasource
       .map((value) => {
         return { text: String(value) };
       });
+  }
+
+  private async fetchTimeColumn(db: string, table: string): Promise<string | undefined> {
+    const sql = `SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '${db}' AND table_name = '${table}' AND column_key = 'TIME INDEX' LIMIT 1`;
+    try {
+      const frame = await this.runQuery({ rawSql: sql, meta: { skipAdHocFilters: true } } as any);
+      if (frame.fields?.length && frame.fields[0].values.length) {
+        return String(frame.fields[0].values[0]);
+      }
+    } catch {
+      // ignore errors
+    }
+    return undefined;
   }
 
   private async fetchTagValuesFromQuery(key: string): Promise<MetricFindValue[]> {
@@ -1104,10 +1088,6 @@ export class Datasource
         'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS';
       const results = await this.runQuery({ rawSql, meta: adHocQueryMeta } as any);
       return { type: TagType.schema, frame: results };
-    }
-
-    if (tagSource.type === TagType.query) {
-      this.adHocFilter.setTargetTableFromQuery(tagSource.source);
     }
 
     const results = await this.runQuery({ rawSql: tagSource.source, meta: adHocQueryMeta } as any);
@@ -1152,84 +1132,6 @@ export class Datasource
   private async canUseAdhocFilters(): Promise<AdHocFilterStatus> {
     this.skipAdHocFilter = false;
     return Promise.resolve(AdHocFilterStatus.enabled);
-  }
-
-  private injectAdHocWhere(sql: string, conditions: string): string {
-    sql = sql.replace(/;\s*$/, '');
-
-    const TRAILING_CLAUSES = ['GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET', 'HAVING',
-      'UNION ALL', 'UNION', 'EXCEPT', 'INTERSECT', 'SETTINGS'];
-
-    let depth = 0;
-    let lastWhereEnd = -1;
-    let firstTrailingIdx = -1;
-    let i = 0;
-
-    while (i < sql.length) {
-      const ch = sql[i];
-
-      if (ch === "'" || ch === '"' || ch === '`') {
-        const quote = ch;
-        i++;
-        while (i < sql.length) {
-          if (sql[i] === '\\') { i += 2; continue; }
-          if (sql[i] === quote) { i++; break; }
-          i++;
-        }
-        continue;
-      }
-
-      if (ch === '-' && sql[i + 1] === '-') {
-        const nl = sql.indexOf('\n', i);
-        i = nl > -1 ? nl + 1 : sql.length;
-        continue;
-      }
-
-      if (ch === '/' && sql[i + 1] === '*') {
-        const end = sql.indexOf('*/', i + 2);
-        i = end > -1 ? end + 2 : sql.length;
-        continue;
-      }
-
-      if (ch === '(') { depth++; i++; continue; }
-      if (ch === ')') { depth--; i++; continue; }
-
-      if (depth === 0) {
-        const rest = sql.substring(i).toUpperCase();
-
-        if (rest.startsWith('WHERE ') || rest.startsWith('WHERE\t') || rest.startsWith('WHERE\n')
-            || rest === 'WHERE') {
-          lastWhereEnd = i + 5;
-          i += 5;
-          continue;
-        }
-
-        for (const clause of TRAILING_CLAUSES) {
-          if (rest.startsWith(clause + ' ') || rest.startsWith(clause + '\t')
-              || rest.startsWith(clause + '\n') || rest === clause) {
-            if (firstTrailingIdx === -1) {
-              firstTrailingIdx = i;
-            }
-            i += clause.length - 1;
-            break;
-          }
-        }
-      }
-
-      i++;
-    }
-
-    if (lastWhereEnd > -1) {
-      const before = sql.substring(0, lastWhereEnd);
-      const after = sql.substring(lastWhereEnd).replace(/^\s+/, '');
-      return `${before} (${conditions}) AND ${after}`;
-    }
-
-    if (firstTrailingIdx > -1) {
-      return `${sql.substring(0, firstTrailingIdx)} WHERE ${conditions} ${sql.substring(firstTrailingIdx)}`;
-    }
-
-    return `${sql} WHERE ${conditions}`;
   }
 
   // interface DataSourceWithLogsContextSupport

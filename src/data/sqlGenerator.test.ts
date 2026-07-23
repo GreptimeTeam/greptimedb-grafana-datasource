@@ -720,6 +720,7 @@ describe('escapeValue', () => {
     { input: `plain text`, expected: `'plain text'` },
     { input: `text`, expected: `'text'` },
     { input: `"column"`, expected: `"column"` },
+    { input: `it's a test`, expected: `'it''s a test'` },
     { input: `invalid(`, expected: `invalid(` },
     { input: `invalid)`, expected: `invalid)` },
     { input: `$()'" `, expected: `$()'" ` },

@@ -1,5 +1,4 @@
 import { BooleanFilter, BuilderMode, ColumnHint, DateFilterWithValue, FilterOperator, MultiFilter, NumberFilter, QueryBuilderOptions, QueryType, SelectedColumn, StringFilter, TimeUnit } from 'types/queryBuilder';
-import otel from 'otel';
 
 /**
  * Generates a SQL string for the given QueryBuilderOptions
@@ -494,7 +493,7 @@ const getColumnIdentifier = (col: SelectedColumn): string => {
   let colName = col.name;
 
   // allow for functions like count() or already-qualified expressions;
-  // otherwise always quote identifiers to preserve case (e.g. "aUTEM")
+  // otherwise always quote identifiers with backtick for MySQL compatibility
   if (
     colName.includes('(') ||
     colName.includes(')') ||
@@ -559,11 +558,15 @@ const escapeIdentifierIfNeeded = (identifier: string): string => {
 };
 
 const escapeValue = (value: string): string => {
-  if (value.includes('$') || value.includes('(') || value.includes(')') || value.includes('\'') || value.includes('"')) {
+  if (value.includes('$') || value.includes('(') || value.includes(')')) {
     return value;
   }
 
-  return `'${value}'`;
+  if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
+    return value;
+  }
+
+  return `'${value.replace(/'/g, "''")}'`;
 }
 
 /**
@@ -601,10 +604,6 @@ const getTraceDurationSelectSqlGreptimeDB = (columnIdentifier: string, timeUnit?
       return `${columnIdentifier} AS ${alias}`;
   }
 };
-/** Returns the input time field converted to a Unix timestamp in nanoseconds and then adjusted to milliseconds. */
-
-const convertTimeFieldToMilliseconds = (columnIdentifier: string) =>
-  `CAST(to_unixtime(${columnIdentifier}) * 1000 AS BIGINT)`;
 /**
  * Concatenates query parts with no empty spaces.
  */
@@ -782,7 +781,8 @@ const getFilters = (options: QueryBuilderOptions): string => {
       }
     } else if (isStringFilter(type, filter.operator)) {
       if (filter.operator === FilterOperator.Like || filter.operator === FilterOperator.NotLike) {
-        filterParts.push(`'%${filter.value || ''}%'`);
+        const escaped = String(filter.value || '').replace(/'/g, "''");
+        filterParts.push(`'%${escaped}%'`);
       } else if (isMatchesTerm) {
         const raw = (filter as StringFilter).value || '';
         const term = isMatchesTermCaseInsensitive ? raw.toLowerCase() : raw;
