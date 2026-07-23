@@ -156,8 +156,13 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
       return;
     }
 
+    const datasourceRef = { uid: datasource.uid, type: datasource.type };
+
     const traceIdQuery: GreptimeBuilderQuery = {
-      datasource: datasource,
+      // Embed only a datasource ref ({ uid, type }), never the live Datasource instance:
+      // the instance is circular (datasource.variables.datasource === datasource) and Grafana's
+      // data-link scanner recurses into it / JSON.stringifies it.
+      datasource: datasourceRef,
       editorType: EditorType.Builder,
       /**
        * Evil bug:
@@ -215,7 +220,8 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
     }
 
     const traceLogsQuery: GreptimeBuilderQuery = {
-      datasource: datasource,
+      // Same as traceIdQuery: plain ref only — never the live Datasource instance.
+      datasource: datasourceRef,
       editorType: EditorType.Builder,
       rawSql: '',
       builderOptions: {} as QueryBuilderOptions,

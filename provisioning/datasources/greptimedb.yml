@@ -3,19 +3,42 @@ apiVersion: 1
 
 # List of data sources to delete from the database.
 deleteDatasources:
-  - name: GreptimeDB
+  - name: info8fcc-greptimedb-datasource
     orgId: 1
 
 datasources:
-  - name: GreptimeDB
+  - name: info8fcc-greptimedb-datasource
     type: info8fcc-greptimedb-datasource
     access: proxy
-    url: http://localhost:4000
+    uid: dfsr7wolp7awwf
+    isDefault: true
+    url: http://host.docker.internal:4000
     orgId: 1
     jsonData:
-      host: http://localhost:4000
+      host: http://host.docker.internal:4000
       database: "public"
       username: ""
-
+      logs:
+        defaultDatabase: "public"
+        defaultTable: "genai_conversations"
+        timeColumn: "timestamp"
+        messageColumn: "body"
+        levelColumn: "severity_text"
+        traceIdColumn: "trace_id"
+        selectContextColumns: true
+        contextColumns:
+          - "scope_name"
+          - "span_id"
+      traces:
+        defaultDatabase: "public"
+        defaultTable: "opentelemetry_traces"
+        durationColumn: "duration_nano"
+        durationUnit: "nanoseconds"
+        operationNameColumn: "span_name"
+        parentSpanIdColumn: "parent_span_id"
+        serviceNameColumn: "service_name"
+        spanIdColumn: "span_id"
+        startTimeColumn: "timestamp"
+        traceIdColumn: "trace_id"
     secureJsonData:
       # password: ""

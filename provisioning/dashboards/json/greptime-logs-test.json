@@ -1,0 +1,231 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "time": {
+    "from": "2026-07-21T07:00:00",
+    "to": "2026-07-21T09:00:00"
+  },
+  "refresh": "30s",
+  "title": "GreptimeDB - Logs Test",
+  "uid": "greptime-logs-test",
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "search",
+        "label": "Search",
+        "type": "textbox",
+        "hide": 0
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "level_filter",
+        "label": "Level",
+        "type": "textbox",
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "logs",
+      "title": "Logs - Basic (timestamp + body + level)",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name FROM genai_conversations WHERE $__timeFilter(timestamp) AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 100"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "logs",
+      "title": "Logs - With Search Variable",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name, trace_id FROM genai_conversations WHERE $__timeFilter(timestamp) AND ('${search}' = '' OR matches_term(body, '${search}')) ORDER BY timestamp DESC LIMIT 200"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "logs",
+      "title": "Logs - With Context Columns",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name, trace_id, span_id, '' AS hostname, '' AS pod_name FROM genai_conversations WHERE $__timeFilter(timestamp) AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 200"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "logs",
+      "title": "Logs - With Level Filter Variable",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name FROM genai_conversations WHERE $__timeFilter(timestamp) AND ('${level_filter}' = '' OR severity_text = '${level_filter}') ORDER BY timestamp DESC LIMIT 200"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Logs - Table View (same data)",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "table",
+          "rawSql": "SELECT timestamp AS time, severity_text AS level, scope_name, body FROM genai_conversations WHERE $__timeFilter(timestamp) ORDER BY timestamp DESC LIMIT 50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 2
+}

@@ -1,0 +1,286 @@
+{
+  "title": "GreptimeDB - Traces Test",
+  "uid": "greptime-traces-test",
+  "editable": true,
+  "schemaVersion": 39,
+  "time": {
+    "from": "2026-07-21T07:00:00",
+    "to": "2026-07-21T09:00:00"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "trace_id",
+        "type": "textbox",
+        "hide": 0,
+        "label": "Trace ID",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "span_name_filter",
+        "type": "textbox",
+        "hide": 0,
+        "label": "Span Name",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Trace Search Table",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "traces",
+          "rawSql": "SELECT trace_id, span_name, service_name, CAST(timestamp AS INT64) / 1000000 AS timestamp_ms, FLOOR(duration_nano * 0.000001) AS duration_ms, span_status_code AS status FROM opentelemetry_traces WHERE $__timeFilter(timestamp) AND \"span_attributes.gen_ai.system\" IS NOT NULL ORDER BY timestamp DESC LIMIT 20",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          }
+        }
+      ],
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "trace_id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View trace",
+                    "url": "/d/greptime-traces-test/greptimedb-traces-test?var-trace_id=${__value.raw}&${__url_time_range}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "duration_ms"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "STATUS_CODE_ERROR": {
+                        "color": "red",
+                        "text": "ERROR"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "STATUS_CODE_UNSET": {
+                        "color": "green",
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Trace Detail (Waterfall)",
+      "type": "traces",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 24,
+        "h": 16
+      },
+      "targets": [
+        {
+          "refId": "Trace ID",
+          "editorType": "sql",
+          "format": 3,
+          "queryType": "traces",
+          "rawSql": "SELECT * FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime AND trace_id = COALESCE(NULLIF('${trace_id}', ''), (SELECT trace_id FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime ORDER BY timestamp DESC LIMIT 1)) ORDER BY timestamp",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "meta": {
+            "builderOptions": {
+              "database": "public",
+              "table": "opentelemetry_traces",
+              "queryType": "traces",
+              "columns": [
+                {
+                  "name": "trace_id",
+                  "hint": "trace_id"
+                },
+                {
+                  "name": "span_id",
+                  "hint": "trace_span_id"
+                },
+                {
+                  "name": "parent_span_id",
+                  "hint": "trace_parent_span_id"
+                },
+                {
+                  "name": "service_name",
+                  "hint": "trace_service_name"
+                },
+                {
+                  "name": "span_name",
+                  "hint": "trace_operation_name"
+                },
+                {
+                  "name": "timestamp",
+                  "hint": "time"
+                },
+                {
+                  "name": "duration_nano",
+                  "hint": "trace_duration_time"
+                },
+                {
+                  "name": "span_attributes.gen_ai.system",
+                  "hint": "trace_tags"
+                },
+                {
+                  "name": "span_attributes.gen_ai.operation.name",
+                  "hint": "trace_tags"
+                },
+                {
+                  "name": "span_attributes.gen_ai.request.model",
+                  "hint": "trace_tags"
+                },
+                {
+                  "name": "resource_attributes.telemetry.sdk.name",
+                  "hint": "trace_service_tags"
+                },
+                {
+                  "name": "resource_attributes.telemetry.sdk.language",
+                  "hint": "trace_service_tags"
+                },
+                {
+                  "name": "resource_attributes.telemetry.sdk.version",
+                  "hint": "trace_service_tags"
+                }
+              ],
+              "limit": 1000,
+              "meta": {
+                "traceDurationUnit": "nanoseconds",
+                "isTraceIdMode": true
+              }
+            }
+          }
+        }
+      ],
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      }
+    },
+    {
+      "title": "Span Count by Service",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT service_name, count(*) AS span_count, ROUND(AVG(duration_nano)/1000000, 2) AS avg_duration_ms FROM opentelemetry_traces WHERE $__timeFilter(timestamp) GROUP BY service_name ORDER BY span_count DESC",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          }
+        }
+      ],
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      }
+    },
+    {
+      "title": "Span Duration Distribution",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 26,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorType": "sql",
+          "format": 0,
+          "queryType": "timeseries",
+          "rawSql": "SELECT date_bin('$__interval', timestamp) AS time, service_name AS metric, ROUND(AVG(duration_nano)/1000000, 2) AS avg_duration_ms FROM opentelemetry_traces WHERE $__timeFilter(timestamp) GROUP BY time, metric ORDER BY time",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "ms",
+          "min": 0
+        }
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      }
+    }
+  ]
+}

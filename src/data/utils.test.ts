@@ -4,6 +4,7 @@ import { newMockDatasource } from "__mocks__/datasource";
 import { CoreApp, DataFrame, DataQueryRequest, DataQueryResponse, Field, FieldType } from "@grafana/data";
 import { GreptimeBuilderQuery, GreptimeQuery, EditorType } from "types/sql";
 import { logColumnHintsToAlias } from "./sqlGenerator";
+import { Datasource } from "./GreptimeDatasource";
 
 describe('isBuilderOptionsRunnable', () => {
   it('should return false for empty builder options', () => {
@@ -205,6 +206,26 @@ describe('transformQueryResponseWithTraceAndLogLinks', () => {
     expect(getDefaultLogsTable).not.toHaveBeenCalled();
     // getLogsTraceIdColumn() reads default log columns when attaching the linked logs query.
     expect(getDefaultLogsColumns).toHaveBeenCalled();
+  });
+
+  it('embeds a serializable datasource ref (not the live instance) in trace/log link queries', () => {
+    const mockDatasource = newMockDatasource();
+    // Live instance forms a cycle once CustomVariableSupport is wired.
+    expect(mockDatasource.variables).toBeDefined();
+    expect((mockDatasource.variables as { datasource?: Datasource }).datasource).toBe(mockDatasource);
+
+    const [request, response] = buildTestRequestResponse({ queryType: QueryType.Traces, columns: [{ name: 'a' }] });
+    const out = transformQueryResponseWithTraceAndLogLinks(mockDatasource, request, response);
+    const links = out?.data[0]?.fields[0]?.config?.links;
+    expect(links).toHaveLength(2);
+
+    for (const link of links!) {
+      const embedded = (link.internal!.query as GreptimeBuilderQuery).datasource;
+      expect(embedded).toEqual({ uid: 'greptimedb_ds', type: 'info8fcc-greptimedb-datasource' });
+      expect(embedded).not.toBe(mockDatasource);
+      // Grafana Explore walks / JSON.stringifies internal.query; this must not throw.
+      expect(() => JSON.stringify(link.internal!.query)).not.toThrow();
+    }
   });
 });
 

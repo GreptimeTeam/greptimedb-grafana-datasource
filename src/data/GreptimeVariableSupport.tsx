@@ -247,6 +247,7 @@ function toVariableString(value: unknown): string | null {
 export class GreptimeVariableSupport extends CustomVariableSupport<Datasource, GreptimeVariableQuery> {
   constructor(private readonly datasource: Datasource) {
     super();
+    Object.defineProperty(this, 'datasource', { enumerable: false });
   }
 
   editor = VariableQueryEditor;

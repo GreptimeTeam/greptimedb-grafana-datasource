@@ -1,0 +1,99 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "links": [],
+  "time": {
+    "from": "2026-07-21T07:00:00",
+    "to": "2026-07-21T09:00:00"
+  },
+  "title": "GreptimeDB - Builder Logs Test",
+  "uid": "greptime-builder-logs",
+  "schemaVersion": 39,
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Logs",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "collapsed": false
+    },
+    {
+      "type": "logs",
+      "title": "All Logs",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "builderOptions": {
+            "database": "public",
+            "table": "genai_conversations",
+            "queryType": "logs",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "severity_text",
+                "hint": "log_level"
+              },
+              {
+                "name": "body",
+                "hint": "log_message"
+              },
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              }
+            ],
+            "filters": [],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
+            ],
+            "limit": 200,
+            "meta": {}
+          },
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name AS service, trace_id FROM genai_conversations WHERE $__timeFilter(timestamp) AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 200"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    }
+  ]
+}

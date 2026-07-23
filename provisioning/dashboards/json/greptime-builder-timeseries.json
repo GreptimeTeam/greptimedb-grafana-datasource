@@ -1,0 +1,1037 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "links": [],
+  "time": {
+    "from": "2026-05-22T00:00:00",
+    "to": "2026-05-22T03:00:00"
+  },
+  "refresh": "30s",
+  "title": "GreptimeDB - Builder Time Series Test",
+  "uid": "greptime-builder-timeseries",
+  "schemaVersion": 39,
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Trend Mode (date_bin + GROUP BY)",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Trend: AVG by Host",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host",
+                "hint": ""
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Trend: MAX/MIN by Host",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host",
+                "hint": ""
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "max",
+                "column": "cpu_usage",
+                "alias": "max_cpu"
+              },
+              {
+                "aggregateType": "min",
+                "column": "cpu_usage",
+                "alias": "min_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", MAX(\"cpu_usage\") AS \"max_cpu\", MIN(\"cpu_usage\") AS \"min_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Trend: SUM+COUNT by Region",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "region",
+                "hint": ""
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "sum",
+                "column": "cpu_usage",
+                "alias": "sum_cpu"
+              },
+              {
+                "aggregateType": "count",
+                "column": "cpu_usage",
+                "alias": "rows"
+              }
+            ],
+            "groupBy": [
+              "region"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"region\", SUM(\"cpu_usage\") AS \"sum_cpu\", COUNT(\"cpu_usage\") AS \"rows\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"region\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Aggregate Mode (GROUP BY, no date_bin)",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Aggregate: AVG by Host",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 10
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host",
+                "hint": ""
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_cpu"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\", \"host\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Aggregate: ALL Aggregates",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 10
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host",
+                "hint": ""
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg"
+              },
+              {
+                "aggregateType": "max",
+                "column": "cpu_usage",
+                "alias": "max"
+              },
+              {
+                "aggregateType": "min",
+                "column": "cpu_usage",
+                "alias": "min"
+              }
+            ],
+            "groupBy": [
+              "host"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, \"host\", AVG(\"cpu_usage\") AS \"avg\", MAX(\"cpu_usage\") AS \"max\", MIN(\"cpu_usage\") AS \"min\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\", \"host\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Aggregate: COUNT+ANY by Host+Region",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 10
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host",
+                "hint": ""
+              },
+              {
+                "name": "region",
+                "hint": ""
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "cpu_usage",
+                "alias": "count"
+              },
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "avg_sample"
+              }
+            ],
+            "groupBy": [
+              "host",
+              "region"
+            ],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, \"host\", \"region\", COUNT(\"cpu_usage\") AS \"count\", AVG(\"cpu_usage\") AS \"avg_sample\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\", \"host\", \"region\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "List Mode (Raw Rows)",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "List: Raw cpu_usage by Host",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "list",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host",
+                "hint": ""
+              },
+              {
+                "name": "cpu_usage",
+                "hint": ""
+              }
+            ],
+            "aggregates": [],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, \"host\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "List: Full Row View",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "list",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              },
+              {
+                "name": "host",
+                "hint": ""
+              },
+              {
+                "name": "region",
+                "hint": ""
+              },
+              {
+                "name": "cpu_usage",
+                "hint": ""
+              }
+            ],
+            "aggregates": [],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, \"host\", \"region\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Summary Stats",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "AVG CPU",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 28
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "avg",
+                "column": "cpu_usage",
+                "alias": "val"
+              }
+            ],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, AVG(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "MAX CPU",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 28
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "max",
+                "column": "cpu_usage",
+                "alias": "val"
+              }
+            ],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, MAX(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "MIN CPU",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 28
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "min",
+                "column": "cpu_usage",
+                "alias": "val"
+              }
+            ],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, MIN(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "SUM CPU",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 14,
+        "y": 28
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "sum",
+                "column": "cpu_usage",
+                "alias": "val"
+              }
+            ],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, SUM(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "COUNT CPU",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 18,
+        "y": 28
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "cpu_metrics_30",
+            "queryType": "timeseries",
+            "mode": "aggregate",
+            "columns": [
+              {
+                "name": "ts",
+                "hint": "time"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "cpu_usage",
+                "alias": "val"
+              }
+            ],
+            "groupBy": [],
+            "orderBy": [
+              {
+                "name": "ts",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"ts\" AS time, COUNT(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY \"ts\" ORDER BY time LIMIT 1000"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      }
+    }
+  ]
+}

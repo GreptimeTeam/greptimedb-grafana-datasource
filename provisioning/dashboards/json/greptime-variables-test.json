@@ -1,0 +1,353 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "time": {
+    "from": "2026-05-22T00:00:00",
+    "to": "2026-05-22T03:00:00"
+  },
+  "refresh": "30s",
+  "title": "GreptimeDB - Variables Test",
+  "uid": "greptime-variables-test",
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "cpu_metrics_30",
+          "value": "cpu_metrics_30"
+        },
+        "name": "table_name",
+        "label": "Table Name",
+        "type": "textbox",
+        "hide": 0
+      },
+      {
+        "current": {
+          "text": "avg(cpu_usage)",
+          "value": "avg(cpu_usage)"
+        },
+        "name": "metric_column",
+        "label": "Metric Column",
+        "type": "textbox",
+        "hide": 0
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "hosts",
+        "label": "Hosts (comma-separated)",
+        "type": "textbox",
+        "hide": 0
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "search_term",
+        "label": "Search Term",
+        "type": "textbox",
+        "hide": 0
+      },
+      {
+        "current": {
+          "text": "1m",
+          "value": "1m"
+        },
+        "name": "custom_interval",
+        "label": "Custom Interval",
+        "type": "textbox",
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Table Variable in FROM clause",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "rawSql": "SELECT date_bin('$__interval', ts) AS time, avg(cpu_usage) AS value FROM ${table_name:sqlstring} WHERE $__timeFilter(ts) GROUP BY time ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Column Name Variable",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "rawSql": "SELECT date_bin('$__interval', ts) AS time, host, ${metric_column:sqlstring} AS value FROM ${table_name:sqlstring} WHERE $__timeFilter(ts) GROUP BY time, host ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "IN Clause with Variable",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "rawSql": "SELECT date_bin('$__interval', ts) AS time, host, avg(cpu_usage) AS cpu_usage FROM ${table_name:sqlstring} WHERE $__timeFilter(ts) AND ('${hosts}' = '' OR host IN ('${hosts}')) GROUP BY time, host ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Custom Interval Variable",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "rawSql": "SELECT date_bin(${custom_interval:sqlstring}::INTERVAL, ts) AS time, avg(cpu_usage) AS cpu_usage FROM ${table_name:sqlstring} WHERE $__timeFilter(ts) GROUP BY time ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Combined Macros + Variables",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "rawSql": "SELECT $__timeInterval(ts) AS time, host, ${metric_column:sqlstring} AS value FROM ${table_name:sqlstring} WHERE $__timeFilter(ts) AND ('${search_term}' = '' OR host LIKE '%${search_term}%') GROUP BY time, host ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Stat with Variables",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 24
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "table",
+          "rawSql": "SELECT count(*) AS total_rows FROM ${table_name:sqlstring} WHERE $__timeFilter(ts) AND ('${hosts}' = '' OR host IN ('${hosts}'))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "table",
+      "title": "Table with All Variables",
+      "gridPos": {
+        "h": 8,
+        "w": 18,
+        "x": 6,
+        "y": 24
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "table",
+          "rawSql": "SELECT ts, host, ${metric_column:sqlstring} AS value FROM ${table_name:sqlstring} WHERE $__timeFilter(ts) AND ('${hosts}' = '' OR host IN ('${hosts}')) ORDER BY ts DESC LIMIT 20"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

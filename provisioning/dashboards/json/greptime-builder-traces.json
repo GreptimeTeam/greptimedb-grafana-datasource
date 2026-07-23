@@ -1,0 +1,305 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "links": [],
+  "time": {
+    "from": "2026-07-21T07:00:00",
+    "to": "2026-07-21T09:00:00"
+  },
+  "title": "GreptimeDB - Builder Traces Test",
+  "uid": "greptime-builder-traces",
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "trace_id",
+        "label": "Trace ID",
+        "type": "textbox",
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Trace Search",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "collapsed": false
+    },
+    {
+      "type": "table",
+      "title": "Trace Search Table",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "traces",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "traces",
+            "columns": [
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              },
+              {
+                "name": "span_name",
+                "hint": "trace_operation_name"
+              },
+              {
+                "name": "service_name",
+                "hint": "trace_service_name"
+              },
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "duration_nano",
+                "hint": "trace_duration_time"
+              },
+              {
+                "name": "span_status_code",
+                "hint": "trace_status_code"
+              },
+              {
+                "name": "span_id",
+                "hint": "trace_span_id"
+              },
+              {
+                "name": "parent_span_id",
+                "hint": "trace_parent_span_id"
+              },
+              {
+                "name": "span_kind"
+              }
+            ],
+            "filters": [],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
+            ],
+            "limit": 50,
+            "meta": {}
+          },
+          "rawSql": "SELECT trace_id, span_name, service_name, CAST(timestamp AS INT64) / 1000000 AS timestamp_ms, FLOOR(duration_nano * 0.000001) AS duration_ms, span_status_code AS status FROM opentelemetry_traces WHERE $__timeFilter(timestamp) AND \"span_attributes.gen_ai.system\" IS NOT NULL ORDER BY timestamp DESC LIMIT 50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "trace_id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View trace",
+                    "url": "/d/greptime-builder-traces/greptimedb-builder-traces-test?var-trace_id=${__value.raw}&${__url_time_range}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "duration_ms"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "STATUS_CODE_ERROR": {
+                        "color": "red",
+                        "text": "ERROR"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "STATUS_CODE_UNSET": {
+                        "color": "green",
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "row",
+      "title": "Trace Detail",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "collapsed": false
+    },
+    {
+      "type": "traces",
+      "title": "Trace Detail Waterfall",
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "Trace ID",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 3,
+          "pluginVersion": "2.2.1",
+          "queryType": "traces",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "traces",
+            "columns": [
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              },
+              {
+                "name": "span_id",
+                "hint": "trace_span_id"
+              },
+              {
+                "name": "parent_span_id",
+                "hint": "trace_parent_span_id"
+              },
+              {
+                "name": "service_name",
+                "hint": "trace_service_name"
+              },
+              {
+                "name": "span_name",
+                "hint": "trace_operation_name"
+              },
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "duration_nano",
+                "hint": "trace_duration_time"
+              },
+              {
+                "name": "span_status_code",
+                "hint": "trace_status_code"
+              },
+              {
+                "name": "span_attributes.gen_ai.system",
+                "hint": "trace_tags"
+              },
+              {
+                "name": "span_attributes.gen_ai.request.model",
+                "hint": "trace_tags"
+              },
+              {
+                "name": "span_attributes.gen_ai.operation.name",
+                "hint": "trace_tags"
+              },
+              {
+                "name": "resource_attributes.telemetry.sdk.name",
+                "hint": "trace_service_tags"
+              },
+              {
+                "name": "resource_attributes.telemetry.sdk.language",
+                "hint": "trace_service_tags"
+              },
+              {
+                "name": "resource_attributes.telemetry.sdk.version",
+                "hint": "trace_service_tags"
+              },
+              {
+                "name": "span_kind"
+              }
+            ],
+            "filters": [],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 1000,
+            "meta": {
+              "traceDurationUnit": "nanoseconds",
+              "isTraceIdMode": true
+            }
+          },
+          "rawSql": "SELECT * FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime AND trace_id = COALESCE(NULLIF('${trace_id}', ''), (SELECT trace_id FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime ORDER BY timestamp DESC LIMIT 1)) ORDER BY timestamp"
+        }
+      ]
+    }
+  ]
+}

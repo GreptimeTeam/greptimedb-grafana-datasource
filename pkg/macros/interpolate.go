@@ -26,7 +26,9 @@ func expandQuotedIntervalMacros(sql string, resolvedInterval string) string {
 
 	sql = strings.ReplaceAll(sql, "'$__interval'", "'"+resolvedInterval+"'")
 	sql = strings.ReplaceAll(sql, "\"$__interval\"", "\""+resolvedInterval+"\"")
-	sql = strings.ReplaceAll(sql, "$__interval", resolvedInterval)
+	// Use regex with word boundary so $__interval does not corrupt longer macros like $__interval_s.
+	bareIntervalRe := regexp.MustCompile(`\$__interval\b`)
+	sql = bareIntervalRe.ReplaceAllLiteralString(sql, resolvedInterval)
 	return sql
 }
 

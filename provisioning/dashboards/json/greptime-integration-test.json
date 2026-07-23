@@ -1,0 +1,697 @@
+{
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.4.0"
+    },
+    {
+      "type": "datasource",
+      "id": "info8fcc-greptimedb-datasource",
+      "name": "GreptimeDB",
+      "version": "0.1.0"
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [],
+  "time": {
+    "from": "2026-01-01T00:00:00",
+    "to": "2026-12-31T23:59:59"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "GreptimeDB - Integration Test",
+  "uid": "greptime-integration-test",
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Host",
+        "name": "host_filter",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Search",
+        "name": "search",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Trace ID",
+        "name": "trace_id",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Time Series",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_bin('$__interval', ts) AS time, host, avg(cpu_usage) AS cpu_usage FROM cpu_metrics_30 WHERE $__timeFilter(ts) GROUP BY time, host ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Usage Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "id": 3,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_bin('$__interval', greptime_timestamp) AS time, host, avg(mem_usage) AS memory FROM system_metrics WHERE $__timeFilter(greptime_timestamp) GROUP BY time, host ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory Usage Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "table",
+          "rawSql": "SELECT count(*) AS total FROM cpu_metrics_30 WHERE $__timeFilter(ts)",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Count",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 5,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "table",
+          "rawSql": "SELECT count(DISTINCT host) AS hosts FROM cpu_metrics_30 WHERE $__timeFilter(ts)",
+          "refId": "A"
+        }
+      ],
+      "title": "Hosts Count",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "id": 6,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT date_bin('$__interval', greptime_timestamp) AS time, host, avg(cpu_usage) AS avg_cpu, avg(mem_usage) AS avg_mem FROM system_metrics WHERE $__timeFilter(greptime_timestamp) GROUP BY time, host ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Multi-Metric (Long to Multi-Frame)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 7,
+      "panels": [],
+      "title": "Logs & Table",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "id": 8,
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": 2,
+          "queryType": "logs",
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name, trace_id AS hostname FROM genai_conversations WHERE $__timeFilter(timestamp) AND ('${search}' = '' OR matches_term(body, '${search}')) AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "App Logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 6,
+        "x": 12,
+        "y": 14
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "values": true
+        },
+        "displayLabels": [
+          "name",
+          "percent"
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "table",
+          "rawSql": "SELECT severity_text AS level, count(*) AS count FROM genai_conversations WHERE $__timeFilter(timestamp) GROUP BY level ORDER BY count DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Log Level Distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 6,
+        "x": 18,
+        "y": 14
+      },
+      "id": 10,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "table",
+          "rawSql": "SELECT greptime_timestamp AS time, host, cpu_usage, mem_usage FROM system_metrics WHERE $__timeFilter(greptime_timestamp) AND ('${host_filter}' = '' OR host = '${host_filter}') ORDER BY greptime_timestamp DESC LIMIT 30",
+          "refId": "A"
+        }
+      ],
+      "title": "Server Metrics Table",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 11,
+      "panels": [],
+      "title": "Traces",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "duration_ms"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "STATUS_CODE_ERROR": {
+                        "color": "red",
+                        "text": "ERROR"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "STATUS_CODE_UNSET": {
+                        "color": "green",
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "trace_id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View trace",
+                    "url": "/d/greptime-integration-test/greptimedb-integration-test?var-trace_id=${__value.raw}&${__url_time_range}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "id": 12,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": 1,
+          "queryType": "traces",
+          "rawSql": "SELECT trace_id, span_name, service_name, CAST(timestamp AS INT64) / 1000000 AS timestamp_ms, FLOOR(duration_nano * 0.000001) AS duration_ms, span_status_code AS status FROM opentelemetry_traces WHERE $__timeFilter(timestamp) AND \"span_attributes.gen_ai.system\" IS NOT NULL ORDER BY timestamp DESC LIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "title": "Trace Search",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "id": 13,
+      "meta": {
+        "builderOptions": {
+          "database": "public",
+          "table": "opentelemetry_traces",
+          "queryType": "traces",
+          "columns": [
+            {
+              "name": "trace_id",
+              "hint": "trace_id"
+            },
+            {
+              "name": "span_id",
+              "hint": "trace_span_id"
+            },
+            {
+              "name": "parent_span_id",
+              "hint": "trace_parent_span_id"
+            },
+            {
+              "name": "service_name",
+              "hint": "trace_service_name"
+            },
+            {
+              "name": "span_name",
+              "hint": "trace_operation_name"
+            },
+            {
+              "name": "timestamp",
+              "hint": "time"
+            },
+            {
+              "name": "duration_nano",
+              "hint": "trace_duration_time"
+            },
+            {
+              "name": "span_attributes.gen_ai.system",
+              "hint": "trace_tags"
+            },
+            {
+              "name": "span_attributes.gen_ai.request.model",
+              "hint": "trace_tags"
+            },
+            {
+              "name": "resource_attributes.telemetry.sdk.name",
+              "hint": "trace_service_tags"
+            },
+            {
+              "name": "resource_attributes.telemetry.sdk.version",
+              "hint": "trace_service_tags"
+            }
+          ],
+          "limit": 1000,
+          "meta": {
+            "traceDurationUnit": "nanoseconds",
+            "isTraceIdMode": true
+          }
+        }
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": 3,
+          "queryType": "traces",
+          "rawSql": "SELECT * FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime AND trace_id = COALESCE(NULLIF('${trace_id}', ''), (SELECT trace_id FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime ORDER BY timestamp DESC LIMIT 1)) ORDER BY timestamp",
+          "refId": "Trace ID"
+        }
+      ],
+      "title": "Trace Detail Waterfall",
+      "type": "traces"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 14,
+      "panels": [],
+      "title": "Metrics Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "id": 15,
+      "options": {
+        "xField": "host",
+        "orientation": "auto",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "sortField": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "table",
+          "rawSql": "SELECT host, sum(cpu_usage) AS total_cpu FROM cpu_metrics_30 WHERE $__timeFilter(ts) AND ('${host_filter}' = '' OR host = '${host_filter}') GROUP BY host ORDER BY total_cpu DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Cumulative CPU by Host",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 36
+      },
+      "id": 16,
+      "options": {
+        "xField": "service_name",
+        "orientation": "auto",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.97,
+        "sortField": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "format": "table",
+          "rawSql": "SELECT service_name, count(*) AS span_count, ROUND(avg(duration_nano)/1000000, 1) AS avg_ms FROM opentelemetry_traces WHERE $__timeFilter(timestamp) GROUP BY service_name ORDER BY span_count DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Service Span Count",
+      "type": "barchart"
+    }
+  ]
+}

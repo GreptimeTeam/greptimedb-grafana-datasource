@@ -52,6 +52,31 @@ func TransformTraceDetailFrame(frame *data.Frame, columns []BuilderColumn, durat
 	tagNames := columnNamesByHint(columns, hintTraceTags)
 	serviceTagNames := columnNamesByHint(columns, hintTraceServiceTags)
 
+	// Auto-discover span_attributes.* and resource_attributes.* columns not
+	// explicitly listed in builder columns. This lets SELECT * include all
+	// attribute columns without requiring the builder to enumerate every one.
+	knownNames := map[string]bool{}
+	for _, f := range frame.Fields {
+		knownNames[strings.ToLower(f.Name)] = true
+	}
+	knownSet := make(map[string]bool, len(tagNames)+len(serviceTagNames))
+	for _, n := range tagNames {
+		knownSet[strings.ToLower(n)] = true
+	}
+	for _, n := range serviceTagNames {
+		knownSet[strings.ToLower(n)] = true
+	}
+	for name := range knownNames {
+		lower := strings.ToLower(name)
+		if !knownSet[lower] {
+			if strings.HasPrefix(lower, "span_attributes.") {
+				tagNames = append(tagNames, name)
+			} else if strings.HasPrefix(lower, "resource_attributes.") {
+				serviceTagNames = append(serviceTagNames, name)
+			}
+		}
+	}
+
 	traceIDField := findTraceField(fieldByName, columns, hintTraceID, "traceID", "trace_id")
 	spanIDField := findTraceField(fieldByName, columns, hintTraceSpanID, "spanID", "span_id")
 	parentField := findTraceField(fieldByName, columns, hintTraceParentSpanID, "parentSpanID", "parent_span_id")
