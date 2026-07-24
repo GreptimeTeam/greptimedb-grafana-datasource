@@ -13,7 +13,18 @@
   "uid": "greptime-builder-timeseries",
   "schemaVersion": 39,
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "filters",
+        "label": "Filters",
+        "type": "adhoc",
+        "hide": 0,
+        "datasource": {
+          "type": "info8fcc-greptimedb-datasource",
+          "uid": "dfsr7wolp7awwf"
+        }
+      }
+    ]
   },
   "panels": [
     {
@@ -84,7 +95,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
@@ -163,7 +184,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", MAX(\"cpu_usage\") AS \"max_cpu\", MIN(\"cpu_usage\") AS \"min_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
@@ -242,7 +273,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"region\", SUM(\"cpu_usage\") AS \"sum_cpu\", COUNT(\"cpu_usage\") AS \"rows\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"region\" ORDER BY time"
         }
@@ -327,7 +368,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg_cpu\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
@@ -411,7 +462,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", AVG(\"cpu_usage\") AS \"avg\", MAX(\"cpu_usage\") AS \"max\", MIN(\"cpu_usage\") AS \"min\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\" ORDER BY time"
         }
@@ -495,7 +556,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, \"host\", \"region\", COUNT(\"cpu_usage\") AS \"count\", AVG(\"cpu_usage\") AS \"avg_sample\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time, \"host\", \"region\" ORDER BY time"
         }
@@ -576,7 +647,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT \"ts\" AS time, \"host\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time"
         }
@@ -650,7 +731,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT \"ts\" AS time, \"host\", \"region\", \"cpu_usage\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") ORDER BY time"
         }
@@ -729,7 +820,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, AVG(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
@@ -800,7 +901,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, MAX(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
@@ -871,7 +982,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, MIN(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
@@ -942,7 +1063,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, SUM(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
@@ -1013,7 +1144,17 @@
               }
             ],
             "limit": 1000,
-            "meta": {}
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', \"ts\") AS time, COUNT(\"cpu_usage\") AS \"val\" FROM public.cpu_metrics_30 WHERE $__timeFilter(\"ts\") GROUP BY time ORDER BY time"
         }
@@ -1104,6 +1245,14 @@
             "filters": [
               {
                 "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
                 "key": "host",
                 "type": "string",
                 "operator": "=",
@@ -1185,6 +1334,14 @@
             "limit": 0,
             "meta": {},
             "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
               {
                 "filterType": "custom",
                 "key": "host",
@@ -1270,6 +1427,14 @@
             "filters": [
               {
                 "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
                 "key": "region",
                 "type": "string",
                 "operator": "LIKE",
@@ -1351,6 +1516,14 @@
             "limit": 0,
             "meta": {},
             "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
               {
                 "filterType": "custom",
                 "key": "host",
@@ -1441,6 +1614,14 @@
             "limit": 0,
             "meta": {},
             "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
               {
                 "filterType": "custom",
                 "key": "host",
@@ -1534,6 +1715,14 @@
             "filters": [
               {
                 "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
                 "key": "host",
                 "type": "string",
                 "operator": "=",
@@ -1625,6 +1814,14 @@
             "filters": [
               {
                 "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
                 "key": "cpu_usage",
                 "type": "number",
                 "operator": ">",
@@ -1708,6 +1905,14 @@
             "filters": [
               {
                 "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
                 "key": "region",
                 "type": "string",
                 "operator": "IS NOT NULL",
@@ -1788,6 +1993,14 @@
             "limit": 0,
             "meta": {},
             "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
               {
                 "filterType": "custom",
                 "key": "host",
@@ -1875,6 +2088,14 @@
             "limit": 0,
             "meta": {},
             "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
               {
                 "filterType": "custom",
                 "key": "cpu_usage",
@@ -1966,6 +2187,14 @@
             "limit": 0,
             "meta": {},
             "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
               {
                 "filterType": "custom",
                 "key": "cpu_usage",
@@ -2062,7 +2291,16 @@
             ],
             "limit": 0,
             "meta": {},
-            "filters": []
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', timestamp) AS time, COUNT(\"timestamp\") AS \"count\" FROM public.genai_conversations WHERE $__timeFilter(\"timestamp\") GROUP BY time ORDER BY time"
         }
@@ -2142,7 +2380,16 @@
             ],
             "limit": 0,
             "meta": {},
-            "filters": []
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
           },
           "rawSql": "SELECT date_bin('$__interval', timestamp) AS time, \"scope_name\", COUNT(\"timestamp\") AS \"log_count\", AVG(\"severity_number\") AS \"avg_severity\" FROM public.genai_conversations WHERE $__timeFilter(\"timestamp\") GROUP BY time, \"scope_name\" ORDER BY time"
         }
@@ -2159,6 +2406,332 @@
         "overrides": []
       },
       "options": {}
+    },
+    {
+      "type": "row",
+      "title": "Escape Test (dot columns + db.table)",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 77
+      },
+      "collapsed": false
+    },
+    {
+      "type": "table",
+      "title": "Table: dot columns (span_attributes.gen_ai.system, resource_attributes)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 78
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "table",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "table",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "service_name"
+              },
+              {
+                "name": "span_attributes.gen_ai.system"
+              },
+              {
+                "name": "resource_attributes.telemetry.sdk.name"
+              },
+              {
+                "name": "span_name"
+              }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
+            ],
+            "limit": 20,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"timestamp\", \"service_name\", \"span_attributes.gen_ai.system\", \"resource_attributes.telemetry.sdk.name\", \"span_name\" FROM \"public\".\"opentelemetry_traces\" WHERE $__timeFilter(\"timestamp\") ORDER BY \"timestamp\" DESC LIMIT 20"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Timeseries: GROUP BY dot column (span_attributes.gen_ai.system)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 78
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "span_attributes.gen_ai.system"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "timestamp",
+                "alias": "span_count"
+              }
+            ],
+            "groupBy": [
+              "span_attributes.gen_ai.system"
+            ],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "asc"
+              }
+            ],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT date_bin('$__interval', timestamp) AS time, \"span_attributes.gen_ai.system\", COUNT(\"timestamp\") AS \"span_count\" FROM \"public\".\"opentelemetry_traces\" WHERE $__timeFilter(\"timestamp\") AND \"span_attributes.gen_ai.system\" IS NOT NULL GROUP BY time, \"span_attributes.gen_ai.system\" ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "table",
+      "title": "Table: db.table + dot column filter test",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 86
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "table",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "table",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "service_name"
+              },
+              {
+                "name": "span_attributes.gen_ai.system"
+              },
+              {
+                "name": "span_attributes.gen_ai.request.model"
+              },
+              {
+                "name": "resource_attributes.telemetry.sdk.name"
+              },
+              {
+                "name": "resource_attributes.telemetry.sdk.language"
+              }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
+                "key": "span_attributes.gen_ai.system",
+                "type": "string",
+                "operator": "!=",
+                "value": "",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
+            ],
+            "limit": 20,
+            "meta": {}
+          },
+          "rawSql": "SELECT \"timestamp\", \"service_name\", \"span_attributes.gen_ai.system\", \"span_attributes.gen_ai.request.model\", \"resource_attributes.telemetry.sdk.name\", \"resource_attributes.telemetry.sdk.language\" FROM \"public\".\"opentelemetry_traces\" WHERE $__timeFilter(\"timestamp\") ORDER BY \"timestamp\" DESC LIMIT 20"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Stat: COUNT with dot column (span_attributes)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 86
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "table",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "table",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "timestamp",
+                "alias": "total_spans"
+              }
+            ],
+            "orderBy": [],
+            "limit": 0,
+            "meta": {},
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ]
+          },
+          "rawSql": "SELECT COUNT(\"timestamp\") AS \"total_spans\" FROM \"public\".\"opentelemetry_traces\" WHERE $__timeFilter(\"timestamp\")"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none"
+      }
     }
   ]
 }

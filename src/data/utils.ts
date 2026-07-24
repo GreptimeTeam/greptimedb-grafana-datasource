@@ -151,7 +151,10 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
       return;
     }
 
-    const traceField = frame.fields.find(field => field.name.toLowerCase() === 'traceid' || field.name.toLowerCase() === 'trace_id');
+    const traceField = frame.fields.find(field => {
+      const lower = field.name.toLowerCase();
+      return lower === 'traceid' || lower === 'trace_id' || lower.replace(/[^a-z0-9]/g, '') === 'traceid';
+    });
     if (!traceField) {
       return;
     }
@@ -285,6 +288,7 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
         }
       }
     });
+    if (datasource.getDefaultLogsTable()) {
     traceField.config.links!.push({
       title: 'View logs',
       targetBlank: openInNewWindow,
@@ -295,6 +299,73 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
         datasourceName: traceLogsQuery.datasource?.type!,
       }
     }); 
+    }
+
+    // Also add links to tags and serviceTags fields so that clicking a tag value
+    // opens the trace/log views too.
+    const traceTagFieldNames: string[] = [];
+    const traceServiceTagFieldNames: string[] = [];
+    if (originalQuery.builderOptions?.columns) {
+      for (const col of originalQuery.builderOptions.columns) {
+        if (col.hint === ColumnHint.TraceTags) {
+          traceTagFieldNames.push(col.name);
+          if (col.alias) traceTagFieldNames.push(col.alias);
+        } else if (col.hint === ColumnHint.TraceServiceTags) {
+          traceServiceTagFieldNames.push(col.name);
+          if (col.alias) traceServiceTagFieldNames.push(col.alias);
+        }
+      }
+    }
+
+    const tagLinkFields: DataFrame['fields'] = [];
+    for (const f of frame.fields) {
+      const normalized = f.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (
+        traceTagFieldNames.includes(f.name) ||
+        traceServiceTagFieldNames.includes(f.name) ||
+        normalized === 'tags' ||
+        normalized === 'attributes' ||
+        normalized === 'spanattributes' ||
+        normalized === 'attr' ||
+        normalized === 'servicetags' ||
+        normalized === 'resourcetags' ||
+        normalized === 'resourceattributes' ||
+        normalized === 'resourceattr'
+      ) {
+        tagLinkFields.push(f);
+      }
+    }
+
+    for (const field of tagLinkFields) {
+      field.config.links = field.config.links || [];
+      field.config.links!.push({
+        title: 'View trace',
+        targetBlank: openInNewWindow,
+        url: '',
+        internal: {
+          query: traceIdQuery,
+          datasourceUid: traceIdQuery.datasource?.uid!,
+          datasourceName: traceIdQuery.datasource?.type!,
+          panelsState: {
+            trace: {
+              spanId: '${__value.raw}'
+            }
+          }
+        }
+      });
+      if (datasource.getDefaultLogsTable()) {
+      field.config.links!.push({
+        title: 'View logs',
+        targetBlank: openInNewWindow,
+        url: '',
+        internal: {
+          query: traceLogsQuery,
+          datasourceUid: traceLogsQuery.datasource?.uid!,
+          datasourceName: traceLogsQuery.datasource?.type!,
+        }
+      });
+      }
+    }
   });
 
   return res;

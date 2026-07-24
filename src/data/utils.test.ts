@@ -99,7 +99,6 @@ describe('tryApplyColumnHints', () => {
     expect(columns[0].hint).toEqual(ColumnHint.Time);
     expect(columns[1].hint).toEqual(ColumnHint.LogLevel);
   });
-});
 
 describe('columnLabelToPlaceholder', () => {
   it('converts to lowercase and removes multiple spaces', () => {

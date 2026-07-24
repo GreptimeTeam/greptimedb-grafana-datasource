@@ -112,7 +112,16 @@
                 "name": "span_id"
               }
             ],
-            "filters": [],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ],
             "orderBy": [
               {
                 "name": "timestamp",

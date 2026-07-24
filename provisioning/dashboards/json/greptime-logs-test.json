@@ -7,7 +7,7 @@
   "links": [],
   "time": {
     "from": "2026-07-21T07:00:00",
-    "to": "2026-07-21T09:00:00"
+    "to": "2026-07-21T23:00:00"
   },
   "refresh": "30s",
   "title": "GreptimeDB - Logs Test",

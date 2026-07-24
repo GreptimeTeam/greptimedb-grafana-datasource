@@ -4,44 +4,60 @@
 
 ## 1. 列映射（以配置 / otel 预设为准）
 
-### Logs（示例默认）
+### Logs（OTel 1.29.0 预设，`src/otel.ts`）
 
-| 配置 | 典型列 |
-|------|--------|
-| Database / Table | `otel` / `otel_logs` |
+| Hint | GreptimeDB 列名 |
+|------|----------------|
 | Time | `timestamp` |
-| Level | `severity_text` |
-| Message | `body` |
+| LogLevel | `severity_text` |
+| LogMessage | `body` |
+| TraceId | `trace_id` |
 
-### Traces（示例默认）
+### Traces（OTel 1.29.0 预设）
 
-| 配置 | 典型列 |
-|------|--------|
-| Trace / Span / Parent | `trace_id` / `span_id` / `parent_span_id` |
-| Operation / Service | `name` / `resource.service.name` |
-| Duration / Start | duration 表达式 / `start_time_unix_nano` |
-| Tags | `attributes` / `resource.attributes` |
+| Hint | GreptimeDB 列名 |
+|------|----------------|
+| Time | `timestamp` |
+| TraceId | `trace_id` |
+| TraceSpanId | `span_id` |
+| TraceParentSpanId | `parent_span_id` |
+| TraceServiceName | `service_name` |
+| TraceOperationName | `span_name` |
+| TraceDurationTime | `duration_nano` |
+| TraceTags | `span_attributes` |
+| TraceServiceTags | `resource_attributes` |
+| TraceStatusCode | `span_status_code` |
+| TraceEventsPrefix | `span_events` |
 
-具体以 datasource 配置与 `otel` 版本映射表为准。
+列名使用 GreptimeDB 实际小写 underscore 风格，**不是** OTel 标准的 PascalCase（`TraceId`/`SpanId`），因为 GreptimeDB 不保留大小写。
 
 ## 2. 数据流
 
 ```
 datasource config（logs / traces 列）
-  → QueryBuilder hooks（默认列、时间过滤）
-  → sqlGenerator
-  →（目标）Go QueryData → Greptime
+  → QueryBuilder hooks（默认列、时间过滤、OTel 预设）
+  → sqlGenerator（$__timeFilter + 引号处理）
+  → Go QueryData → Greptime
   → Logs / Trace DataFrame（preferredVisualisationType）
 ```
 
-## 3. 已知改进点
+### OTel 启用路径
 
-| 项 | 说明 |
-|----|------|
-| `OtelVersionSelect` UI 被注释 | 版本选择不可见，需评估后恢复 |
-| Logs 列无 fallback | ColumnHint 未匹配时面板空白；应对 message/body/log 等模糊匹配 |
-| Trace 触发条件 | 避免仅依赖脆弱硬编码；以 `QueryType.Traces` / 明确 meta 为准 |
-| Data Links | Log ↔ Trace 跳转已有能力，随后端化需回归 |
+1. 用户在 datasource 配置或 Query Builder 中开启 OTel 并选版本
+2. `useOtelColumns` hook dispatch `setOptions({ columns: otel预设列 })`
+3. Builder 列锁定（`disabled={otelEnabled}`），不可手动改
+4. 关闭 OTel 恢复手动模式
+
+## 3. 改进状态
+
+| 项 | 状态 | 说明 |
+|----|------|------|
+| `OtelVersionSelect` UI 恢复 | ✅ 完成 | Logs/Traces QueryBuilder + Config Editor 均已恢复 |
+| OTel 列名修正 | ✅ 完成 | PascalCase → GreptimeDB lowercase underscore |
+| `useOtelColumns` 首次加载 bug | ✅ 修复 | `useRef(otelEnabled)` → `useRef(false)`，首次必定填充 |
+| Data Links — View logs 空表过滤 | ✅ 修复 | 无默认日志表时不创建链接 |
+| Logs 列无 fallback | ❌ 放弃 | 模糊猜测弊大于利：逻辑复杂、经常猜错。列映射应走显式配置或 OTel 预设 |
+| Trace 触发条件 | ✅ 已有 | `isSingleTraceDetail` 按数据自动区分 search/detail + `RefID == "Trace ID"` 双路径 |
 
 ## 4. 与其它主题
 

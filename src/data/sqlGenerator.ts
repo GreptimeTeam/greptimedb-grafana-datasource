@@ -66,11 +66,9 @@ const generateTraceSearchQuery = (options: QueryBuilderOptions): string => {
   queryParts.push(getTableIdentifier(database, table));
 
   const filterParts = getFilters(options);
-  const timeFilter = applyTimeFilter(options);
-  const whereParts = [timeFilter, filterParts].filter(Boolean);
-  if (whereParts.length > 0) {
+  if (filterParts) {
     queryParts.push('WHERE');
-    queryParts.push(whereParts.join(' AND '));
+    queryParts.push(filterParts);
   }
 
   const orderBy = getOrderBy(options);
@@ -197,15 +195,19 @@ const generateLogsQuery = (_options: QueryBuilderOptions): string => {
 
 
   const filterParts = getFilters(options);
-  const timeFilter = applyTimeFilter(options);
   const hasLogMessageFilter = logMessage && options.meta?.logMessageLike;
 
-  const whereParts = [timeFilter, filterParts, hasLogMessageFilter && logMessage?.name
-    ? `(${escapeIdentifier(logMessage.name)} LIKE '%${options.meta!.logMessageLike}%')`
-    : ''].filter(Boolean);
-  if (whereParts.length > 0) {
+  if (filterParts || hasLogMessageFilter) {
     queryParts.push('WHERE');
-    queryParts.push(whereParts.join(' AND '));
+  }
+  if (filterParts) {
+    queryParts.push(filterParts);
+  }
+  if (hasLogMessageFilter && logMessage?.name) {
+    if (filterParts) {
+      queryParts.push('AND');
+    }
+    queryParts.push(`(${escapeIdentifier(logMessage.name)} LIKE '%${options.meta!.logMessageLike}%')`);
   }
 
   const orderBy = getOrderBy(options);
@@ -275,11 +277,9 @@ const generateSimpleTimeSeriesQuery = (_options: QueryBuilderOptions): string =>
   queryParts.push(getTableIdentifier(database, table));
 
   const filterParts = getFilters(options);
-  const timeFilter = applyTimeFilter(options);
-  const whereParts = [timeFilter, filterParts].filter(Boolean);
-  if (whereParts.length > 0) {
+  if (filterParts) {
     queryParts.push('WHERE');
-    queryParts.push(whereParts.join(' AND '));
+    queryParts.push(filterParts);
   }
 
   const hasAggregates = (options.aggregates?.length || 0 > 0);
@@ -364,13 +364,9 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   queryParts.push(getTableIdentifier(database, table));
 
   const filterParts = getFilters(options);
-  // Use the original time column name (before date_bin wrapping) so
-  // $__timeFilter references the raw column, not the date_bin expression.
-  const timeFilter = rawTimeName ? `$__timeFilter(${escapeIdentifier(rawTimeName)})` : '';
-  const whereParts = [timeFilter, filterParts].filter(Boolean);
-  if (whereParts.length > 0) {
+  if (filterParts) {
     queryParts.push('WHERE');
-    queryParts.push(whereParts.join(' AND '));
+    queryParts.push(filterParts);
   }
 
   // Same shape as ClickHouse: GROUP BY time alias (and optional dims)
@@ -523,18 +519,6 @@ const escapeIdentifier = (id: string): string => {
   }
   return id ? `"${id}"` : '';
 }
-
-/**
- * Returns $__timeFilter("time_col") when a time column is configured,
- * so the Go backend can expand it to the dashboard's time range.
- */
-const applyTimeFilter = (options: QueryBuilderOptions): string => {
-  const timeCol = getColumnByHint(options, ColumnHint.Time);
-  if (timeCol?.name) {
-    return `$__timeFilter(${escapeIdentifier(timeCol.name)})`;
-  }
-  return '';
-};
 
 const isSimpleLowerIdentifier = (id: string): boolean => /^[a-z_][a-z0-9_]*$/.test(id);
 const escapeIdentifierIfNeeded = (identifier: string): string => {
@@ -720,7 +704,9 @@ const getFilters = (options: QueryBuilderOptions): string => {
       column = `lower(${column})`;
     }
 
-    filterParts.push(column);
+    if (!isDateFilterWithoutValue(type, filter.operator)) {
+      filterParts.push(column);
+    }
 
     let operator: string = filter.operator;
     let negate = false;
@@ -761,7 +747,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
     } else if (isDateFilter(type)) {
       if (isDateFilterWithoutValue(type, filter.operator)) {
         if (isDateType(type)) {
-          filterParts.push('>=', '\$__fromTime', 'AND', column, '<=', '\$__toTime');
+          filterParts.push(`\$__timeFilter(${column})`);
         }
       } else {
         switch ((filter as DateFilterWithValue).value) {

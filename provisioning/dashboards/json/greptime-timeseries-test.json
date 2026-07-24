@@ -7,7 +7,7 @@
   "links": [],
   "time": {
     "from": "2026-05-22T00:00:00",
-    "to": "2026-05-22T03:00:00"
+    "to": "2026-05-22T11:00:00"
   },
   "refresh": "30s",
   "title": "GreptimeDB - Time Series Test",

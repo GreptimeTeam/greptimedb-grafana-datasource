@@ -6,10 +6,10 @@
   "links": [],
   "time": {
     "from": "2026-07-21T07:00:00",
-    "to": "2026-07-21T09:00:00"
+    "to": "2026-07-21T19:00:00"
   },
-  "title": "GreptimeDB - Builder Traces Test",
-  "uid": "greptime-builder-traces",
+  "title": "OTel Test",
+  "uid": "otel-test",
   "schemaVersion": 39,
   "templating": {
     "list": [
@@ -29,7 +29,7 @@
   "panels": [
     {
       "type": "row",
-      "title": "Trace Search",
+      "title": "OTel Logs",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -39,24 +39,199 @@
       "collapsed": false
     },
     {
-      "type": "table",
-      "title": "Trace Search Table",
+      "type": "logs",
+      "title": "OTel Logs (genai_conversations)",
       "gridPos": {
-        "h": 10,
-        "w": 24,
+        "h": 12,
+        "w": 12,
         "x": 0,
         "y": 1
       },
       "datasource": {
         "type": "info8fcc-greptimedb-datasource",
-        "uid": "dfsr7wolp7awwf"
+        "uid": "cft1yphhr8ykga"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
             "type": "info8fcc-greptimedb-datasource",
-            "uid": "dfsr7wolp7awwf"
+            "uid": "cft1yphhr8ykga"
+          },
+          "editorType": "builder",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "builderOptions": {
+            "database": "public",
+            "table": "genai_conversations",
+            "queryType": "logs",
+            "mode": "list",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "severity_text",
+                "hint": "log_level"
+              },
+              {
+                "name": "body",
+                "hint": "log_message"
+              },
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
+            ],
+            "limit": 200,
+            "meta": {
+              "otelEnabled": true,
+              "otelVersion": "latest"
+            }
+          },
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name, trace_id FROM genai_conversations WHERE $__timeFilter(timestamp) AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 200"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "logs",
+      "title": "OTel Logs - Non-OTel (manual columns)",
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "cft1yphhr8ykga"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "cft1yphhr8ykga"
+          },
+          "editorType": "builder",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "builderOptions": {
+            "database": "public",
+            "table": "genai_conversations",
+            "queryType": "logs",
+            "mode": "list",
+            "columns": [
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "severity_text",
+                "hint": "log_level"
+              },
+              {
+                "name": "body",
+                "hint": "log_message"
+              },
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              },
+              {
+                "name": "scope_name"
+              }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
+            ],
+            "limit": 200,
+            "meta": {}
+          },
+          "rawSql": "SELECT timestamp AS timestamp, body AS body, severity_text AS level, scope_name, trace_id FROM genai_conversations WHERE $__timeFilter(timestamp) AND body IS NOT NULL ORDER BY timestamp DESC LIMIT 200"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "row",
+      "title": "OTel Traces",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "collapsed": false
+    },
+    {
+      "type": "table",
+      "title": "OTel Trace Search",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "cft1yphhr8ykga"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "cft1yphhr8ykga"
           },
           "editorType": "builder",
           "format": 1,
@@ -90,17 +265,6 @@
               {
                 "name": "span_status_code",
                 "hint": "trace_status_code"
-              },
-              {
-                "name": "span_id",
-                "hint": "trace_span_id"
-              },
-              {
-                "name": "parent_span_id",
-                "hint": "trace_parent_span_id"
-              },
-              {
-                "name": "span_kind"
               }
             ],
             "filters": [
@@ -120,33 +284,18 @@
                 "dir": "desc"
               }
             ],
-            "limit": 50,
-            "meta": {}
+            "limit": 20,
+            "meta": {
+              "otelEnabled": true,
+              "otelVersion": "latest"
+            }
           },
-          "rawSql": "SELECT trace_id, span_name, service_name, CAST(timestamp AS INT64) / 1000000 AS timestamp_ms, FLOOR(duration_nano * 0.000001) AS duration_ms, span_status_code AS status FROM opentelemetry_traces WHERE $__timeFilter(timestamp) AND \"span_attributes.gen_ai.system\" IS NOT NULL ORDER BY timestamp DESC LIMIT 50"
+          "rawSql": "SELECT trace_id, span_name, service_name, CAST(timestamp AS INT64) / 1000000 AS timestamp_ms, FLOOR(duration_nano * 0.000001) AS duration_ms, span_status_code AS status FROM opentelemetry_traces WHERE $__timeFilter(timestamp) ORDER BY timestamp DESC LIMIT 20"
         }
       ],
       "fieldConfig": {
         "defaults": {},
         "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "trace_id"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "View trace",
-                    "url": "/d/greptime-builder-traces/greptimedb-builder-traces-test?var-trace_id=${__value.raw}&${__url_time_range}",
-                    "targetBlank": false
-                  }
-                ]
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byName",
@@ -194,35 +343,24 @@
       }
     },
     {
-      "type": "row",
-      "title": "Trace Detail",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 11
-      },
-      "collapsed": false
-    },
-    {
       "type": "traces",
-      "title": "Trace Detail Waterfall",
+      "title": "OTel Trace Detail",
       "gridPos": {
-        "h": 14,
-        "w": 24,
-        "x": 0,
-        "y": 12
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 14
       },
       "datasource": {
         "type": "info8fcc-greptimedb-datasource",
-        "uid": "dfsr7wolp7awwf"
+        "uid": "cft1yphhr8ykga"
       },
       "targets": [
         {
           "refId": "Trace ID",
           "datasource": {
             "type": "info8fcc-greptimedb-datasource",
-            "uid": "dfsr7wolp7awwf"
+            "uid": "cft1yphhr8ykga"
           },
           "editorType": "builder",
           "format": 3,
@@ -274,23 +412,8 @@
                 "hint": "trace_tags"
               },
               {
-                "name": "span_attributes.gen_ai.operation.name",
-                "hint": "trace_tags"
-              },
-              {
                 "name": "resource_attributes.telemetry.sdk.name",
                 "hint": "trace_service_tags"
-              },
-              {
-                "name": "resource_attributes.telemetry.sdk.language",
-                "hint": "trace_service_tags"
-              },
-              {
-                "name": "resource_attributes.telemetry.sdk.version",
-                "hint": "trace_service_tags"
-              },
-              {
-                "name": "span_kind"
               }
             ],
             "filters": [
@@ -313,7 +436,9 @@
             "limit": 1000,
             "meta": {
               "traceDurationUnit": "nanoseconds",
-              "isTraceIdMode": true
+              "isTraceIdMode": true,
+              "otelEnabled": true,
+              "otelVersion": "latest"
             }
           },
           "rawSql": "SELECT * FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime AND trace_id = COALESCE(NULLIF('${trace_id}', ''), (SELECT trace_id FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime ORDER BY timestamp DESC LIMIT 1)) ORDER BY timestamp"

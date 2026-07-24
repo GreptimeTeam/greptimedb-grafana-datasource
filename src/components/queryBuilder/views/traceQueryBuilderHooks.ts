@@ -44,7 +44,7 @@ export const useTraceDefaultsOnMount = (datasource: Datasource, isNewQuery: bool
  * Does not run if OTEL is already enabled, only when it's changed.
  */
 export const useOtelColumns = (otelEnabled: boolean, otelVersion: string, builderOptionsDispatch: React.Dispatch<BuilderOptionsReducerAction>) => {
-  const didSetColumns = useRef<boolean>(otelEnabled);
+  const didSetColumns = useRef<boolean>(false);
   if (!otelEnabled) {
     didSetColumns.current = false;
   }
