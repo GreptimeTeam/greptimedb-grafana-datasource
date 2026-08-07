@@ -12,39 +12,38 @@ GreptimeDB's additional features.
 
 ## Installation
 
-Grab the latest release from [release
-page](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/),
-Unzip the file to your [grafana plugin
+Public GitHub Releases ship an **unsigned** plugin zip only. Allow unsigned
+loading for this plugin id, then install from the [latest
+release](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/).
+
+In `grafana.ini`:
+
+```
+allow_loading_unsigned_plugins = info8fcc-greptimedb-datasource
+```
+
+Or with Grafana in Docker:
+
+```
+GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=info8fcc-greptimedb-datasource
+```
+
+### Manual install
+
+Download `info8fcc-greptimedb-datasource-unsigned.zip` and unzip it into your
+[Grafana plugins
 directory](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#plugins).
 
-### Use grafana cli to download and install
-
-#### Install signed version
-
-```
-grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource.zip plugins install info8fcc
-```
-
-#### Install unsigned version
-
-If there is [some error](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#why-do-i-get-a-field-is-required-rooturls-error-for-my-private-plugin) when installing signed version, use unsigned version
-> you need to set grafana ini file to use unsigned plugin.
->  ```
-> allow_loading_unsigned_plugins = info8fcc-greptimedb-datasource
->  ```
-
-If you are using Grafana inside Docker, you need to export the variable:
->  ```
-> GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=info8fcc-greptimedb-datasource
->  ```
-
+### Install with grafana cli
 
 ```
 grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/download/info8fcc-greptimedb-datasource-unsigned.zip plugins install info8fcc
 ```
 
-Note that you may need to restart your grafana server after installing the
-plugin.
+Restart Grafana after installing the plugin.
+
+Private-signed builds bound to a customer Grafana `root_url` are produced on
+request and delivered privately (not published on GitHub Releases).
 
 ### Docker Image
 

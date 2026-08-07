@@ -15,7 +15,7 @@
     "lint:fix": "yarn run lint --fix",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "server": "docker compose up --build",
-    "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls http://localhost:3000",
+    "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls \"$ROOT_URLS\"",
     "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\"",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "test": "jest --watch --onlyChanged",
@@ -23,7 +23,8 @@
     "zipunsigned": "rm -f info8fcc-greptimedb-datasource-unsigned.zip && mv dist/ info8fcc-greptimedb-datasource && zip -r info8fcc-greptimedb-datasource-unsigned.zip info8fcc-greptimedb-datasource && mv info8fcc-greptimedb-datasource/ dist",
     "zip": "mv dist/ info8fcc-greptimedb-datasource && zip info8fcc-greptimedb-datasource.zip info8fcc-greptimedb-datasource  -r && mv info8fcc-greptimedb-datasource/ dist",
     "unzip": "unzip info8fcc-greptimedb-datasource.zip -d  /usr/local/var/lib/grafana/plugins",
-    "buildzip": "yarn build && mage && yarn sign && yarn zip"
+    "buildzip": "yarn build && mage && yarn zipunsigned",
+    "buildzip:signed": "yarn build && mage && yarn sign && yarn zip"
   },
   "author": "Grafana Labs",
   "license": "Apache-2.0",
