@@ -95,7 +95,7 @@ describe('TracesConfig', () => {
   });
 
   it.skip('should call onOtelEnabled when changed', () => {
-    // OtelVersionSelect UI is currently commented out (docs/03-otel-support.md).
+    // OtelVersionSelect UI is currently commented out.
     const onOtelEnabledChange = jest.fn();
     const result = render(
       <TracesConfig
@@ -127,7 +127,7 @@ describe('TracesConfig', () => {
   });
 
   it.skip('should call onOtelVersionChange when changed', () => {
-    // OtelVersionSelect UI is currently commented out (docs/03-otel-support.md).
+    // OtelVersionSelect UI is currently commented out.
     const onOtelVersionChange = jest.fn();
     const result = render(
       <TracesConfig
