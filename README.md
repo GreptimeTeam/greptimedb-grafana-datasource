@@ -12,9 +12,9 @@ GreptimeDB's additional features.
 
 ## Installation
 
-Public GitHub Releases ship an **unsigned** plugin zip only. Allow unsigned
-loading for this plugin id, then install from the [latest
+The recommended install path is the **unsigned** plugin zip from the [latest
 release](https://github.com/GreptimeTeam/greptimedb-grafana-datasource/releases/latest/).
+Allow unsigned loading for this plugin id first.
 
 In `grafana.ini`:
 
@@ -42,8 +42,8 @@ grafana cli --pluginUrl https://github.com/GreptimeTeam/greptimedb-grafana-datas
 
 Restart Grafana after installing the plugin.
 
-Private-signed builds bound to a customer Grafana `root_url` are produced on
-request and delivered privately (not published on GitHub Releases).
+For a **signed** build (Private, bound to your Grafana `root_url`), please
+[contact us](https://greptime.com/contactus).
 
 ### Docker Image
 

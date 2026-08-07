@@ -15,7 +15,7 @@
     "lint:fix": "yarn run lint --fix",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "server": "docker compose up --build",
-    "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls \"$ROOT_URLS\"",
+    "sign": "npx @grafana/sign-plugin@3.0.0 --rootUrls \"${ROOT_URLS:-http://localhost:3000}\"",
     "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\"",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "test": "jest --watch --onlyChanged",

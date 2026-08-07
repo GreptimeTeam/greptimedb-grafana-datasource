@@ -44,10 +44,20 @@ jobs:
       - name: zip unsigned
         run: yarn zipunsigned
 
+      - name: Sign
+        run: yarn sign
+        env:
+          ROOT_URLS: http://localhost:3000
+          GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.SIGN_TOKEN }}
+
+      - name: zip
+        run: yarn zip
+
       - name: Wait for files to settle
         run: sleep 5 # Wait for 5 seconds to ensure files are fully written and released
       - name: List files before release
         run: |
+          ls -al info8fcc-greptimedb-datasource.zip
           ls -al info8fcc-greptimedb-datasource-unsigned.zip
           pwd # Print current working directory
         shell: bash
@@ -67,6 +77,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
+            info8fcc-greptimedb-datasource.zip
             info8fcc-greptimedb-datasource-unsigned.zip
           prerelease: ${{ steps.release_type.outputs.prerelease }} # Use the output from the previous step
 

@@ -1,6 +1,6 @@
 # 5. 插件签名与分发
 
-> 主题 5。Release **默认非签名（unsigned）**；企业按需 Private。不上 Catalog 为默认策略。
+> 主题 5。公开安装以 **unsigned** 为主；Release 仍附带 localhost Private 签包（兼容，不主推）；企业真实 `root_url` 签名走联系我们 / 本地交付。不上 Catalog 为默认策略。
 
 ## 1. 签名级别摘要
 
@@ -14,28 +14,29 @@ Catalog **必须**带签名；「上架但不签名」不存在。
 
 ## 2. 当前问题
 
-- 公开 Release 曾发 **Private 签包且 rootUrls=localhost** → 对真实域名几乎无效。
+- 公开 Release 的 Private 签包 `rootUrls=localhost` 对真实域名几乎无效，故**不作为推荐安装路径**。
 - Docker / 自托管主路径本就是 **unsigned + allowlist**。
 
 ## 3. 推荐模型（默认）
 
 ```
 公开 GitHub Release
-  └─ 只发 unsigned.zip
-       + allow_loading_unsigned_plugins = <plugin-id>
+  ├─ unsigned.zip          ← 推荐安装
+  └─ signed.zip (localhost) ← 兼容保留，不主推
 
-企业按需
-  └─ workflow_dispatch：按客户 root_url Private 签名
-       → Actions Artifact → 内部转交（不挂公开 Release）
+企业按需（真实 root_url）
+  └─ 联系我们 / 本地：ROOT_URLS + yarn buildzip:signed
+       → 邮件 / 工单交付
 ```
 
-## 4. 待实施改动
+## 4. 实施改动
 
 | 项 | 改动 |
 |----|------|
-| `release.yaml` | 公开不再强制无效 localhost sign；只发 unsigned |
-| `sign` / 新 workflow | `ROOT_URLS` 环境变量；按需 Private |
-| README | 公开安装以 unsigned 为唯一推荐 |
+| `release.yaml` | 仍签 localhost 并同时发 signed + unsigned；文档与 README 主推 unsigned |
+| `package.json` → `sign` | `ROOT_URLS`，默认 `http://localhost:3000` |
+| `buildzip` / `buildzip:signed` | 默认 unsigned；signed 用于本地按需 |
+| README | 公开安装以 unsigned 为主；签名版写联系我们 |
 | Dockerfile | 保持 unsigned |
 
 ## 5. Catalog
@@ -44,7 +45,7 @@ Catalog **必须**带签名；「上架但不签名」不存在。
 
 ## 6. 详细原文
 
-下文保留策略细节（Artifact、交付形态、政策对照）：
+下文保留策略细节（交付形态、政策对照）：
 
 ---
 
@@ -59,24 +60,31 @@ Catalog **必须**带签名；「上架但不签名」不存在。
 
 参考：[Plugins policy](https://grafana.com/legal/plugins/)、[Sign a plugin](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin)。
 
-### 仓库现状
+### 仓库现状（目标）
 
 | 位置 | 行为 |
 |------|------|
-| `package.json` → `sign` | 常绑 localhost rootUrls |
-| `release.yaml` | 曾同时发 signed + unsigned |
+| `package.json` → `sign` | `--rootUrls "${ROOT_URLS:-http://localhost:3000}"` |
+| `buildzip` | 构建 unsigned zip |
+| `buildzip:signed` | 本地 Private：sign + zip（可覆盖 `ROOT_URLS`） |
+| `release.yaml` | 签 localhost；Release 附 signed + unsigned |
 | `Dockerfile` | unsigned + allowlist |
 
-### 企业 Private 流程
+### 企业 Private 流程（本地 / 联系我们）
 
-1. 客户提供与 Grafana `root_url` 完全一致的 URL。  
-2. 内部触发 Action（客户不能直接触发公开 repo）。  
-3. Artifact 下载后邮件 / 工单交付；**不要**挂公开 Release。  
+1. 客户提供与 Grafana `root_url` 完全一致的 URL（或走联系我们）。  
+2. 维护者本地执行：
 
-Artifact 约 90 天、无可外链的私有 URL；需要外链时再接对象存储预签名。
+```bash
+export GRAFANA_ACCESS_POLICY_TOKEN=...
+export ROOT_URLS=https://grafana.customer.example
+yarn buildzip:signed
+```
+
+3. 将生成的 `info8fcc-greptimedb-datasource.zip` 通过邮件 / 工单交付。
 
 ### 决策摘要
 
-1. 公开默认 **unsigned**。  
-2. 去掉误导性的 localhost Private 公开包。  
-3. 企业按需签；Catalog 非默认目标。
+1. 公开安装默认推荐 **unsigned**。  
+2. Release 仍保留 localhost Private 签包（兼容），但不主推。  
+3. 真实域名签名版：联系我们 / 本地按需签；Catalog 非默认目标。
