@@ -1,0 +1,435 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["otel", "demo"],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timezone": "",
+  "title": "GreptimeDB - OTel Min Demo",
+  "uid": "greptime-otel-min-demo",
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "search",
+        "label": "Search",
+        "type": "textbox",
+        "hide": 0,
+        "refresh": 2
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "name": "trace_id",
+        "label": "Trace ID",
+        "type": "textbox",
+        "hide": 0,
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Metrics",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Time Series + Multi-Frame：Request Rate by Model",
+      "description": "Query Builder → Timeseries (Trend). date_bin + COUNT grouped by gen_ai.request.model (multi-frame).",
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 1 },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 0,
+          "pluginVersion": "2.2.1",
+          "queryType": "timeseries",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "timeseries",
+            "mode": "trend",
+            "columns": [
+              { "name": "timestamp", "hint": "time" },
+              { "name": "span_attributes.gen_ai.request.model" }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "timestamp",
+                "alias": "request_count"
+              }
+            ],
+            "groupBy": ["span_attributes.gen_ai.request.model"],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
+                "key": "span_attributes.gen_ai.system",
+                "type": "string",
+                "operator": "IS NOT NULL",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [
+              { "name": "timestamp", "hint": "time", "dir": "asc" }
+            ],
+            "limit": 0,
+            "meta": {}
+          },
+          "rawSql": "SELECT date_bin('$__interval', \"timestamp\") AS time, `span_attributes.gen_ai.request.model`, COUNT(\"timestamp\") AS \"request_count\" FROM \"public\".\"opentelemetry_traces\" WHERE $__timeFilter(\"timestamp\") AND (`span_attributes.gen_ai.system` IS NOT NULL) GROUP BY time, `span_attributes.gen_ai.request.model` ORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Table Query + $__timeFilter：Error Count",
+      "description": "Query Builder → Table (aggregate COUNT) with $__timeFilter and status = ERROR.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "table",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "table",
+            "mode": "aggregate",
+            "columns": [
+              { "name": "timestamp", "hint": "time" }
+            ],
+            "aggregates": [
+              {
+                "aggregateType": "count",
+                "column": "timestamp",
+                "alias": "error_count"
+              }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              },
+              {
+                "filterType": "custom",
+                "key": "span_status_code",
+                "type": "string",
+                "operator": "=",
+                "value": "STATUS_CODE_ERROR",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [],
+            "limit": 0,
+            "meta": {}
+          },
+          "rawSql": "SELECT COUNT(\"timestamp\") AS \"error_count\" FROM \"public\".\"opentelemetry_traces\" WHERE $__timeFilter(\"timestamp\") AND (\"span_status_code\" = 'STATUS_CODE_ERROR')"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"]
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      }
+    },
+    {
+      "type": "row",
+      "title": "Logs",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "collapsed": false
+    },
+    {
+      "type": "logs",
+      "title": "Logs Query + View Trace：Conversations",
+      "description": "Query Builder → Logs. Expand a line or use trace_id for plugin View Trace (needs Logs Config Default Table / Trace ID Column).",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 2,
+          "pluginVersion": "2.2.1",
+          "queryType": "logs",
+          "builderOptions": {
+            "database": "public",
+            "table": "genai_conversations",
+            "queryType": "logs",
+            "mode": "list",
+            "columns": [
+              { "name": "timestamp", "hint": "time" },
+              { "name": "severity_text", "hint": "log_level" },
+              { "name": "body", "hint": "log_message" },
+              { "name": "trace_id", "hint": "trace_id" },
+              { "name": "scope_name" }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [
+              { "name": "timestamp", "hint": "time", "dir": "desc" }
+            ],
+            "limit": 100,
+            "meta": {
+              "otelEnabled": true,
+              "otelVersion": "latest"
+            }
+          },
+          "rawSql": "SELECT \"timestamp\" AS timestamp, body AS body, severity_text AS level, scope_name, trace_id FROM genai_conversations WHERE $__timeFilter(\"timestamp\") AND ('${search}' = '' OR matches_term(body, '${search}')) AND ('${trace_id}' = '' OR trace_id = '${trace_id}') AND body IS NOT NULL ORDER BY \"timestamp\" DESC LIMIT 100"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "type": "row",
+      "title": "Traces",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "collapsed": false
+    },
+    {
+      "type": "table",
+      "title": "Trace Search + Data Link：Recent Spans",
+      "description": "Query Builder → Traces (Trace Search). Click trace_id → View trace / View logs (needs Logs Config Default Table).",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 21 },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "pluginVersion": "2.2.1",
+          "queryType": "traces",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "traces",
+            "columns": [
+              { "name": "trace_id", "hint": "trace_id" },
+              { "name": "span_name", "hint": "trace_operation_name" },
+              { "name": "service_name", "hint": "trace_service_name" },
+              { "name": "timestamp", "hint": "time" },
+              { "name": "duration_nano", "hint": "trace_duration_time" },
+              { "name": "span_status_code", "hint": "trace_status_code" }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [
+              { "name": "timestamp", "hint": "time", "dir": "desc" }
+            ],
+            "limit": 50,
+            "meta": {
+              "otelEnabled": true,
+              "otelVersion": "latest",
+              "isTraceIdMode": false
+            }
+          },
+          "rawSql": "SELECT trace_id, span_name, service_name, CAST(\"timestamp\" AS INT64) / 1000000 AS timestamp_ms, FLOOR(duration_nano * 0.000001) AS duration_ms, span_status_code AS status FROM opentelemetry_traces WHERE $__timeFilter(\"timestamp\") ORDER BY \"timestamp\" DESC LIMIT 50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "duration_ms" },
+            "properties": [{ "id": "unit", "value": "ms" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "STATUS_CODE_ERROR": { "color": "red", "text": "ERROR" },
+                      "STATUS_CODE_UNSET": { "color": "green", "text": "OK" }
+                    }
+                  }
+                ]
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "timestamp_ms", "desc": true }]
+      }
+    },
+    {
+      "type": "traces",
+      "title": "Trace ID Mode + Waterfall：Trace Detail",
+      "description": "Query Builder → Traces (Trace ID mode). Paste Trace ID from Search or the dashboard variable. View logs needs Logs Config Default Table.",
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 30 },
+      "datasource": {
+        "type": "info8fcc-greptimedb-datasource",
+        "uid": "dfsr7wolp7awwf"
+      },
+      "targets": [
+        {
+          "refId": "Trace ID",
+          "datasource": {
+            "type": "info8fcc-greptimedb-datasource",
+            "uid": "dfsr7wolp7awwf"
+          },
+          "editorType": "builder",
+          "format": 3,
+          "pluginVersion": "2.2.1",
+          "queryType": "traces",
+          "builderOptions": {
+            "database": "public",
+            "table": "opentelemetry_traces",
+            "queryType": "traces",
+            "columns": [
+              { "name": "trace_id", "hint": "trace_id" },
+              { "name": "span_id", "hint": "trace_span_id" },
+              { "name": "parent_span_id", "hint": "trace_parent_span_id" },
+              { "name": "service_name", "hint": "trace_service_name" },
+              { "name": "span_name", "hint": "trace_operation_name" },
+              { "name": "timestamp", "hint": "time" },
+              { "name": "duration_nano", "hint": "trace_duration_time" },
+              { "name": "span_status_code", "hint": "trace_status_code" },
+              { "name": "span_attributes.gen_ai.system", "hint": "trace_tags" },
+              { "name": "span_attributes.gen_ai.request.model", "hint": "trace_tags" },
+              { "name": "resource_attributes.telemetry.sdk.name", "hint": "trace_service_tags" }
+            ],
+            "filters": [
+              {
+                "filterType": "custom",
+                "key": "",
+                "hint": "time",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime",
+                "condition": "AND"
+              }
+            ],
+            "orderBy": [],
+            "limit": 1000,
+            "meta": {
+              "traceDurationUnit": "nanoseconds",
+              "isTraceIdMode": true,
+              "otelEnabled": true,
+              "otelVersion": "latest"
+            }
+          },
+          "rawSql": "SELECT * FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime AND trace_id = COALESCE(NULLIF('${trace_id}', ''), (SELECT trace_id FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime ORDER BY \"timestamp\" DESC LIMIT 1)) ORDER BY \"timestamp\""
+        }
+      ]
+    }
+  ]
+}
