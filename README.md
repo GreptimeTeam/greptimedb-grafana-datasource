@@ -57,10 +57,16 @@ docker run -p 3000:3000 greptime/grafana-greptimedb:latest
 
 You can log in Grafana by visiting http://localhost:3000. The default username and password are both set to admin.
 
-## Provisioned Demo (Connection + Dashboards)
+## Included Dashboards
 
-This repository provisions the GreptimeDB datasource and two dashboards
-(folder `Greptime Demo`):
+The plugin ships with two dashboards (same pattern as the ClickHouse
+datasource). After you configure a GreptimeDB data source:
+
+1. Open **Connections → Data sources →** your GreptimeDB instance
+2. Open the **Dashboards** tab
+3. Click **Import** next to a dashboard
+
+Included dashboards:
 
 - **GreptimeDB - OTel Min Demo**
 - **GenAI Observability**
@@ -70,6 +76,7 @@ This repository provisions the GreptimeDB datasource and two dashboards
 Sample data for these dashboards can be written into GreptimeDB via the
 [genai-observability](https://github.com/GreptimeTeam/demo-scene/tree/main/genai-observability)
 demo in [demo-scene](https://github.com/GreptimeTeam/demo-scene).
+
 
 ## Connection Settings
 
