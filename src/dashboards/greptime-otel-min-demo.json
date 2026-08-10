@@ -7,7 +7,10 @@
   "links": [],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["otel", "demo"],
+  "tags": [
+    "otel",
+    "demo"
+  ],
   "time": {
     "from": "now-15m",
     "to": "now"
@@ -18,6 +21,16 @@
   "version": 1,
   "templating": {
     "list": [
+      {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "name": "DS_GREPTIMEDB",
+        "options": [],
+        "query": "info8fcc-greptimedb-datasource",
+        "refresh": 1,
+        "type": "datasource"
+      },
       {
         "current": {
           "text": "",
@@ -46,24 +59,34 @@
     {
       "type": "row",
       "title": "Metrics",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "collapsed": false
     },
     {
       "type": "timeseries",
-      "title": "Time Series + Multi-Frame：Request Rate by Model",
-      "description": "Query Builder → Timeseries (Trend). date_bin + COUNT grouped by gen_ai.request.model (multi-frame).",
-      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 1 },
+      "title": "Time Series + Multi-Frame\uff1aRequest Rate by Model",
+      "description": "Query Builder \u2192 Timeseries (Trend). date_bin + COUNT grouped by gen_ai.request.model (multi-frame).",
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 1
+      },
       "datasource": {
         "type": "info8fcc-greptimedb-datasource",
-        "uid": "dfsr7wolp7awwf"
+        "uid": "${DS_GREPTIMEDB}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
             "type": "info8fcc-greptimedb-datasource",
-            "uid": "dfsr7wolp7awwf"
+            "uid": "${DS_GREPTIMEDB}"
           },
           "editorType": "builder",
           "format": 0,
@@ -75,8 +98,13 @@
             "queryType": "timeseries",
             "mode": "trend",
             "columns": [
-              { "name": "timestamp", "hint": "time" },
-              { "name": "span_attributes.gen_ai.request.model" }
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "span_attributes.gen_ai.request.model"
+              }
             ],
             "aggregates": [
               {
@@ -85,7 +113,9 @@
                 "alias": "request_count"
               }
             ],
-            "groupBy": ["span_attributes.gen_ai.request.model"],
+            "groupBy": [
+              "span_attributes.gen_ai.request.model"
+            ],
             "filters": [
               {
                 "filterType": "custom",
@@ -104,7 +134,11 @@
               }
             ],
             "orderBy": [
-              { "name": "timestamp", "hint": "time", "dir": "asc" }
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "asc"
+              }
             ],
             "limit": 0,
             "meta": {}
@@ -126,19 +160,24 @@
     },
     {
       "type": "stat",
-      "title": "Table Query + $__timeFilter：Error Count",
-      "description": "Query Builder → Table (aggregate COUNT) with $__timeFilter and status = ERROR.",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "title": "Table Query + $__timeFilter\uff1aError Count",
+      "description": "Query Builder \u2192 Table (aggregate COUNT) with $__timeFilter and status = ERROR.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
       "datasource": {
         "type": "info8fcc-greptimedb-datasource",
-        "uid": "dfsr7wolp7awwf"
+        "uid": "${DS_GREPTIMEDB}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
             "type": "info8fcc-greptimedb-datasource",
-            "uid": "dfsr7wolp7awwf"
+            "uid": "${DS_GREPTIMEDB}"
           },
           "editorType": "builder",
           "format": 1,
@@ -150,7 +189,10 @@
             "queryType": "table",
             "mode": "aggregate",
             "columns": [
-              { "name": "timestamp", "hint": "time" }
+              {
+                "name": "timestamp",
+                "hint": "time"
+              }
             ],
             "aggregates": [
               {
@@ -190,9 +232,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 10 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
             ]
           }
         },
@@ -200,7 +251,9 @@
       },
       "options": {
         "reduceOptions": {
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "colorMode": "value",
         "graphMode": "none",
@@ -210,24 +263,34 @@
     {
       "type": "row",
       "title": "Logs",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
       "collapsed": false
     },
     {
       "type": "logs",
-      "title": "Logs Query + View Trace：Conversations",
-      "description": "Query Builder → Logs. Expand a line or use trace_id for plugin View Trace (needs Logs Config Default Table / Trace ID Column).",
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "title": "Logs Query + View Trace\uff1aConversations",
+      "description": "Query Builder \u2192 Logs. Expand a line or use trace_id for plugin View Trace (needs Logs Config Default Table / Trace ID Column).",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
       "datasource": {
         "type": "info8fcc-greptimedb-datasource",
-        "uid": "dfsr7wolp7awwf"
+        "uid": "${DS_GREPTIMEDB}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
             "type": "info8fcc-greptimedb-datasource",
-            "uid": "dfsr7wolp7awwf"
+            "uid": "${DS_GREPTIMEDB}"
           },
           "editorType": "builder",
           "format": 2,
@@ -239,11 +302,25 @@
             "queryType": "logs",
             "mode": "list",
             "columns": [
-              { "name": "timestamp", "hint": "time" },
-              { "name": "severity_text", "hint": "log_level" },
-              { "name": "body", "hint": "log_message" },
-              { "name": "trace_id", "hint": "trace_id" },
-              { "name": "scope_name" }
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "severity_text",
+                "hint": "log_level"
+              },
+              {
+                "name": "body",
+                "hint": "log_message"
+              },
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              },
+              {
+                "name": "scope_name"
+              }
             ],
             "filters": [
               {
@@ -256,7 +333,11 @@
               }
             ],
             "orderBy": [
-              { "name": "timestamp", "hint": "time", "dir": "desc" }
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
             ],
             "limit": 100,
             "meta": {
@@ -281,24 +362,34 @@
     {
       "type": "row",
       "title": "Traces",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
       "collapsed": false
     },
     {
       "type": "table",
-      "title": "Trace Search + Data Link：Recent Spans",
-      "description": "Query Builder → Traces (Trace Search). Click trace_id → View trace / View logs (needs Logs Config Default Table).",
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 21 },
+      "title": "Trace Search + Data Link\uff1aRecent Spans",
+      "description": "Query Builder \u2192 Traces (Trace Search). Click trace_id \u2192 View trace / View logs (needs Logs Config Default Table).",
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
       "datasource": {
         "type": "info8fcc-greptimedb-datasource",
-        "uid": "dfsr7wolp7awwf"
+        "uid": "${DS_GREPTIMEDB}"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
             "type": "info8fcc-greptimedb-datasource",
-            "uid": "dfsr7wolp7awwf"
+            "uid": "${DS_GREPTIMEDB}"
           },
           "editorType": "builder",
           "format": 1,
@@ -309,12 +400,30 @@
             "table": "opentelemetry_traces",
             "queryType": "traces",
             "columns": [
-              { "name": "trace_id", "hint": "trace_id" },
-              { "name": "span_name", "hint": "trace_operation_name" },
-              { "name": "service_name", "hint": "trace_service_name" },
-              { "name": "timestamp", "hint": "time" },
-              { "name": "duration_nano", "hint": "trace_duration_time" },
-              { "name": "span_status_code", "hint": "trace_status_code" }
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              },
+              {
+                "name": "span_name",
+                "hint": "trace_operation_name"
+              },
+              {
+                "name": "service_name",
+                "hint": "trace_service_name"
+              },
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "duration_nano",
+                "hint": "trace_duration_time"
+              },
+              {
+                "name": "span_status_code",
+                "hint": "trace_status_code"
+              }
             ],
             "filters": [
               {
@@ -327,7 +436,11 @@
               }
             ],
             "orderBy": [
-              { "name": "timestamp", "hint": "time", "dir": "desc" }
+              {
+                "name": "timestamp",
+                "hint": "time",
+                "dir": "desc"
+              }
             ],
             "limit": 50,
             "meta": {
@@ -343,11 +456,22 @@
         "defaults": {},
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "duration_ms" },
-            "properties": [{ "id": "unit", "value": "ms" }]
+            "matcher": {
+              "id": "byName",
+              "options": "duration_ms"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "status" },
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
             "properties": [
               {
                 "id": "mappings",
@@ -355,37 +479,58 @@
                   {
                     "type": "value",
                     "options": {
-                      "STATUS_CODE_ERROR": { "color": "red", "text": "ERROR" },
-                      "STATUS_CODE_UNSET": { "color": "green", "text": "OK" }
+                      "STATUS_CODE_ERROR": {
+                        "color": "red",
+                        "text": "ERROR"
+                      },
+                      "STATUS_CODE_UNSET": {
+                        "color": "green",
+                        "text": "OK"
+                      }
                     }
                   }
                 ]
               },
-              { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
             ]
           }
         ]
       },
       "options": {
         "showHeader": true,
-        "sortBy": [{ "displayName": "timestamp_ms", "desc": true }]
+        "sortBy": [
+          {
+            "displayName": "timestamp_ms",
+            "desc": true
+          }
+        ]
       }
     },
     {
       "type": "traces",
-      "title": "Trace ID Mode + Waterfall：Trace Detail",
-      "description": "Query Builder → Traces (Trace ID mode). Paste Trace ID from Search or the dashboard variable. View logs needs Logs Config Default Table.",
-      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 30 },
+      "title": "Trace ID Mode + Waterfall\uff1aTrace Detail",
+      "description": "Query Builder \u2192 Traces (Trace ID mode). Paste Trace ID from Search or the dashboard variable. View logs needs Logs Config Default Table.",
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
       "datasource": {
         "type": "info8fcc-greptimedb-datasource",
-        "uid": "dfsr7wolp7awwf"
+        "uid": "${DS_GREPTIMEDB}"
       },
       "targets": [
         {
           "refId": "Trace ID",
           "datasource": {
             "type": "info8fcc-greptimedb-datasource",
-            "uid": "dfsr7wolp7awwf"
+            "uid": "${DS_GREPTIMEDB}"
           },
           "editorType": "builder",
           "format": 3,
@@ -396,17 +541,50 @@
             "table": "opentelemetry_traces",
             "queryType": "traces",
             "columns": [
-              { "name": "trace_id", "hint": "trace_id" },
-              { "name": "span_id", "hint": "trace_span_id" },
-              { "name": "parent_span_id", "hint": "trace_parent_span_id" },
-              { "name": "service_name", "hint": "trace_service_name" },
-              { "name": "span_name", "hint": "trace_operation_name" },
-              { "name": "timestamp", "hint": "time" },
-              { "name": "duration_nano", "hint": "trace_duration_time" },
-              { "name": "span_status_code", "hint": "trace_status_code" },
-              { "name": "span_attributes.gen_ai.system", "hint": "trace_tags" },
-              { "name": "span_attributes.gen_ai.request.model", "hint": "trace_tags" },
-              { "name": "resource_attributes.telemetry.sdk.name", "hint": "trace_service_tags" }
+              {
+                "name": "trace_id",
+                "hint": "trace_id"
+              },
+              {
+                "name": "span_id",
+                "hint": "trace_span_id"
+              },
+              {
+                "name": "parent_span_id",
+                "hint": "trace_parent_span_id"
+              },
+              {
+                "name": "service_name",
+                "hint": "trace_service_name"
+              },
+              {
+                "name": "span_name",
+                "hint": "trace_operation_name"
+              },
+              {
+                "name": "timestamp",
+                "hint": "time"
+              },
+              {
+                "name": "duration_nano",
+                "hint": "trace_duration_time"
+              },
+              {
+                "name": "span_status_code",
+                "hint": "trace_status_code"
+              },
+              {
+                "name": "span_attributes.gen_ai.system",
+                "hint": "trace_tags"
+              },
+              {
+                "name": "span_attributes.gen_ai.request.model",
+                "hint": "trace_tags"
+              },
+              {
+                "name": "resource_attributes.telemetry.sdk.name",
+                "hint": "trace_service_tags"
+              }
             ],
             "filters": [
               {
@@ -430,6 +608,16 @@
           "rawSql": "SELECT * FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime AND trace_id = COALESCE(NULLIF('${trace_id}', ''), (SELECT trace_id FROM opentelemetry_traces WHERE timestamp >= $__fromTime AND timestamp <= $__toTime ORDER BY \"timestamp\" DESC LIMIT 1)) ORDER BY \"timestamp\""
         }
       ]
+    }
+  ],
+  "__inputs": [
+    {
+      "name": "DS_GREPTIMEDB",
+      "label": "GreptimeDB",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "info8fcc-greptimedb-datasource",
+      "pluginName": "GreptimeDB"
     }
   ]
 }
