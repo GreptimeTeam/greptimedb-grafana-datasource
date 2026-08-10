@@ -65,41 +65,10 @@ This repository provisions the GreptimeDB datasource and two dashboards
 - **GreptimeDB - OTel Min Demo**
 - **GenAI Observability**
 
-### Start services
+Sample data for these dashboards can be written into GreptimeDB via the
+[genai-observability](https://github.com/GreptimeTeam/demo-scene/tree/main/genai-observability)
+demo in [demo-scene](https://github.com/GreptimeTeam/demo-scene).
 
-```bash
-docker compose up -d
-```
-
-This starts:
-- `greptimedb` on `http://localhost:4000`
-- `grafana` on `http://localhost:3000`
-
-### Import demo data
-
-```bash
-./demo/seed/import.sh
-```
-
-Optional: import into a different target:
-
-```bash
-./demo/seed/import.sh --endpoint http://127.0.0.1:4000 --db public
-```
-
-### Validate data quickly
-
-```sql
-SELECT count(*) AS c FROM cpu_metrics_30;
-SELECT count(*) AS c FROM genai_conversations;
-SELECT count(*) AS c FROM opentelemetry_traces;
-SELECT count(*) AS c FROM genai_conversations l JOIN opentelemetry_traces t ON l.trace_id = t.trace_id;
-```
-
-After import, open **Greptime Demo**:
-
-- **GreptimeDB - OTel Min Demo**
-- **GenAI Observability**
 ## Connection Settings
 
 Click the Add data source button and select GreptimeDB as the type.
@@ -356,38 +325,6 @@ The plugin automatically adds double quotes around column names in macros.
 `"timestamp" >= 'ISO1' AND "timestamp" <= 'ISO2'`. The `date_bin` function
 does NOT quote its column argument: `date_bin('15s', ts)`.
 
-## Dashboard Variables
-
-### Textbox
-
-```sql
-SELECT ... WHERE $__timeFilter(ts) AND ('${host}' = '' OR host = '${host}')
-```
-
-- Empty → no filter applied
-- Press **Enter** after typing to trigger panel refresh
-
-### Query (Dropdown)
-
-Add a Query-type variable with SQL like:
-
-```sql
-SELECT DISTINCT host FROM cpu_metrics_30
-```
-
-Enable **Multi-value** and **Include All option**.
-
-### Format Specifiers
-
-| Specifier | Purpose | Example |
-|-----------|---------|---------|
-| `${var}` | Raw value | `host = '${host}'` |
-| `${var:sqlstring}` | SQL-quoted, empty → `''` | `host = ${host:sqlstring}` |
-| `${var:csv}` | Comma-separated | `host IN (${hosts:csv})` |
-| `${var:singlequote}` | Each value single-quoted, comma-separated | `host IN (${hosts:singlequote})` |
-
-Set `Refresh = On Time Range Change` on each variable for auto-refresh.
-
 ## Development
 
 Yarn 1.x is required for this project. Execute these commands in code root folder
@@ -415,34 +352,6 @@ Yarn 1.x is required for this project. Execute these commands in code root folde
    ```bash
    docker compose up
    ```
-
-## FAQ
-
-**Q: Panel shows "No data"**
-
-Check the dashboard time range against your actual data:
-```sql
-SELECT min(ts), max(ts) FROM your_table;
-```
-
-**Q: Columns are not auto-mapped in the Query Builder**
-
-Configure column names in the data source settings (Logs Config / Traces
-Config), or enable the OTel preset. The builder does not guess column hints.
-
-**Q: "View logs" link is missing on trace ID cells**
-
-The data source must have a **Default Table** set in Logs Config.
-
-**Q: Trace Detail waterfall not showing**
-
-Ensure the query's `refId` is `"Trace ID"`, or that the result contains
-exactly one unique `trace_id` (auto-detection).
-
-**Q: `timestamp` column causes SQL error**
-
-GreptimeDB treats `timestamp` as a reserved keyword. Use double quotes:
-`"timestamp"`. The Go backend's macro expansion handles this automatically.
 
 ## License
 
