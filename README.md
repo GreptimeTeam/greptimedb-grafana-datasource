@@ -65,6 +65,8 @@ This repository provisions the GreptimeDB datasource and two dashboards
 - **GreptimeDB - OTel Min Demo**
 - **GenAI Observability**
 
+![GenAI Observability](screenshots/genai-observability.jpg)
+
 Sample data for these dashboards can be written into GreptimeDB via the
 [genai-observability](https://github.com/GreptimeTeam/demo-scene/tree/main/genai-observability)
 demo in [demo-scene](https://github.com/GreptimeTeam/demo-scene).
@@ -202,7 +204,7 @@ numerical values. Ideal for visualizing metrics over time.
 | **Group By** | Select columns to group by. |
 | **Filters** | Optional conditions: `=`, `!=`, `>`, `<`, `LIKE`, `IN`, `IS NULL`, AND/OR. |
 
-![Time Series](https://raw.githubusercontent.com/GreptimeTeam/greptimedb-grafana-datasource/refs/heads/main/screenshots/series.png)
+![Time Series](screenshots/series.png)
 
 #### Multi-Frame Splitting
 
