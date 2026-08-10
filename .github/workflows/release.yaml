@@ -8,7 +8,7 @@ on:
       - '*'
 
 env:
-  GRAFANA_VERSION: "11.2.5"
+  GRAFANA_VERSION: "12.4.8"
 
 jobs:
   build_release:
@@ -47,10 +47,12 @@ jobs:
       - name: Sign
         run: yarn sign
         env:
+          ROOT_URLS: http://localhost:3000
           GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.SIGN_TOKEN }}
 
       - name: zip
         run: yarn zip
+
       - name: Wait for files to settle
         run: sleep 5 # Wait for 5 seconds to ensure files are fully written and released
       - name: List files before release

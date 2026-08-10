@@ -1,7 +1,7 @@
 import { CoreApp, DataFrame, DataQueryRequest, DataQueryResponse } from "@grafana/data";
 import { ColumnHint, FilterOperator, OrderByDirection, QueryBuilderOptions, QueryType, SelectedColumn, StringFilter } from "types/queryBuilder"
-import { CHBuilderQuery, CHQuery, EditorType } from "types/sql";
-import { Datasource } from "./CHDatasource";
+import { GreptimeBuilderQuery, GreptimeQuery, EditorType } from "types/sql";
+import { Datasource } from "./GreptimeDatasource";
 import { pluginVersion } from "utils/version";
 import { logColumnHintsToAlias, getColumnByHint } from "./sqlGenerator";
 
@@ -144,20 +144,28 @@ const applyTraceLogsQueryDefaults = (datasource: Datasource, builderOptions: Que
  * 
  * Requires defaults to be configured when crossing query types.
  */
-export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasource, req: DataQueryRequest<CHQuery>, res: DataQueryResponse): DataQueryResponse => {
+export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasource, req: DataQueryRequest<GreptimeQuery>, res: DataQueryResponse): DataQueryResponse => {
   res.data.forEach((frame: DataFrame) => {
-    const originalQuery = req.targets.find(t => t.refId === frame.refId) as CHBuilderQuery;
+    const originalQuery = req.targets.find(t => t.refId === frame.refId) as GreptimeBuilderQuery;
     if (!originalQuery) {
       return;
     }
 
-    const traceField = frame.fields.find(field => field.name.toLowerCase() === 'traceid' || field.name.toLowerCase() === 'trace_id');
+    const traceField = frame.fields.find(field => {
+      const lower = field.name.toLowerCase();
+      return lower === 'traceid' || lower === 'trace_id' || lower.replace(/[^a-z0-9]/g, '') === 'traceid';
+    });
     if (!traceField) {
       return;
     }
 
-    const traceIdQuery: CHBuilderQuery = {
-      datasource: datasource,
+    const datasourceRef = { uid: datasource.uid, type: datasource.type };
+
+    const traceIdQuery: GreptimeBuilderQuery = {
+      // Embed only a datasource ref ({ uid, type }), never the live Datasource instance:
+      // the instance is circular (datasource.variables.datasource === datasource) and Grafana's
+      // data-link scanner recurses into it / JSON.stringifies it.
+      datasource: datasourceRef,
       editorType: EditorType.Builder,
       /**
        * Evil bug:
@@ -214,8 +222,9 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
       traceIdQuery.builderOptions = options;
     }
 
-    const traceLogsQuery: CHBuilderQuery = {
-      datasource: datasource,
+    const traceLogsQuery: GreptimeBuilderQuery = {
+      // Same as traceIdQuery: plain ref only — never the live Datasource instance.
+      datasource: datasourceRef,
       editorType: EditorType.Builder,
       rawSql: '',
       builderOptions: {} as QueryBuilderOptions,
@@ -279,6 +288,7 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
         }
       }
     });
+    if (datasource.getDefaultLogsTable()) {
     traceField.config.links!.push({
       title: 'View logs',
       targetBlank: openInNewWindow,
@@ -289,6 +299,73 @@ export const transformQueryResponseWithTraceAndLogLinks = (datasource: Datasourc
         datasourceName: traceLogsQuery.datasource?.type!,
       }
     }); 
+    }
+
+    // Also add links to tags and serviceTags fields so that clicking a tag value
+    // opens the trace/log views too.
+    const traceTagFieldNames: string[] = [];
+    const traceServiceTagFieldNames: string[] = [];
+    if (originalQuery.builderOptions?.columns) {
+      for (const col of originalQuery.builderOptions.columns) {
+        if (col.hint === ColumnHint.TraceTags) {
+          traceTagFieldNames.push(col.name);
+          if (col.alias) traceTagFieldNames.push(col.alias);
+        } else if (col.hint === ColumnHint.TraceServiceTags) {
+          traceServiceTagFieldNames.push(col.name);
+          if (col.alias) traceServiceTagFieldNames.push(col.alias);
+        }
+      }
+    }
+
+    const tagLinkFields: DataFrame['fields'] = [];
+    for (const f of frame.fields) {
+      const normalized = f.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (
+        traceTagFieldNames.includes(f.name) ||
+        traceServiceTagFieldNames.includes(f.name) ||
+        normalized === 'tags' ||
+        normalized === 'attributes' ||
+        normalized === 'spanattributes' ||
+        normalized === 'attr' ||
+        normalized === 'servicetags' ||
+        normalized === 'resourcetags' ||
+        normalized === 'resourceattributes' ||
+        normalized === 'resourceattr'
+      ) {
+        tagLinkFields.push(f);
+      }
+    }
+
+    for (const field of tagLinkFields) {
+      field.config.links = field.config.links || [];
+      field.config.links!.push({
+        title: 'View trace',
+        targetBlank: openInNewWindow,
+        url: '',
+        internal: {
+          query: traceIdQuery,
+          datasourceUid: traceIdQuery.datasource?.uid!,
+          datasourceName: traceIdQuery.datasource?.type!,
+          panelsState: {
+            trace: {
+              spanId: '${__value.raw}'
+            }
+          }
+        }
+      });
+      if (datasource.getDefaultLogsTable()) {
+      field.config.links!.push({
+        title: 'View logs',
+        targetBlank: openInNewWindow,
+        url: '',
+        internal: {
+          query: traceLogsQuery,
+          datasourceUid: traceLogsQuery.datasource?.uid!,
+          datasourceName: traceLogsQuery.datasource?.type!,
+        }
+      });
+      }
+    }
   });
 
   return res;

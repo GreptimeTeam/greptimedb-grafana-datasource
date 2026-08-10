@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
@@ -34,6 +32,9 @@ type Settings struct {
 
 	DefaultDatabase string `json:"defaultDatabase,omitempty"`
 
+	// LogsContextColumns are datasource-config columns copied into LogLines labels.
+	LogsContextColumns []string `json:"-"`
+
 	ConnMaxLifetime string `json:"connMaxLifetime,omitempty"`
 	DialTimeout     string `json:"dialTimeout,omitempty"`
 	QueryTimeout    string `json:"queryTimeout,omitempty"`
@@ -56,10 +57,11 @@ type CustomSetting struct {
 const secureHeaderKeyPrefix = "secureHttpHeaders."
 
 func (settings *Settings) isValid() (err error) {
-	if settings.Host == "" {
+	if strings.TrimSpace(settings.Host) == "" {
 		return backend.DownstreamError(ErrorMessageInvalidHost)
 	}
-	if settings.Port == 0 {
+	host := strings.TrimSpace(settings.Host)
+	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") && settings.Port == 0 {
 		return backend.DownstreamError(ErrorMessageInvalidPort)
 	}
 	return nil
@@ -145,6 +147,16 @@ func LoadSettings(ctx context.Context, config backend.DataSourceInstanceSettings
 		settings.DefaultDatabase = jsonData["defaultDatabase"].(string)
 	}
 
+	if logsRaw, ok := jsonData["logs"].(map[string]interface{}); ok {
+		if cols, ok := logsRaw["contextColumns"].([]interface{}); ok {
+			for _, c := range cols {
+				if s, ok := c.(string); ok && s != "" {
+					settings.LogsContextColumns = append(settings.LogsContextColumns, s)
+				}
+			}
+		}
+	}
+
 	// Deprecated: Replaced with DialTimeout for v4. Deserializes "timeout" field for old v3 configs.
 	if jsonData["timeout"] != nil {
 		settings.DialTimeout = jsonData["timeout"].(string)
@@ -221,9 +233,7 @@ func LoadSettings(ctx context.Context, config backend.DataSourceInstanceSettings
 		settings.TlsClientKey = tlsClientKey
 	}
 
-	if settings.Protocol == clickhouse.HTTP.String() {
-		settings.HttpHeaders = loadHttpHeaders(jsonData, config.DecryptedSecureJSONData)
-	}
+	settings.HttpHeaders = loadHttpHeaders(jsonData, config.DecryptedSecureJSONData)
 
 	proxyOpts, err := config.ProxyOptionsFromContext(ctx)
 

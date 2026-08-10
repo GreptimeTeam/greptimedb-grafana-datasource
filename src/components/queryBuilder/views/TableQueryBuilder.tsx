@@ -8,7 +8,7 @@ import allLabels from 'labels';
 import { ModeSwitch } from '../ModeSwitch';
 import { AggregateEditor } from '../AggregateEditor';
 import { GroupByEditor } from '../GroupByEditor';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { useBuilderOptionChanges } from 'hooks/useBuilderOptionChanges';
 import useColumns from 'hooks/useColumns';
 import { BuilderOptionsReducerAction, setOptions } from 'hooks/useBuilderOptionsState';

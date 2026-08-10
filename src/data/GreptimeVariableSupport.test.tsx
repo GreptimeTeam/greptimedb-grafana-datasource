@@ -3,22 +3,31 @@ import { fireEvent, render, waitFor } from '@testing-library/react';
 import { firstValueFrom } from 'rxjs';
 import { DataQueryRequest, FieldType } from '@grafana/data';
 import {
-  CHVariableQuery,
-  CHVariableQueryType,
-  CHVariableSupport,
+  GreptimeVariableQuery,
+  GreptimeVariableQueryType,
+  GreptimeVariableSupport,
   VariableQueryEditor,
   escapeGreptimeIdentifier,
   escapeGreptimeStringLiteral,
   generateVariableSql,
-  isCHVariableQueryType,
+  isGreptimeVariableQueryType,
   normalizeVariableQuery,
   pickerLevelFor,
-} from './CHVariableSupport';
-import { Datasource } from './CHDatasource';
+} from './GreptimeVariableSupport';
+import { Datasource } from './GreptimeDatasource';
 import { EditorType } from 'types/sql';
 import { QueryType } from 'types/queryBuilder';
 
-const baseQuery = (overrides: Partial<CHVariableQuery> = {}): CHVariableQuery => ({
+const templateSrvMock = {
+  replace: jest.fn((target: string) => target),
+  getVariables: jest.fn(() => [] as any[]),
+};
+jest.mock('@grafana/runtime', () => ({
+  ...(jest.requireActual('@grafana/runtime') as unknown as object),
+  getTemplateSrv: () => templateSrvMock,
+}));
+
+const baseQuery = (overrides: Partial<GreptimeVariableQuery> = {}): GreptimeVariableQuery => ({
   refId: 'v',
   queryType: 'sql',
   ...overrides,
@@ -97,7 +106,7 @@ describe('generateVariableSql', () => {
 });
 
 describe('pickerLevelFor', () => {
-  const cases: Array<[CHVariableQueryType, ReturnType<typeof pickerLevelFor>]> = [
+  const cases: Array<[GreptimeVariableQueryType, ReturnType<typeof pickerLevelFor>]> = [
     ['sql', null],
     ['databases', null],
     ['tables', 'database'],
@@ -128,7 +137,7 @@ describe('normalizeVariableQuery', () => {
   });
 
   it('does not treat panel QueryType values as variable queryType (#60 DataQuery)', () => {
-    expect(isCHVariableQueryType(QueryType.Table)).toBe(false);
+    expect(isGreptimeVariableQueryType(QueryType.Table)).toBe(false);
     const normalized = normalizeVariableQuery({
       refId: 'A',
       editorType: EditorType.SQL,
@@ -192,7 +201,7 @@ describe('VariableQueryEditor', () => {
     fireEvent.keyDown(typeCombobox, { key: 'ArrowDown' });
     fireEvent.keyDown(typeCombobox, { key: 'Enter' });
     expect(onChange).toHaveBeenCalled();
-    const next = onChange.mock.calls[0][0] as CHVariableQuery;
+    const next = onChange.mock.calls[0][0] as GreptimeVariableQuery;
     expect(next.queryType).toBe('databases');
     expect(next.rawSql).toBe('SHOW DATABASES');
   });
@@ -213,35 +222,40 @@ describe('VariableQueryEditor', () => {
     const sqlArea = result.getByLabelText('SQL Query');
     fireEvent.change(sqlArea, { target: { value: 'SHOW DATABASES' } });
     expect(onChange).toHaveBeenCalledTimes(1);
-    const next = onChange.mock.calls[0][0] as CHVariableQuery;
+    const next = onChange.mock.calls[0][0] as GreptimeVariableQuery;
     expect(next.queryType).toBe('sql');
     expect(next.rawSql).toBe('SHOW DATABASES');
   });
 });
 
-describe('CHVariableSupport.query', () => {
+describe('GreptimeVariableSupport.query', () => {
   it('returns an empty response when there is no rawSql', async () => {
     const ds = buildDatasource();
-    const support = new CHVariableSupport(ds);
+    const support = new GreptimeVariableSupport(ds);
     const response = await firstValueFrom(
       support.query({
         targets: [baseQuery({ rawSql: '' })],
-      } as DataQueryRequest<CHVariableQuery>)
+      } as DataQueryRequest<GreptimeVariableQuery>)
     );
     expect(response.data).toEqual([]);
     expect(ds.metricFindQuery).not.toHaveBeenCalled();
   });
 
-  it('runs metricFindQuery with rawSql and emits string text/value fields', async () => {
+  it('runs metricFindQuery with variableQuery and emits string text/value fields', async () => {
     const ds = buildDatasource();
-    const support = new CHVariableSupport(ds);
+    const support = new GreptimeVariableSupport(ds);
     const response = await firstValueFrom(
       support.query({
         targets: [baseQuery({ rawSql: 'SHOW DATABASES' })],
         range: {} as any,
-      } as DataQueryRequest<CHVariableQuery>)
+      } as DataQueryRequest<GreptimeVariableQuery>)
     );
-    expect(ds.metricFindQuery).toHaveBeenCalledWith('SHOW DATABASES', expect.any(Object));
+    expect(ds.metricFindQuery).toHaveBeenCalledWith(
+      '',
+      expect.objectContaining({
+        variableQuery: expect.objectContaining({ rawSql: 'SHOW DATABASES' }),
+      })
+    );
     expect(response.data).toHaveLength(1);
     const frame = response.data[0];
     expect(frame.fields[0].name).toBe('text');
@@ -253,13 +267,46 @@ describe('CHVariableSupport.query', () => {
 
   it('accepts a legacy plain-string target', async () => {
     const ds = buildDatasource();
-    const support = new CHVariableSupport(ds);
+    const support = new GreptimeVariableSupport(ds);
     await firstValueFrom(
       support.query({
         targets: ['SELECT 1' as any],
         range: {} as any,
-      } as DataQueryRequest<CHVariableQuery>)
+      } as DataQueryRequest<GreptimeVariableQuery>)
     );
-    expect(ds.metricFindQuery).toHaveBeenCalledWith('SELECT 1', expect.any(Object));
+    expect(ds.metricFindQuery).toHaveBeenCalledWith(
+      '',
+      expect.objectContaining({
+        variableQuery: expect.objectContaining({ rawSql: 'SELECT 1', queryType: 'sql' }),
+      })
+    );
+  });
+
+  it('forwards scopedVars to metricFindQuery', async () => {
+    const ds = buildDatasource();
+    const support = new GreptimeVariableSupport(ds);
+    const scopedVars = { column: { value: 'service', text: 'service' } } as any;
+
+    await firstValueFrom(
+      support.query({
+        targets: [
+          baseQuery({
+            queryType: 'sql',
+            rawSql:
+              'SELECT DISTINCT "$column" AS value FROM "public"."syslog" WHERE "$column" IS NOT NULL ORDER BY value LIMIT 1000',
+          }),
+        ],
+        range: {} as any,
+        scopedVars,
+      } as DataQueryRequest<GreptimeVariableQuery>)
+    );
+
+    expect(ds.metricFindQuery).toHaveBeenCalledWith(
+      '',
+      expect.objectContaining({
+        scopedVars,
+        variableQuery: expect.objectContaining({ queryType: 'sql' }),
+      })
+    );
   });
 });

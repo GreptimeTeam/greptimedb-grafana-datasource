@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { EditorTypeSwitcher } from './EditorTypeSwitcher';
-import { CHQuery, CHSqlQuery, EditorType } from 'types/sql';
+import { GreptimeQuery, GreptimeSqlQuery, EditorType } from 'types/sql';
 import labels from 'labels';
 
 const options = {
@@ -13,7 +13,7 @@ describe('EditorTypeSwitcher', () => {
   it('should render default query', () => {
     const result = render(
       <EditorTypeSwitcher
-        query={{ refId: 'A', editorType: EditorType.Builder } as CHQuery}
+        query={{ refId: 'A', editorType: EditorType.Builder } as GreptimeQuery}
         onChange={() => {}}
         onRunQuery={() => {}}
       />
@@ -26,7 +26,7 @@ describe('EditorTypeSwitcher', () => {
   it('should render legacy query (query without query type)', () => {
     const result = render(
       <EditorTypeSwitcher
-        query={{ refId: 'A', rawSql: 'hello', editorType: EditorType.SQL } as CHSqlQuery}
+        query={{ refId: 'A', rawSql: 'hello', editorType: EditorType.SQL } as GreptimeSqlQuery}
         onChange={() => {}}
         onRunQuery={() => {}}
       />
@@ -62,7 +62,7 @@ describe('EditorTypeSwitcher', () => {
             refId: 'A',
             editorType: EditorType.Builder,
             rawSql: ''
-        } as CHQuery}
+        } as GreptimeQuery}
         onChange={() => {}}
         onRunQuery={() => {}}
       />

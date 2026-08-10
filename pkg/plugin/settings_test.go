@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +61,7 @@ func TestLoadSettings(t *testing.T) {
 					Host:               "foo",
 					Port:               443,
 					Path:               "custom-path",
-					Protocol:           clickhouse.HTTP.String(),
+					Protocol:           "http",
 					Username:           "baz",
 					DefaultDatabase:    "example",
 					InsecureSkipVerify: true,
@@ -120,6 +118,7 @@ func TestLoadSettings(t *testing.T) {
 					MaxIdleConns:       "25",
 					MaxOpenConns:       "50",
 					QueryTimeout:       "60",
+					HttpHeaders:        map[string]string{},
 					ProxyOptions:       nil,
 					RowLimit:           1000000,
 				},
@@ -142,6 +141,7 @@ func TestLoadSettings(t *testing.T) {
 					MaxIdleConns:    "25",
 					MaxOpenConns:    "50",
 					QueryTimeout:    "60",
+					HttpHeaders:     map[string]string{},
 					RowLimit:        1000000,
 				},
 				wantErr: nil,

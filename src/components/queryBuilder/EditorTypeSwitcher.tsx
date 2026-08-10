@@ -4,14 +4,14 @@ import { RadioButtonGroup, ConfirmModal, InlineFormLabel } from '@grafana/ui';
 import { getQueryOptionsFromSql } from '../queryBuilder/utils';
 import { generateSql } from 'data/sqlGenerator';
 import labels from 'labels';
-import { EditorType, CHQuery, defaultCHBuilderQuery } from 'types/sql';
+import { EditorType, GreptimeQuery, defaultGreptimeBuilderQuery } from 'types/sql';
 import { QueryBuilderOptions } from 'types/queryBuilder';
 import { mapQueryTypeToGrafanaFormat } from 'data/utils';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 
-interface CHEditorTypeSwitcherProps {
-  query: CHQuery;
-  onChange: (query: CHQuery) => void;
+interface EditorTypeSwitcherProps {
+  query: GreptimeQuery;
+  onChange: (query: GreptimeQuery) => void;
   onRunQuery: () => void;
   datasource?: Datasource;
 }
@@ -24,7 +24,7 @@ const options: Array<SelectableValue<EditorType>> = [
 /**
  * Component for switching between the SQL and Query Builder editors.
  */
-export const EditorTypeSwitcher = (props: CHEditorTypeSwitcherProps) => {
+export const EditorTypeSwitcher = (props: EditorTypeSwitcherProps) => {
   const { datasource, query, onChange } = props;
   const { label, tooltip, switcher, cannotConvert } = labels.components.EditorTypeSwitcher;
   const editorType: EditorType = query.editorType || EditorType.Builder;
@@ -51,11 +51,11 @@ export const EditorTypeSwitcher = (props: CHEditorTypeSwitcherProps) => {
           try {
             builderOptions = getQueryOptionsFromSql(query.rawSql, query.queryType, datasource) as QueryBuilderOptions;
           } catch (err) {
-            builderOptions = defaultCHBuilderQuery.builderOptions;
+            builderOptions = defaultGreptimeBuilderQuery.builderOptions;
           }
           break;
         default:
-          builderOptions = defaultCHBuilderQuery.builderOptions;
+          builderOptions = defaultGreptimeBuilderQuery.builderOptions;
           break;
       }
       if (editorType === EditorType.SQL) {

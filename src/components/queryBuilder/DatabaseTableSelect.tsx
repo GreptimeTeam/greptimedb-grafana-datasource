@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { InlineFormLabel, Select } from '@grafana/ui';
-import { Datasource } from '../../data/CHDatasource';
+import { Datasource } from '../../data/GreptimeDatasource';
 import labels from 'labels';
 import { styles } from '../../styles';
 import useTables from 'hooks/useTables';

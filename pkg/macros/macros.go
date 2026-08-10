@@ -6,43 +6,44 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/sqlds/v4"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data/sqlutil"
 )
 
-// Converts a time.Time to a Date
+// timeToDate converts a time.Time to a Greptime date literal.
+// ClickHouse equivalent: toDate('YYYY-MM-DD')
 func timeToDate(t time.Time) string {
-	return fmt.Sprintf("toDate('%s')", t.Format("2006-01-02"))
+	return fmt.Sprintf("'%s'", t.UTC().Format("2006-01-02"))
 }
 
-// Converts a time.Time to a UTC DateTime with seconds precision
+// timeToDateTime converts a time.Time to a Greptime timestamp literal (ms precision).
+// ClickHouse equivalent: toDateTime(unix)
 func timeToDateTime(t time.Time) string {
-	return fmt.Sprintf("toDateTime(%d)", t.Unix())
+	return fmt.Sprintf("'%s'", t.UTC().Format("2006-01-02T15:04:05.000Z"))
 }
 
-// Converts a time.Time to a UTC DateTime64 with milliseconds precision
+// timeToDateTime64 is the millisecond-precision counterpart of timeToDateTime.
+// Greptime uses the same ISO literal for both; ClickHouse uses fromUnixTimestamp64Milli.
 func timeToDateTime64(t time.Time) string {
-	return fmt.Sprintf("fromUnixTimestamp64Milli(%d)", t.UnixMilli())
+	return timeToDateTime(t)
 }
 
-// FromTimeFilter returns a time filter expression based on grafana's timepicker's "from" time in seconds
+// FromTimeFilter returns a time filter expression based on grafana's timepicker "from" time.
 func FromTimeFilter(query *sqlutil.Query, args []string) (string, error) {
 	return timeToDateTime(query.TimeRange.From), nil
 }
 
-// ToTimeFilter returns a time filter expression based on grafana's timepicker's "to" time in seconds
+// ToTimeFilter returns a time filter expression based on grafana's timepicker "to" time.
 func ToTimeFilter(query *sqlutil.Query, args []string) (string, error) {
 	return timeToDateTime(query.TimeRange.To), nil
 }
 
-// FromTimeFilterMs returns a time filter expression based on grafana's timepicker's "from" time in milliseconds
+// FromTimeFilterMs returns a millisecond-precision "from" time literal.
 func FromTimeFilterMs(query *sqlutil.Query, args []string) (string, error) {
 	return timeToDateTime64(query.TimeRange.From), nil
 }
 
-// ToTimeFilterMs returns a time filter expression based on grafana's timepicker's "to" time in milliseconds
+// ToTimeFilterMs returns a millisecond-precision "to" time literal.
 func ToTimeFilterMs(query *sqlutil.Query, args []string) (string, error) {
 	return timeToDateTime64(query.TimeRange.To), nil
 }
@@ -53,7 +54,7 @@ func TimeFilter(query *sqlutil.Query, args []string) (string, error) {
 	}
 
 	var (
-		column = args[0]
+		column = quoteIdentifier(args[0])
 		from   = query.TimeRange.From
 		to     = query.TimeRange.To
 	)
@@ -67,7 +68,7 @@ func TimeFilterMs(query *sqlutil.Query, args []string) (string, error) {
 	}
 
 	var (
-		column = args[0]
+		column = quoteIdentifier(args[0])
 		from   = query.TimeRange.From
 		to     = query.TimeRange.To
 	)
@@ -80,7 +81,7 @@ func DateFilter(query *sqlutil.Query, args []string) (string, error) {
 		return "", backend.DownstreamError(fmt.Errorf("%w: expected 1 argument, received %d", sqlutil.ErrorBadArgumentCount, len(args)))
 	}
 	var (
-		column = args[0]
+		column = quoteIdentifier(args[0])
 		from   = query.TimeRange.From
 		to     = query.TimeRange.To
 	)
@@ -93,8 +94,8 @@ func DateTimeFilter(query *sqlutil.Query, args []string) (string, error) {
 		return "", backend.DownstreamError(fmt.Errorf("%w: expected 2 arguments, received %d", sqlutil.ErrorBadArgumentCount, len(args)))
 	}
 	var (
-		dateColumn = args[0]
-		timeColumn = args[1]
+		dateColumn = quoteIdentifier(args[0])
+		timeColumn = quoteIdentifier(args[1])
 		from       = query.TimeRange.From
 		to         = query.TimeRange.To
 	)
@@ -104,27 +105,44 @@ func DateTimeFilter(query *sqlutil.Query, args []string) (string, error) {
 	return fmt.Sprintf("%s AND %s", dateFilter, timeFilter), nil
 }
 
+// TimeInterval expands $__timeInterval(col) to Greptime date_bin.
+// ClickHouse equivalent: toStartOfInterval(toDateTime(col), INTERVAL N second)
 func TimeInterval(query *sqlutil.Query, args []string) (string, error) {
 	if len(args) != 1 {
 		return "", backend.DownstreamError(fmt.Errorf("%w: expected 1 argument, received %d", sqlutil.ErrorBadArgumentCount, len(args)))
 	}
 
 	seconds := math.Max(query.Interval.Seconds(), 1)
-	return fmt.Sprintf("toStartOfInterval(toDateTime(%s), INTERVAL %d second)", args[0], int(seconds)), nil
+	interval := MsToGreptimeDateBinInterval(int64(seconds) * 1000)
+	return fmt.Sprintf("date_bin('%s', %s)", interval, quoteIdentifier(strings.TrimSpace(args[0]))), nil
 }
 
+// TimeIntervalMs expands $__timeInterval_ms(col) to Greptime date_bin.
+// ClickHouse equivalent: toStartOfInterval(toDateTime64(col, 3), INTERVAL N millisecond)
 func TimeIntervalMs(query *sqlutil.Query, args []string) (string, error) {
 	if len(args) != 1 {
 		return "", backend.DownstreamError(fmt.Errorf("%w: expected 1 argument, received %d", sqlutil.ErrorBadArgumentCount, len(args)))
 	}
 
 	milliseconds := math.Max(float64(query.Interval.Milliseconds()), 1)
-	return fmt.Sprintf("toStartOfInterval(toDateTime64(%s, 3), INTERVAL %d millisecond)", args[0], int(milliseconds)), nil
+	interval := MsToGreptimeDateBinInterval(int64(milliseconds))
+	return fmt.Sprintf("date_bin('%s', %s)", interval, quoteIdentifier(strings.TrimSpace(args[0]))), nil
 }
 
 func IntervalSeconds(query *sqlutil.Query, args []string) (string, error) {
 	seconds := math.Max(query.Interval.Seconds(), 1)
 	return fmt.Sprintf("%d", int(seconds)), nil
+}
+
+// quoteIdentifier wraps a column name in double quotes unless it is a
+// SQL expression (contains parentheses). Existing quotes are stripped first
+// so both $__timeFilter(col) and $__timeFilter("col") produce "col".
+func quoteIdentifier(col string) string {
+	col = strings.ReplaceAll(col, "\"", "")
+	if strings.Contains(col, "(") || strings.Contains(col, ")") {
+		return col
+	}
+	return fmt.Sprintf("\"%s\"", col)
 }
 
 // RemoveQuotesInArgs remove all quotes from macro arguments and return
@@ -149,8 +167,10 @@ func IsValidComparisonPredicates(comparison_predicates string) bool {
 	return false
 }
 
-// Macros is a map of all macro functions
-var Macros = map[string]sqlds.MacroFunc{
+// Macros is a map of all macro functions — same keys as the ClickHouse plugin.
+// Dialect output differs (ISO / date_bin); $__interval is handled in InterpolateSQL
+// because Builder emits date_bin('$__interval', col) which sqlutil cannot expand inside quotes.
+var Macros = sqlutil.Macros{
 	"fromTime":        FromTimeFilter,
 	"toTime":          ToTimeFilter,
 	"fromTime_ms":     FromTimeFilterMs,

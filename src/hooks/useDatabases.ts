@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 
 export default (datasource: Datasource): readonly string[] => {
   const [databases, setDatabases] = useState<string[]>([]); 

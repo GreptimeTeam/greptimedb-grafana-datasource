@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { TableColumn } from 'types/queryBuilder';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 
 export default (datasource: Datasource, database: string, table: string): readonly TableColumn[] => {
   const [columns, setColumns] = useState<readonly TableColumn[]>([]);

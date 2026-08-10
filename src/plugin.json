@@ -7,11 +7,14 @@
   "backend": true,
   "logs": true,
   "tracing": true,
-  "alerting": false,
+  "alerting": true,
   "annotations": true,
   "executable": "gpx_greptimedb",
   "includes": [
+    { "type": "dashboard", "name": "GreptimeDB OTel Min Demo", "path": "dashboards/greptime-otel-min-demo.json" },
+    { "type": "dashboard", "name": "GenAI Observability", "path": "dashboards/genai-observability.json" }
   ],
+
   "category": "tsdb",
   "info": {
     "description": "Greptime datasource plugin for Grafana",
@@ -38,9 +41,9 @@
     "plugins": []
   },
   "routes": [
-	{
-	  "path": "greptime",
-	  "url": "{{ .JsonData.host }}"
-	}
-]
+    {
+      "path": "greptime",
+      "url": "{{ .JsonData.host }}"
+    }
+  ]
 }

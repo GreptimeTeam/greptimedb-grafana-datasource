@@ -1,21 +1,21 @@
-import { ClickhouseCounters, analyzeQueries } from 'tracking';
-import { CHBuilderQuery, CHQuery, CHSqlQuery, EditorType } from 'types/sql';
+import { GreptimeCounters, analyzeQueries } from 'tracking';
+import { GreptimeBuilderQuery, GreptimeQuery, GreptimeSqlQuery, EditorType } from 'types/sql';
 import { QueryType, BuilderMode } from 'types/queryBuilder';
 
 interface AnalyzeQueriesTestCase {
   description: string;
-  queries: CHQuery[];
-  expectedCounters: ClickhouseCounters;
+  queries: GreptimeQuery[];
+  expectedCounters: GreptimeCounters;
 }
 
 describe('analyzeQueries', () => {
-  const baseQuery: Partial<CHQuery> = {
+  const baseQuery: Partial<GreptimeQuery> = {
     pluginVersion: '',
     rawSql: '',
     refId: ''
   };
 
-  const emptyCounters: ClickhouseCounters = {
+  const emptyCounters: GreptimeCounters = {
     sql_queries: 0,
     sql_query_type_table: 0,
     sql_query_type_logs: 0,
@@ -43,7 +43,7 @@ describe('analyzeQueries', () => {
       queries: [{
         ...baseQuery,
         editorType: EditorType.SQL
-      } as CHSqlQuery],
+      } as GreptimeSqlQuery],
       expectedCounters: {
         ...emptyCounters,
         sql_queries: 1
@@ -55,7 +55,7 @@ describe('analyzeQueries', () => {
         ...baseQuery,
         editorType: EditorType.SQL,
         queryType: QueryType.Table
-      } as CHSqlQuery],
+      } as GreptimeSqlQuery],
       expectedCounters: {
         ...emptyCounters,
         sql_queries: 1,
@@ -68,7 +68,7 @@ describe('analyzeQueries', () => {
         ...baseQuery,
         editorType: EditorType.SQL,
         queryType: QueryType.Logs
-      } as CHSqlQuery],
+      } as GreptimeSqlQuery],
       expectedCounters: {
         ...emptyCounters,
         sql_queries: 1,
@@ -81,7 +81,7 @@ describe('analyzeQueries', () => {
         ...baseQuery,
         editorType: EditorType.SQL,
         queryType: QueryType.TimeSeries
-      } as CHSqlQuery],
+      } as GreptimeSqlQuery],
       expectedCounters: {
         ...emptyCounters,
         sql_queries: 1,
@@ -94,7 +94,7 @@ describe('analyzeQueries', () => {
         ...baseQuery,
         editorType: EditorType.SQL,
         queryType: QueryType.Traces
-      } as CHSqlQuery],
+      } as GreptimeSqlQuery],
       expectedCounters: {
         ...emptyCounters,
         sql_queries: 1,
@@ -107,7 +107,7 @@ describe('analyzeQueries', () => {
       queries: [{
         ...baseQuery,
         editorType: EditorType.Builder
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1
@@ -119,7 +119,7 @@ describe('analyzeQueries', () => {
         ...baseQuery,
         editorType: EditorType.Builder,
         builderOptions: {}
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1
@@ -133,7 +133,7 @@ describe('analyzeQueries', () => {
         builderOptions: {
           queryType: QueryType.Table
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -150,7 +150,7 @@ describe('analyzeQueries', () => {
           queryType: QueryType.Table,
           mode: BuilderMode.List
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -167,7 +167,7 @@ describe('analyzeQueries', () => {
           queryType: QueryType.Table,
           mode: BuilderMode.Aggregate
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -183,7 +183,7 @@ describe('analyzeQueries', () => {
         builderOptions: {
           queryType: QueryType.Logs
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -198,7 +198,7 @@ describe('analyzeQueries', () => {
         builderOptions: {
           queryType: QueryType.TimeSeries
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -215,7 +215,7 @@ describe('analyzeQueries', () => {
           queryType: QueryType.TimeSeries,
           mode: BuilderMode.Aggregate
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -232,7 +232,7 @@ describe('analyzeQueries', () => {
           queryType: QueryType.TimeSeries,
           mode: BuilderMode.Trend
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -248,7 +248,7 @@ describe('analyzeQueries', () => {
         builderOptions: {
           queryType: QueryType.Traces
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -267,7 +267,7 @@ describe('analyzeQueries', () => {
             isTraceIdMode: true
           }
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -286,7 +286,7 @@ describe('analyzeQueries', () => {
             isTraceIdMode: false
           }
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -305,7 +305,7 @@ describe('analyzeQueries', () => {
             minimized: true
           }
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -325,7 +325,7 @@ describe('analyzeQueries', () => {
             otelEnabled: true
           }
         }
-      } as CHBuilderQuery],
+      } as GreptimeBuilderQuery],
       expectedCounters: {
         ...emptyCounters,
         builder_queries: 1,
@@ -340,18 +340,18 @@ describe('analyzeQueries', () => {
         {
           ...baseQuery,
           editorType: EditorType.SQL
-        } as CHSqlQuery,
+        } as GreptimeSqlQuery,
         {
         ...baseQuery,
         editorType: EditorType.Builder,
         builderOptions: {
           queryType: QueryType.Table
         }
-      } as CHBuilderQuery,
+      } as GreptimeBuilderQuery,
       {
         ...baseQuery,
         editorType: EditorType.SQL
-      } as CHSqlQuery],
+      } as GreptimeSqlQuery],
       expectedCounters: {
         ...emptyCounters,
         sql_queries: 2,

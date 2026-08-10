@@ -1,4 +1,4 @@
-import { Datasource } from "data/CHDatasource";
+import { Datasource } from "data/GreptimeDatasource";
 import { columnFilterDateTime } from "data/columnFilters";
 import { BuilderOptionsReducerAction, setColumnByHint, setOptions } from "hooks/useBuilderOptionsState";
 import { useEffect, useMemo, useRef } from "react";
@@ -58,7 +58,7 @@ export const useLogDefaultsOnMount = (datasource: Datasource, isNewQuery: boolea
  * Does not run if OTEL is already enabled, only when it's changed.
  */
 export const useOtelColumns = (datasource: Datasource, otelEnabled: boolean, otelVersion: string, builderOptionsDispatch: React.Dispatch<BuilderOptionsReducerAction>) => {
-  const didSetColumns = useRef<boolean>(otelEnabled);
+  const didSetColumns = useRef<boolean>(false);
   if (!otelEnabled) {
     didSetColumns.current = false;
   }

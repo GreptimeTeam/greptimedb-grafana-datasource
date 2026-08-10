@@ -1,34 +1,34 @@
 import { ColumnHint, Filter, QueryBuilderOptions, QueryType, SelectedColumn } from "types/queryBuilder";
-import { CHBuilderQuery, CHQuery, CHSqlQuery, EditorType } from "types/sql";
-import { isVersionGtOrEq, pluginVersion } from "utils/version";
+import { GreptimeBuilderQuery, GreptimeQuery, GreptimeSqlQuery, EditorType } from "types/sql";
+import { pluginVersion } from "utils/version";
 import { mapGrafanaFormatToQueryType } from "./utils";
 
-export type AnyCHQuery = Partial<CHQuery> & {[k: string]: any};
+export type AnyGreptimeQuery = Partial<GreptimeQuery> & {[k: string]: any};
 export type AnyQueryBuilderOptions = Partial<QueryBuilderOptions> & {[k: string]: any};
 
 /**
- * Takes a CHQuery and transforms it to the latest interface.
+ * Takes a GreptimeQuery and transforms it to the latest interface.
  */
-export const migrateCHQuery = (savedQuery: CHQuery): CHQuery => {
+export const migrateGreptimeQuery = (savedQuery: GreptimeQuery): GreptimeQuery => {
   const isGrafanaDefaultQuery = savedQuery.rawSql === undefined;
   if (isGrafanaDefaultQuery) {
     return savedQuery;
   }
 
-  if (isV3CHQuery(savedQuery)) {
-    return migrateV3CHQuery(savedQuery);
+  if (isV3GreptimeQuery(savedQuery)) {
+    return migrateV3GreptimeQuery(savedQuery);
   }
 
   return savedQuery;
 };
 
 /**
- * Takes v3 CHQuery and returns a version compatible with the latest editor.
+ * Takes v3 GreptimeQuery and returns a version compatible with the latest editor.
  */
-const migrateV3CHQuery = (savedQuery: AnyCHQuery): CHQuery => {
+const migrateV3GreptimeQuery = (savedQuery: AnyGreptimeQuery): GreptimeQuery => {
   // Builder Query
   if (savedQuery['queryType'] === 'builder') {
-    const builderQuery: CHBuilderQuery = {
+    const builderQuery: GreptimeBuilderQuery = {
       ...savedQuery,
       pluginVersion,
       editorType: EditorType.Builder,
@@ -52,7 +52,7 @@ const migrateV3CHQuery = (savedQuery: AnyCHQuery): CHQuery => {
   }
 
   // Raw SQL Query
-  const rawSqlQuery: CHSqlQuery = {
+  const rawSqlQuery: GreptimeSqlQuery = {
     ...savedQuery,
     pluginVersion,
     editorType: EditorType.SQL,
@@ -173,13 +173,17 @@ const migrateV3QueryBuilderOptions = (savedOptions: AnyQueryBuilderOptions): Que
 
 
 /**
- * Checks if CHQuery is from <= v3 options.
+ * Checks if GreptimeQuery is from <= v3 options.
+ * Upstream ClickHouse used pluginVersion < 4.0.0; this fork is still on 2.x,
+ * so detect v3 by shape (top-level queryType sql|builder) instead of version.
  */
-const isV3CHQuery = (savedQuery: AnyCHQuery): boolean => {
-  // pluginVersion was added in v4
-  const oldPluginVersion = !savedQuery['pluginVersion'] || !isVersionGtOrEq(savedQuery.pluginVersion, '4.0.0');
+const isV3GreptimeQuery = (savedQuery: AnyGreptimeQuery): boolean => {
   const oldQueryType = savedQuery['queryType'] === 'sql' || savedQuery['queryType'] === 'builder';
-  return oldPluginVersion || oldQueryType;
+  if (oldQueryType) {
+    return true;
+  }
+  // Incomplete / pre-editorType queries still need migration when rawSql exists.
+  return !savedQuery.editorType && Boolean(savedQuery.rawSql);
 };
 
 /**

@@ -2,17 +2,17 @@
 import React from 'react';
 import { ConfigSection, ConfigSubSection } from 'components/experimental/ConfigSection';
 import { Input, Field } from '@grafana/ui';
-// import { OtelVersionSelect } from 'components/queryBuilder/OtelVersionSelect';
+import { OtelVersionSelect } from 'components/queryBuilder/OtelVersionSelect';
 import { ColumnHint, TimeUnit } from 'types/queryBuilder';
 import otel, { defaultTraceTable } from 'otel';
 import { LabeledInput } from './LabeledInput';
 import { DurationUnitSelect } from 'components/queryBuilder/DurationUnitSelect';
-import { CHTracesConfig } from 'types/config';
+import { GreptimeTracesConfig } from 'types/config';
 import allLabels from 'labels';
 import { columnLabelToPlaceholder } from 'data/utils';
 
 interface TraceConfigProps {
-  tracesConfig?: CHTracesConfig;
+  tracesConfig?: GreptimeTracesConfig;
   onDefaultDatabaseChange: (v: string) => void;
   onDefaultTableChange: (v: string) => void;
   onOtelEnabledChange: (v: boolean) => void;
@@ -33,7 +33,7 @@ interface TraceConfigProps {
 export const TracesConfig = (props: TraceConfigProps) => {
   const {
     onDefaultDatabaseChange, onDefaultTableChange,
-    // onOtelEnabledChange, onOtelVersionChange,
+    onOtelEnabledChange, onOtelVersionChange,
     onTraceIdColumnChange, onSpanIdColumnChange, onOperationNameColumnChange, onParentSpanIdColumnChange,
     onServiceNameColumnChange, onDurationColumnChange, onDurationUnitChange, onStartTimeColumnChange,
     onTagsColumnChange, onServiceTagsColumnChange, onEventsColumnPrefixChange
@@ -43,7 +43,7 @@ export const TracesConfig = (props: TraceConfigProps) => {
     otelEnabled, otelVersion,
     traceIdColumn, spanIdColumn, operationNameColumn, parentSpanIdColumn, serviceNameColumn,
     durationColumn, durationUnit, startTimeColumn, tagsColumn, serviceTagsColumn, eventsColumnPrefix
-  } = (props.tracesConfig || {}) as CHTracesConfig;
+  } = (props.tracesConfig || {}) as GreptimeTracesConfig;
   const labels = allLabels.components.Config.TracesConfig;
 
   const otelConfig = otel.getVersion(otelVersion);
@@ -99,13 +99,13 @@ export const TracesConfig = (props: TraceConfigProps) => {
         title={labels.columns.title}
         description={labels.columns.description}
       >
-        {/* <OtelVersionSelect
+        <OtelVersionSelect
           enabled={otelEnabled || false}
           selectedVersion={otelVersion || ''}
           onEnabledChange={onOtelEnabledChange}
           onVersionChange={onOtelVersionChange}
           wide
-        /> */}
+        />
         <LabeledInput
           disabled={otelEnabled}
           label={labels.columns.traceId.label}

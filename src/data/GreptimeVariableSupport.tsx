@@ -13,27 +13,35 @@ import { Observable, from, of } from 'rxjs';
 import { DatabaseSelect, TableSelect } from 'components/queryBuilder/DatabaseTableSelect';
 import useColumns from 'hooks/useColumns';
 import { styles } from 'styles';
-import { CHConfig } from 'types/config';
-import { CHQuery } from 'types/sql';
-import { Datasource } from './CHDatasource';
+import { GreptimeConfig } from 'types/config';
+import { GreptimeQuery } from 'types/sql';
+import { Datasource } from './GreptimeDatasource';
+import {
+  GreptimeVariableQuery,
+  GreptimeVariableQueryType,
+  generateVariableSql,
+  isGreptimeVariableQueryType,
+  resolveVariableSql,
+} from './variableQuerySql';
+
+export type { GreptimeVariableQuery, GreptimeVariableQueryType };
+export {
+  escapeGreptimeIdentifier,
+  escapeGreptimeStringLiteral,
+  filterEmptyScopedVars,
+  generateVariableSql,
+  interpolateDashboardVariables,
+  isGreptimeVariableQueryType,
+  prepareVariableQuerySql,
+  resolveVariableSql,
+} from './variableQuerySql';
 
 /**
  * Variable query types. Each one renders a different combination of pickers and
  * generates a default SQL query that the user can edit before saving.
  */
-export type CHVariableQueryType = 'sql' | 'databases' | 'tables' | 'columns' | 'columnValues';
 
-/** Variable query model. Persisted as part of the dashboard JSON. */
-export interface CHVariableQuery {
-  refId: string;
-  queryType: CHVariableQueryType;
-  rawSql?: string;
-  database?: string;
-  table?: string;
-  column?: string;
-}
-
-const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: CHVariableQueryType; description?: string }> = [
+const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: GreptimeVariableQueryType; description?: string }> = [
   { label: 'Custom SQL', value: 'sql', description: 'Write any SQL query, same as before' },
   { label: 'List databases', value: 'databases', description: 'All databases on the server' },
   { label: 'List tables', value: 'tables', description: 'Tables inside a database' },
@@ -41,22 +49,10 @@ const VARIABLE_TYPE_OPTIONS: Array<{ label: string; value: CHVariableQueryType; 
   { label: 'Column values', value: 'columnValues', description: 'Distinct values of a column' },
 ];
 
-const VARIABLE_QUERY_TYPES = new Set<CHVariableQueryType>([
-  'sql',
-  'databases',
-  'tables',
-  'columns',
-  'columnValues',
-]);
-
-export function isCHVariableQueryType(value: unknown): value is CHVariableQueryType {
-  return typeof value === 'string' && VARIABLE_QUERY_TYPES.has(value as CHVariableQueryType);
-}
-
 /** Returns which pickers a query type needs. */
 export type VariablePickerLevel = 'database' | 'table' | 'column' | null;
 
-export function pickerLevelFor(queryType: CHVariableQueryType): VariablePickerLevel {
+export function pickerLevelFor(queryType: GreptimeVariableQueryType): VariablePickerLevel {
   switch (queryType) {
     case 'tables':
       return 'database';
@@ -69,85 +65,30 @@ export function pickerLevelFor(queryType: CHVariableQueryType): VariablePickerLe
   }
 }
 
-/** Escape a Greptime/MySQL string literal for use inside single quotes. */
-export function escapeGreptimeStringLiteral(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "''");
-}
-
-/** Quote a Greptime identifier with doubled internal quotes. */
-export function escapeGreptimeIdentifier(id: string): string {
-  return id ? `"${id.replace(/"/g, '""')}"` : '';
-}
-
-/**
- * Generate the default SQL for a variable query. Pure function so the editor
- * preview and the unit tests use the same source of truth. At run time the
- * variable resolver only reads `rawSql`, so any manual edits to the SQL field
- * always win.
- */
-export function generateVariableSql(query: CHVariableQuery, defaultDatabase: string): string {
-  const db = query.database || defaultDatabase || '';
-  switch (query.queryType) {
-    case 'databases':
-      return 'SHOW DATABASES';
-    case 'tables':
-      return db ? `SHOW TABLES FROM ${escapeGreptimeIdentifier(db)}` : 'SHOW TABLES';
-    case 'columns':
-      if (!db || !query.table) {
-        return '';
-      }
-      return (
-        `SELECT column_name FROM information_schema.columns ` +
-        `WHERE table_schema = '${escapeGreptimeStringLiteral(db)}' ` +
-        `AND table_name = '${escapeGreptimeStringLiteral(query.table)}' ` +
-        `ORDER BY ordinal_position`
-      );
-    case 'columnValues': {
-      if (!db || !query.table || !query.column) {
-        return '';
-      }
-      const column = escapeGreptimeIdentifier(query.column);
-      const tableRef = `${escapeGreptimeIdentifier(db)}.${escapeGreptimeIdentifier(query.table)}`;
-      return (
-        `SELECT DISTINCT ${column} AS value FROM ${tableRef} ` +
-        `WHERE ${column} IS NOT NULL ORDER BY value LIMIT 1000`
-      );
-    }
-    case 'sql':
-    default:
-      return query.rawSql || '';
-  }
-}
-
-type EditorProps = QueryEditorProps<Datasource, CHQuery, CHConfig, CHVariableQuery>;
-
-/**
- * Normalize Grafana's variable query blob into CHVariableQuery.
- * Handles legacy plain strings and provisioned panel-style DataQuery objects
- * (which may carry QueryType.Table etc. on `queryType`).
- */
-export function normalizeVariableQuery(query: CHVariableQuery | CHQuery | string | undefined): CHVariableQuery {
+export function normalizeVariableQuery(query: GreptimeVariableQuery | GreptimeQuery | string | undefined): GreptimeVariableQuery {
   if (typeof query === 'string') {
     return { refId: 'var', queryType: 'sql', rawSql: query };
   }
 
   const rawSql =
-    typeof (query as CHVariableQuery | undefined)?.rawSql === 'string'
-      ? (query as CHVariableQuery).rawSql
+    typeof (query as GreptimeVariableQuery | undefined)?.rawSql === 'string'
+      ? (query as GreptimeVariableQuery).rawSql
       : undefined;
-  const queryType = isCHVariableQueryType((query as CHVariableQuery | undefined)?.queryType)
-    ? ((query as CHVariableQuery).queryType as CHVariableQueryType)
+  const queryType = isGreptimeVariableQueryType((query as GreptimeVariableQuery | undefined)?.queryType)
+    ? ((query as GreptimeVariableQuery).queryType as GreptimeVariableQueryType)
     : 'sql';
 
   return {
     refId: query?.refId || 'var',
     queryType,
     rawSql,
-    database: (query as CHVariableQuery | undefined)?.database,
-    table: (query as CHVariableQuery | undefined)?.table,
-    column: (query as CHVariableQuery | undefined)?.column,
+    database: (query as GreptimeVariableQuery | undefined)?.database,
+    table: (query as GreptimeVariableQuery | undefined)?.table,
+    column: (query as GreptimeVariableQuery | undefined)?.column,
   };
 }
+
+type EditorProps = QueryEditorProps<Datasource, GreptimeQuery, GreptimeConfig, GreptimeVariableQuery>;
 
 export const VariableQueryEditor = (props: EditorProps) => {
   const { query, onChange, datasource } = props;
@@ -162,8 +103,8 @@ export const VariableQueryEditor = (props: EditorProps) => {
   );
 
   const onTypeChange = useCallback(
-    (queryType: CHVariableQueryType) => {
-      const next: CHVariableQuery = { ...safeQuery, queryType };
+    (queryType: GreptimeVariableQueryType) => {
+      const next: GreptimeVariableQuery = { ...safeQuery, queryType };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -172,7 +113,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
 
   const onDatabaseChange = useCallback(
     (database: string) => {
-      const next: CHVariableQuery = { ...safeQuery, database, table: '', column: '' };
+      const next: GreptimeVariableQuery = { ...safeQuery, database, table: '', column: '' };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -181,7 +122,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
 
   const onTableChange = useCallback(
     (table: string) => {
-      const next: CHVariableQuery = { ...safeQuery, table, column: '' };
+      const next: GreptimeVariableQuery = { ...safeQuery, table, column: '' };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -190,7 +131,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
 
   const onColumnChange = useCallback(
     (column: string) => {
-      const next: CHVariableQuery = { ...safeQuery, column };
+      const next: GreptimeVariableQuery = { ...safeQuery, column };
       next.rawSql = generateVariableSql(next, defaultDatabase);
       onChange(next);
     },
@@ -221,7 +162,7 @@ export const VariableQueryEditor = (props: EditorProps) => {
           width={40}
           options={VARIABLE_TYPE_OPTIONS}
           value={safeQuery.queryType}
-          onChange={(v) => onTypeChange((v.value as CHVariableQueryType) || 'sql')}
+          onChange={(v) => onTypeChange((v.value as GreptimeVariableQueryType) || 'sql')}
           aria-label="Variable type"
         />
       </InlineField>
@@ -303,26 +244,28 @@ function toVariableString(value: unknown): string | null {
  * macro expansion (template variables, time filter, ad-hoc filters) stays in
  * one place.
  */
-export class CHVariableSupport extends CustomVariableSupport<Datasource, CHVariableQuery> {
+export class GreptimeVariableSupport extends CustomVariableSupport<Datasource, GreptimeVariableQuery> {
   constructor(private readonly datasource: Datasource) {
     super();
+    Object.defineProperty(this, 'datasource', { enumerable: false });
   }
 
   editor = VariableQueryEditor;
 
-  query(request: DataQueryRequest<CHVariableQuery>): Observable<DataQueryResponse> {
+  query(request: DataQueryRequest<GreptimeVariableQuery>): Observable<DataQueryResponse> {
     const target = request.targets[0];
-    // A saved variable query can be a legacy plain string or a provisioned
-    // DataQuery object; normalize both to rawSql.
-    const normalized = normalizeVariableQuery(target as CHVariableQuery | string | undefined);
-    const rawSql = normalized.rawSql;
-    if (!rawSql) {
+    const normalized = normalizeVariableQuery(target as GreptimeVariableQuery | string | undefined);
+    const defaultDatabase = this.datasource.getDefaultDatabase() || '';
+    if (!resolveVariableSql(normalized, defaultDatabase)) {
       return of({ data: [] });
     }
-    // Pass rawSql as a string. metricFindQuery accepts (CHQuery | string) and
-    // wraps a string into a minimal SQL-mode CHQuery internally.
     const promise = this.datasource
-      .metricFindQuery(rawSql, { range: request.range })
+      .metricFindQuery('', {
+        range: request.range,
+        scopedVars: request.scopedVars,
+        skipAdHocFilters: true,
+        variableQuery: normalized,
+      })
       .then((values: MetricFindValue[]) => ({
         // Emit text and value separately so a `SELECT value, label` query
         // substitutes the value while displaying the label. Force string typing:

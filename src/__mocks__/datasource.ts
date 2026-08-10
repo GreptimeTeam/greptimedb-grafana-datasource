@@ -1,8 +1,8 @@
 import { PluginType } from '@grafana/data';
 import { Protocol } from 'types/config';
-import { CHQuery, EditorType } from 'types/sql';
+import { GreptimeQuery, EditorType } from 'types/sql';
 import { QueryType } from 'types/queryBuilder';
-import { Datasource } from '../data/CHDatasource';
+import { Datasource } from '../data/GreptimeDatasource';
 import { pluginVersion } from 'utils/version';
 
 export const newMockDatasource = (): Datasource => {
@@ -53,7 +53,7 @@ export const newMockDatasource = (): Datasource => {
 
 export const mockDatasource = newMockDatasource();
 
-export const mockQuery: CHQuery = {
+export const mockQuery: GreptimeQuery = {
   pluginVersion: '',
   rawSql: 'select * from foo',
   refId: '',

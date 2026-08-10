@@ -2,18 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ColumnsEditor } from '../ColumnsEditor';
 import { Filter, OrderBy, QueryBuilderOptions, SelectedColumn, ColumnHint } from 'types/queryBuilder';
 import { ColumnSelect } from '../ColumnSelect';
-// import { OtelVersionSelect } from '../OtelVersionSelect';
+import { OtelVersionSelect } from '../OtelVersionSelect';
 import { OrderByEditor, getOrderByOptions } from '../OrderByEditor';
 import { LimitEditor } from '../LimitEditor';
 import { FiltersEditor } from '../FilterEditor';
 import allLabels from 'labels';
 import { getColumnByHint } from 'data/sqlGenerator';
 import { columnFilterDateTime, columnFilterString } from 'data/columnFilters';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { useBuilderOptionChanges } from 'hooks/useBuilderOptionChanges';
 import { Alert, Button, InlineFormLabel, Input, VerticalGroup } from '@grafana/ui';
 import useColumns from 'hooks/useColumns';
-import { BuilderOptionsReducerAction, setOptions, } from 'hooks/useBuilderOptionsState';
+import { BuilderOptionsReducerAction, setOtelEnabled, setOtelVersion, setOptions, } from 'hooks/useBuilderOptionsState';
 import useIsNewQuery from 'hooks/useIsNewQuery';
 import { useDefaultFilters, useDefaultTimeColumn, useLogDefaultsOnMount, useOtelColumns } from './logsQueryBuilderHooks';
 import { styles } from 'styles';
@@ -112,12 +112,12 @@ export const LogsQueryBuilder = (props: LogsQueryBuilderProps) => {
   return (
     <div>
       { configWarning }
-      {/* <OtelVersionSelect
+      <OtelVersionSelect
         enabled={builderState.otelEnabled}
         onEnabledChange={e => builderOptionsDispatch(setOtelEnabled(e))}
         selectedVersion={builderState.otelVersion}
         onVersionChange={v => builderOptionsDispatch(setOtelVersion(v))}
-      /> */}
+      />
       <ColumnsEditor
         disabled={builderState.otelEnabled}
         allColumns={allColumns}

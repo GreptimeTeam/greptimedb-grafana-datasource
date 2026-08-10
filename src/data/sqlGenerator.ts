@@ -1,5 +1,4 @@
 import { BooleanFilter, BuilderMode, ColumnHint, DateFilterWithValue, FilterOperator, MultiFilter, NumberFilter, QueryBuilderOptions, QueryType, SelectedColumn, StringFilter, TimeUnit } from 'types/queryBuilder';
-import otel from 'otel';
 
 /**
  * Generates a SQL string for the given QueryBuilderOptions
@@ -35,22 +34,22 @@ const generateTraceSearchQuery = (options: QueryBuilderOptions): string => {
   const selectParts: string[] = [];
   const traceId = getColumnByHint(options, ColumnHint.TraceId);
   if (traceId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceId.name)} as traceID`);
+    selectParts.push(`${escapeIdentifier(traceId.name)} as "traceID"`);
   }
 
   const traceServiceName = getColumnByHint(options, ColumnHint.TraceServiceName);
   if (traceServiceName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceServiceName.name)} as serviceName`);
+    selectParts.push(`${escapeIdentifier(traceServiceName.name)} as "serviceName"`);
   }
 
   const traceOperationName = getColumnByHint(options, ColumnHint.TraceOperationName);
   if (traceOperationName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceOperationName.name)} as operationName`);
+    selectParts.push(`${escapeIdentifier(traceOperationName.name)} as "operationName"`);
   }
 
   const traceStartTime = getColumnByHint(options, ColumnHint.Time);
   if (traceStartTime !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceStartTime.name)} as startTime`);
+    selectParts.push(`${escapeIdentifier(traceStartTime.name)} as "startTime"`);
   }
 
   const traceDurationTime = getColumnByHint(options, ColumnHint.TraceDurationTime);
@@ -92,106 +91,22 @@ const generateTraceSearchQuery = (options: QueryBuilderOptions): string => {
  * https://grafana.com/docs/grafana/latest/explore/trace-integration/#data-frame-structure
  */
 const generateTraceIdQuery = (options: QueryBuilderOptions): string => {
-  console.log('generateTraceIdQuery')
   const { database, table } = options;
 
   const queryParts: string[] = [];
 
-  // TODO: these columns could be a map or some other convenience function
-  const selectParts: string[] = [];
-  const traceId = getColumnByHint(options, ColumnHint.TraceId);
-  if (traceId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceId.name)} as traceID`);
-  }
-
-  const traceSpanId = getColumnByHint(options, ColumnHint.TraceSpanId);
-  if (traceSpanId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceSpanId.name)} as spanID`);
-  }
-
-  const traceParentSpanId = getColumnByHint(options, ColumnHint.TraceParentSpanId);
-  if (traceParentSpanId !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceParentSpanId.name)} as parentSpanID`);
-  }
-
-  const traceServiceName = getColumnByHint(options, ColumnHint.TraceServiceName);
-  if (traceServiceName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceServiceName.name)} as serviceName`);
-  }
-
-  const traceOperationName = getColumnByHint(options, ColumnHint.TraceOperationName);
-  if (traceOperationName !== undefined) {
-    selectParts.push(`${escapeIdentifier(traceOperationName.name)} as operationName`);
-  }
-
-  const traceStartTime = getColumnByHint(options, ColumnHint.Time);
-  if (traceStartTime !== undefined) {
-    selectParts.push(`${convertTimeFieldToMilliseconds(escapeIdentifier(traceStartTime.name))} as startTime`);
-  }
-
-  const traceDurationTime = getColumnByHint(options, ColumnHint.TraceDurationTime);
-  if (traceDurationTime !== undefined) {
-    const timeUnit = options.meta?.traceDurationUnit;
-    selectParts.push(getTraceDurationSelectSqlGreptimeDB(escapeIdentifier(traceDurationTime.name), timeUnit));
-  }
-
-  // TODO: for tags and serviceTags, consider the column type. They might not require mapping, they could already be JSON.
-  const traceTags = getColumnsByHint(options, ColumnHint.TraceTags);
- 
-  if (traceTags !== undefined) {
-    // selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceTags.name)}[key]), mapKeys(${escapeIdentifier(traceTags.name)})) as tags`);
-    traceTags.map((v) => selectParts.push(`"${v.name}"`))
-  }
-
- 
-  const traceServiceTags = getColumnsByHint(options, ColumnHint.TraceServiceTags);
-  if (traceServiceTags !== undefined) {
-    traceServiceTags.map((v) => selectParts.push(`"${v.name}"`))
-    // selectParts.push(`arrayMap(key -> map('key', key, 'value',${escapeIdentifier(traceServiceTags.name)}[key]), mapKeys(${escapeIdentifier(traceServiceTags.name)})) as serviceTags`);
-  }
-
-  const traceStatusCode = getColumnByHint(options, ColumnHint.TraceStatusCode);
-  if (traceStatusCode !== undefined) {
-    selectParts.push(`if(${escapeIdentifier(traceStatusCode.name)} IN ('Error', 'STATUS_CODE_ERROR'), 2, 0) as statusCode`);
-  }
-  const traceEventsPrefix = getColumnByHint(options, ColumnHint.TraceEventsPrefix);
-  if (traceEventsPrefix !== undefined) {
-    selectParts.push(`arrayMap((name, timestamp, attributes) -> tuple(name, toString(toUnixTimestamp64Milli(timestamp)), arrayMap( key -> map('key', key, 'value', attributes[key]), mapKeys(attributes)))::Tuple(name String, timestamp String, fields Array(Map(String, String))),${escapeIdentifier(traceEventsPrefix.name)}.Name, ${escapeIdentifier(traceEventsPrefix.name)}.Timestamp, ${escapeIdentifier(traceEventsPrefix.name)}.Attributes) AS logs`);
-  }
-
-  const selectPartsSql = selectParts.join(', ');
-
-  // Optimize trace ID filtering for OTel enabled trace lookups
-  const hasTraceIdFilter = options.meta?.isTraceIdMode && options.meta?.traceId;
-  const otelVersion = otel.getVersion(options.meta?.otelVersion);
-  const applyTraceIdOptimization = hasTraceIdFilter && traceStartTime !== undefined && options.meta?.otelEnabled && otelVersion;
-  if (applyTraceIdOptimization) {
-    const traceId = options.meta!.traceId;
-    const timestampTable = getTableIdentifier(database, table + otel.traceTimestampTableSuffix);
-    queryParts.push('WITH');
-    queryParts.push(`'${traceId}' as trace_id,`);
-    queryParts.push(`(SELECT min(Start) FROM ${timestampTable} WHERE TraceId = trace_id) as trace_start,`);
-    queryParts.push(`(SELECT max(End) + 1 FROM ${timestampTable} WHERE TraceId = trace_id) as trace_end`);
-  }
-
-  queryParts.push('SELECT');
-  queryParts.push(selectPartsSql);
+  queryParts.push('SELECT *');
   queryParts.push('FROM');
   queryParts.push(getTableIdentifier(database, table));
 
+  const hasTraceIdFilter = options.meta?.isTraceIdMode && options.meta?.traceId;
   const filterParts = getFilters(options);
 
   if (hasTraceIdFilter || filterParts) {
     queryParts.push('WHERE');
   }
 
-  if (applyTraceIdOptimization) {
-    queryParts.push('traceID = trace_id');
-    queryParts.push('AND');
-    queryParts.push(`${escapeIdentifier(traceStartTime.name)} >= trace_start`);
-    queryParts.push('AND');
-    queryParts.push(`${escapeIdentifier(traceStartTime.name)} <= trace_end`);
-  } else if (hasTraceIdFilter) {
+  if (hasTraceIdFilter) {
     const traceId = options.meta!.traceId;
     queryParts.push(`trace_id = '${traceId}'`);
   }
@@ -235,40 +150,40 @@ const generateLogsQuery = (_options: QueryBuilderOptions): string => {
   // TODO: these columns could be a map or some other convenience function
   const selectParts: string[] = [];
   const logTime = getColumnByHint(options, ColumnHint.Time);
-  if (logTime !== undefined) {
+  if (logTime?.name) {
     // Must be first column in list.
     logTime.alias = logColumnHintsToAlias.get(ColumnHint.Time);
     selectParts.push(getColumnIdentifier(logTime));
   }
 
   const logMessage = getColumnByHint(options, ColumnHint.LogMessage);
-  if (logMessage !== undefined) {
+  if (logMessage?.name) {
     // Must be second column in list.
     logMessage.alias = logColumnHintsToAlias.get(ColumnHint.LogMessage);
     selectParts.push(getColumnIdentifier(logMessage));
   }
 
   const logLevel = getColumnByHint(options, ColumnHint.LogLevel);
-  if (logLevel !== undefined) {
+  if (logLevel?.name) {
     // TODO: "severity" should be a number, but "level" can be a string? Perhaps we can check the column type here?
     logLevel.alias = logColumnHintsToAlias.get(ColumnHint.LogLevel);
     selectParts.push(getColumnIdentifier(logLevel));
   }
 
   const logLabels = getColumnByHint(options, ColumnHint.LogLabels);
-  if (logLabels !== undefined) {
+  if (logLabels?.name) {
     logLabels.alias = logColumnHintsToAlias.get(ColumnHint.LogLabels);
     selectParts.push(getColumnIdentifier(logLabels));
   }
 
   const traceId = getColumnByHint(options, ColumnHint.TraceId);
-  if (traceId !== undefined) {
+  if (traceId?.name) {
     traceId.alias = logColumnHintsToAlias.get(ColumnHint.TraceId);
     selectParts.push(getColumnIdentifier(traceId));
   }
 
   options.columns?.
-    filter(c => c.hint === undefined). // remove specialized columns
+    filter(c => c.hint === undefined && c.name?.trim()). // remove specialized columns
     forEach(c => selectParts.push(getColumnIdentifier(c)));
 
   const selectPartsSql = selectParts.join(', ');
@@ -285,12 +200,10 @@ const generateLogsQuery = (_options: QueryBuilderOptions): string => {
   if (filterParts || hasLogMessageFilter) {
     queryParts.push('WHERE');
   }
-
   if (filterParts) {
     queryParts.push(filterParts);
   }
-
-  if (hasLogMessageFilter) {
+  if (hasLogMessageFilter && logMessage?.name) {
     if (filterParts) {
       queryParts.push('AND');
     }
@@ -324,7 +237,7 @@ const generateSimpleTimeSeriesQuery = (_options: QueryBuilderOptions): string =>
   const selectParts: string[] = [];
   const selectNames = new Set<string>();
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
-  if (timeColumn !== undefined) {
+  if (timeColumn?.name) {
     timeColumn.alias = 'time';
     selectParts.push(getColumnIdentifier(timeColumn));
     selectNames.add(timeColumn.alias);
@@ -410,10 +323,10 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
   const selectParts: string[] = [];
 
   const timeColumn = getColumnByHint(options, ColumnHint.Time);
-  if (timeColumn !== undefined) {
-    const rawTimeName = timeColumn.name;
+  const rawTimeName = timeColumn?.name || '';
+  if (timeColumn?.name) {
     // Greptime-native preview: show date_bin so users can see how points are bucketed.
-    // `$__interval` is expanded from Grafana's panel interval in CHDatasource before the query runs.
+    // `$__interval` is expanded from Grafana's panel interval before the query runs.
     // (ClickHouse uses $__timeInterval → toStartOfInterval; we keep expanding that macro too for hand-written SQL.)
     timeColumn.name = `date_bin('$__interval', ${rawTimeName})`;
     timeColumn.alias = 'time';
@@ -439,7 +352,7 @@ const generateAggregateTimeSeriesQuery = (_options: QueryBuilderOptions): string
 
   options.aggregates?.forEach(agg => {
     const alias = agg.alias ? ` as ${agg.alias.replace(/ /g, '_')}` : '';
-    const name = `${agg.aggregateType}(${agg.column})`;
+    const name = `${agg.aggregateType}(${escapeIdentifier(agg.column)})`;
     selectParts.push(`${name}${alias}`);
   });
 
@@ -502,8 +415,8 @@ const generateTableQuery = (options: QueryBuilderOptions): string => {
 
   if (isAggregateMode) {
     options.aggregates?.forEach(agg => {
-      const alias = agg.alias ? ` as ${agg.alias.replace(/ /g, '_')}` : '';
-      const name = `${agg.aggregateType}(${agg.column})`;
+    const alias = agg.alias ? ` as ${agg.alias.replace(/ /g, '_')}` : '';
+    const name = `${agg.aggregateType}(${escapeIdentifier(agg.column)})`;
       selectParts.push(`${name}${alias}`);
       selectNames.add(alias ? alias.substring(4) : name);
     });
@@ -569,10 +482,14 @@ export const getColumnsByHints = (options: QueryBuilderOptions, hints: readonly 
 }
 
 const getColumnIdentifier = (col: SelectedColumn): string => {
+  if (!col.name?.trim()) {
+    return '';
+  }
+
   let colName = col.name;
 
   // allow for functions like count() or already-qualified expressions;
-  // otherwise always quote identifiers to preserve case (e.g. "aUTEM")
+  // otherwise always quote identifiers with backtick for MySQL compatibility
   if (
     colName.includes('(') ||
     colName.includes(')') ||
@@ -597,6 +514,9 @@ const getTableIdentifier = (database: string, table: string): string => {
 }
 
 const escapeIdentifier = (id: string): string => {
+  if (id === '*') {
+    return id;
+  }
   return id ? `"${id}"` : '';
 }
 
@@ -622,11 +542,15 @@ const escapeIdentifierIfNeeded = (identifier: string): string => {
 };
 
 const escapeValue = (value: string): string => {
-  if (value.includes('$') || value.includes('(') || value.includes(')') || value.includes('\'') || value.includes('"')) {
+  if (value.includes('$') || value.includes('(') || value.includes(')')) {
     return value;
   }
 
-  return `'${value}'`;
+  if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
+    return value;
+  }
+
+  return `'${value.replace(/'/g, "''")}'`;
 }
 
 /**
@@ -650,7 +574,7 @@ const escapeValue = (value: string): string => {
 // }
 
 const getTraceDurationSelectSqlGreptimeDB = (columnIdentifier: string, timeUnit?: TimeUnit): string => {
-  const alias = 'duration';
+  const alias = '"duration"';
   switch (timeUnit) {
     case TimeUnit.Seconds:
       return `${columnIdentifier} * 1000 AS ${alias}`;
@@ -664,10 +588,6 @@ const getTraceDurationSelectSqlGreptimeDB = (columnIdentifier: string, timeUnit?
       return `${columnIdentifier} AS ${alias}`;
   }
 };
-/** Returns the input time field converted to a Unix timestamp in nanoseconds and then adjusted to milliseconds. */
-
-const convertTimeFieldToMilliseconds = (columnIdentifier: string) =>
-  `CAST(to_unixtime(${columnIdentifier}) * 1000 AS BIGINT)`;
 /**
  * Concatenates query parts with no empty spaces.
  */
@@ -702,11 +622,11 @@ const getOrderBy = (options: QueryBuilderOptions): string => {
         colName = hintedColumn.alias || hintedColumn.name;
       }
 
-      if (!colName) {
+      if (!colName?.trim()) {
         return;
       }
 
-      orderByParts.push(`${escapeIdentifierIfNeeded(colName)} ${o.dir}`);
+      orderByParts.push(`${escapeIdentifier(colName)} ${o.dir}`);
     });
   }
 
@@ -747,7 +667,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
       type = hintedColumn.type || type;
     }
 
-    if (!column) {
+    if (!column?.trim()) {
       continue;
     }
 
@@ -784,7 +704,9 @@ const getFilters = (options: QueryBuilderOptions): string => {
       column = `lower(${column})`;
     }
 
-    filterParts.push(column);
+    if (!isDateFilterWithoutValue(type, filter.operator)) {
+      filterParts.push(column);
+    }
 
     let operator: string = filter.operator;
     let negate = false;
@@ -825,7 +747,7 @@ const getFilters = (options: QueryBuilderOptions): string => {
     } else if (isDateFilter(type)) {
       if (isDateFilterWithoutValue(type, filter.operator)) {
         if (isDateType(type)) {
-          filterParts.push('>=', '\$__fromTime', 'AND', column, '<=', '\$__toTime');
+          filterParts.push(`\$__timeFilter(${column})`);
         }
       } else {
         switch ((filter as DateFilterWithValue).value) {
@@ -845,7 +767,8 @@ const getFilters = (options: QueryBuilderOptions): string => {
       }
     } else if (isStringFilter(type, filter.operator)) {
       if (filter.operator === FilterOperator.Like || filter.operator === FilterOperator.NotLike) {
-        filterParts.push(`'%${filter.value || ''}%'`);
+        const escaped = String(filter.value || '').replace(/'/g, "''");
+        filterParts.push(`'%${escaped}%'`);
       } else if (isMatchesTerm) {
         const raw = (filter as StringFilter).value || '';
         const term = isMatchesTermCaseInsensitive ? raw.toLowerCase() : raw;
@@ -913,7 +836,7 @@ const logAliasToColumnHintsEntries: ReadonlyArray<[string, ColumnHint]> = [
   ['body', ColumnHint.LogMessage],
   ['level', ColumnHint.LogLevel],
   ['labels', ColumnHint.LogLabels],
-  ['traceID', ColumnHint.TraceId],
+  ['trace_id', ColumnHint.TraceId],
 ];
 export const logAliasToColumnHints: Map<string, ColumnHint> = new Map(logAliasToColumnHintsEntries);
 export const logColumnHintsToAlias: Map<ColumnHint, string> = new Map(logAliasToColumnHintsEntries.map(e => [e[1], e[0]]));

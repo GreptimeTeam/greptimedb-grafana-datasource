@@ -1,20 +1,20 @@
 import { DataSourcePlugin } from '@grafana/data';
-import { Datasource } from './data/CHDatasource';
-import { ConfigEditor } from './views/CHConfigEditor';
-import { CHQueryEditor } from './views/CHQueryEditor';
-import { CHConfig } from 'types/config';
-import { CHQuery } from 'types/sql';
+import { Datasource } from './data/GreptimeDatasource';
+import { ConfigEditor } from './views/GreptimeConfigEditor';
+import { GreptimeQueryEditor } from './views/GreptimeQueryEditor';
+import { GreptimeConfig } from 'types/config';
+import { GreptimeQuery } from 'types/sql';
 
-export const plugin = new DataSourcePlugin<Datasource, CHQuery, CHConfig>(Datasource)
+export const plugin = new DataSourcePlugin<Datasource, GreptimeQuery, GreptimeConfig>(Datasource)
   .setConfigEditor(ConfigEditor)
-  .setQueryEditor(CHQueryEditor);
+  .setQueryEditor(GreptimeQueryEditor);
 
 // Track dashboard loads to RudderStack
-// getAppEvents().subscribe<DashboardLoadedEvent<CHQuery>>(
+// getAppEvents().subscribe<DashboardLoadedEvent<GreptimeQuery>>(
 //   DashboardLoadedEvent,
 //   ({ payload: { dashboardId, orgId, grafanaVersion, queries } }) => {
-//     const clickhouseQueries = queries[pluginJson.id]?.filter((q) => !q.hide);
-//     if (!clickhouseQueries?.length) {
+//     const greptimeQueries = queries[pluginJson.id]?.filter((q) => !q.hide);
+//     if (!greptimeQueries?.length) {
 //       return;
 //     }
 //   }

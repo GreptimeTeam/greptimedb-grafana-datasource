@@ -1,4 +1,4 @@
-import { parseFirst, Statement, SelectFromStatement, astMapper, toSql, ExprRef } from 'pgsql-ast-parser';
+import { parseFirst, Statement, SelectFromStatement, astMapper, ExprRef } from 'pgsql-ast-parser';
 
 interface ReplacePart {
   startIndex: number;
@@ -121,28 +121,6 @@ export function sqlToStatement(rawSql: string): Statement {
     },
   }));
   return mapper.statement(ast)!;
-}
-
-export function getTable(sql: string): string {
-  const stm = sqlToStatement(sql);
-  if (stm.type !== 'select' || !stm.from?.length || stm.from?.length <= 0) {
-    return '';
-  }
-  switch (stm.from![0].type) {
-    case 'table': {
-      const table = stm.from![0];
-      const tableName = `${table.name.schema ? `${table.name.schema}.` : ''}${table.name.name}`;
-      // clickhouse table names are case-sensitive and pgsql parser removes casing,
-      // so we need to get the casing from the raw sql
-      const s = new RegExp(`\\b${tableName}\\b`, 'gi').exec(sql);
-      return s ? s[0] : tableName;
-    }
-    case 'statement': {
-      const table = stm.from![0];
-      return getTable(toSql.statement(table.statement));
-    }
-  }
-  return '';
 }
 
 export function getFields(sql: string): string[] {

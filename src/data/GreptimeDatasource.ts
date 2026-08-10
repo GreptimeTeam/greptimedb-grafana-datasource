@@ -20,9 +20,9 @@ import {
   TypedVariableModel,
 } from '@grafana/data';
 import {  BackendSrvRequest, DataSourceWithBackend, FetchResponse, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
-import { Observable, map, firstValueFrom, catchError, of, forkJoin } from 'rxjs';
-import { CHConfig } from 'types/config';
-import { EditorType, CHQuery } from 'types/sql';
+import { Observable, map, firstValueFrom, catchError, of } from 'rxjs';
+import { GreptimeConfig } from 'types/config';
+import { EditorType, GreptimeQuery, GreptimeSqlQuery } from 'types/sql';
 import {
   QueryType,
   AggregateColumn,
@@ -37,14 +37,12 @@ import {
   TimeUnit,
   SelectedColumn,
 } from 'types/queryBuilder';
-import { AdHocFilter, AdHocVariableFilter } from './adHocFilter';
-import { CHVariableSupport } from './CHVariableSupport';
+import { AdHocVariableFilter, columnNameFromAdhocKey, tableAndColumnFromAdhocKey } from './adHocFilter';
+import { GreptimeVariableSupport } from './GreptimeVariableSupport';
 import { cloneDeep, isEmpty, isString } from 'lodash';
 import {
   DEFAULT_LOGS_ALIAS,
   getIntervalInfo,
-  expandGreptimeIntervalMacros,
-  resolveGreptimePanelInterval,
   getTimeFieldRoundingClause,
   LOG_LEVEL_TO_IN_CLAUSE,
   queryLogsVolume,
@@ -54,11 +52,10 @@ import { generateSql, getColumnByHint, logAliasToColumnHints } from './sqlGenera
 import otel from 'otel';
 import { createElement as createReactElement, ReactNode } from 'react';
 import { dataFrameHasLogLabelWithName, transformQueryResponseWithTraceAndLogLinks } from './utils';
+import { replacePreservingBackendMacros } from './macroTemplate';
+import { prepareVariableQuerySql, interpolateDashboardVariables, filterEmptyScopedVars } from './variableQuerySql';
 import { pluginVersion } from 'utils/version';
 import LogsContextPanel from 'components/LogsContextPanel';
-import { transformGreptimeResponseToGrafana, transformGreptimeDBLogs, transformGreptimeDBTraceDetails } from '../greptimedb';
-import { framesToMultiFrameTimeSeries } from '../greptimedb/longToMultiFrame';
-import { GreptimeResponse } from 'greptimedb/types';
 
 /** Prefer Greptime/Grafana fetch error bodies over an empty Error.message ("Unknown error"). */
 function formatQueryError(error: any): string {
@@ -101,26 +98,24 @@ function createMultiSearchAnyEquivalent(llfColumn: string, searchTermsString: st
 }
 
 export class Datasource
-  extends DataSourceWithBackend<CHQuery, CHConfig>
-  implements DataSourceWithSupplementaryQueriesSupport<CHQuery>,
-  DataSourceWithLogsContextSupport<CHQuery>
+  extends DataSourceWithBackend<GreptimeQuery, GreptimeConfig>
+  implements DataSourceWithSupplementaryQueriesSupport<GreptimeQuery>,
+  DataSourceWithLogsContextSupport<GreptimeQuery>
 {
   // This enables default annotation support for 7.2+
   annotations = {};
-  settings: DataSourceInstanceSettings<CHConfig>;
-  adHocFilter: AdHocFilter;
+  settings: DataSourceInstanceSettings<GreptimeConfig>;
   skipAdHocFilter = false; // don't apply adhoc filters to the query
-  adHocFiltersStatus = AdHocFilterStatus.none; // ad hoc filters only work with CH 22.7+
-  adHocCHVerReq = { major: 22, minor: 7 };
+  adHocFiltersStatus = AdHocFilterStatus.none;
+  lastTimeRange?: { from: string; to: string };
 
-  constructor(instanceSettings: DataSourceInstanceSettings<CHConfig>) {
+  constructor(instanceSettings: DataSourceInstanceSettings<GreptimeConfig>) {
     super(instanceSettings);
     this.settings = instanceSettings;
-    this.adHocFilter = new AdHocFilter();
-    this.variables = new CHVariableSupport(this);
+    this.variables = new GreptimeVariableSupport(this);
   }
   
-  private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[]): Filter[] {
+  private buildFiltersFromAdhoc(adHocFilters: AdHocVariableFilter[], targetTable: string): Filter[] {
     const result: Filter[] = [];
 
     for (const f of adHocFilters) {
@@ -128,7 +123,15 @@ export class Datasource
         continue;
       }
 
-      const key = f.key.includes('.') ? f.key.split('.')[1] : f.key;
+      const tc = tableAndColumnFromAdhocKey(f.key);
+      if (tc && targetTable && tc.table !== targetTable) {
+        continue;
+      }
+
+      const key = columnNameFromAdhocKey(f.key);
+      if (!key) {
+        continue;
+      }
       const condition: 'AND' | 'OR' = (f.condition as any) || 'AND';
       const isNullLiteral = typeof f.value === 'string' && f.value.trim().toLowerCase() === 'null';
 
@@ -166,6 +169,23 @@ export class Datasource
           condition,
           operator: op,
           value: f.value,
+        } as Filter);
+        continue;
+      }
+
+      if (f.operator === '>' || f.operator === '<') {
+        const opMap: Record<string, FilterOperator> = {
+          '>': FilterOperator.GreaterThan,
+          '<': FilterOperator.LessThan,
+        };
+        const isNumeric = !isNaN(Number(f.value)) && f.value.trim() !== '';
+        result.push({
+          filterType: 'custom',
+          key,
+          type: isNumeric ? 'number' : 'string',
+          condition,
+          operator: opMap[f.operator],
+          value: isNumeric ? Number(f.value) : f.value,
         } as Filter);
         continue;
       }
@@ -211,21 +231,10 @@ export class Datasource
       }
     });
   }
-  // Add GreptimeDB specific methods
-  async testDatasource(): Promise<any> {
-    const response = await this._request('/v1/sql',{ sql: 'SELECT 1' }).toPromise()
-    .then((response) => {
-      // Do something with the response
-      return response
-    })
-    return {
-      status: response?.ok ? 'success' : 'error',
-      message: response?.ok ? 'Database Connection OK' : response?.status,
-    };
-  }
+
   getDataProvider(
     type: SupplementaryQueryType,
-    request: DataQueryRequest<CHQuery>
+    request: DataQueryRequest<GreptimeQuery>
   ): Observable<DataQueryResponse> | undefined {
     if (!this.getSupportedSupplementaryQueryTypes().includes(type)) {
       return undefined;
@@ -246,7 +255,7 @@ export class Datasource
           };
         }
 
-        const targets: CHQuery[] = [];
+        const targets: GreptimeQuery[] = [];
         logsVolumeRequest.targets.forEach((target) => {
           const supplementaryQuery = this.getSupplementaryLogsVolumeQuery(logsVolumeRequest, target);
           if (supplementaryQuery !== undefined) {
@@ -275,7 +284,7 @@ export class Datasource
     return [SupplementaryQueryType.LogsVolume];
   }
 
-  getSupplementaryLogsVolumeQuery(logsVolumeRequest: DataQueryRequest<CHQuery>, query: CHQuery): CHQuery | undefined {
+  getSupplementaryLogsVolumeQuery(logsVolumeRequest: DataQueryRequest<GreptimeQuery>, query: GreptimeQuery): GreptimeQuery | undefined {
     if (
       query.editorType !== EditorType.Builder ||
       query.builderOptions.queryType !== QueryType.Logs ||
@@ -289,7 +298,7 @@ export class Datasource
     
 
     const timeColumn = getColumnByHint(query.builderOptions, ColumnHint.Time);
-    if (timeColumn === undefined) {
+    if (timeColumn === undefined || !timeColumn.name?.trim()) {
       return undefined;
     }
 
@@ -352,24 +361,41 @@ export class Datasource
     };
   }
 
-  getSupplementaryQuery(options: SupplementaryQueryOptions, originalQuery: CHQuery): CHQuery | undefined {
+  getSupplementaryQuery(options: SupplementaryQueryOptions, originalQuery: GreptimeQuery): GreptimeQuery | undefined {
     return undefined;
   }
 
-  async metricFindQuery(query: CHQuery | string, options: any) {
+  async metricFindQuery(query: GreptimeQuery | string, options: any = {}) {
     if (this.adHocFiltersStatus === AdHocFilterStatus.none) {
       this.adHocFiltersStatus = await this.canUseAdhocFilters();
     }
-    const chQuery = isString(query) ? { rawSql: query, editorType: EditorType.SQL } : query;
 
-    if (!(chQuery.editorType === EditorType.SQL || chQuery.editorType === EditorType.Builder || !chQuery.editorType)) {
+    const sql = options?.variableQuery
+      ? prepareVariableQuerySql(options.variableQuery, this.getDefaultDatabase(), options.scopedVars)
+      : interpolateDashboardVariables(isString(query) ? query : query.rawSql || '', options?.scopedVars);
+    const rawSql = sql;
+
+    if (!rawSql) {
       return [];
     }
 
-    if (!chQuery.rawSql) {
-      return [];
-    }
-    const frame = await this.runQuery(chQuery, options);
+    const greptimeQuery: GreptimeSqlQuery = {
+      rawSql,
+      editorType: EditorType.SQL,
+      refId: 'metricFind',
+      pluginVersion,
+      meta: {
+        skipAdHocFilters: options?.skipAdHocFilters ?? true,
+      },
+    };
+
+    const frame = await this.runQuery(greptimeQuery, {
+      ...options,
+      // Variable SQL is fully interpolated above. Do not pass scopedVars into
+      // super.query() — empty dependent entries override templateSrv global state
+      // (regression vs pre-Go-backend runQuery which never forwarded scopedVars).
+      scopedVars: undefined,
+    });
     if (frame.fields?.length === 0) {
       return [];
     }
@@ -381,7 +407,7 @@ export class Datasource
     return frame?.fields[1]?.values.map((text, i) => ({ text, value: ids.get(i) }));
   }
 
-  applyTemplateVariables(query: CHQuery, scoped: ScopedVars): CHQuery {
+  applyTemplateVariables(query: GreptimeQuery, scoped: ScopedVars): GreptimeQuery {
     let rawQuery = query.rawSql || '';
     rawQuery = this.applyConditionalAll(rawQuery, getTemplateSrv().getVariables());
     return {
@@ -420,7 +446,7 @@ export class Datasource
   }
 
   // Support filtering by field value in Explore
-  modifyQuery(query: CHQuery, action: QueryFixAction): CHQuery {
+  modifyQuery(query: GreptimeQuery, action: QueryFixAction): GreptimeQuery {
     if (query.editorType !== EditorType.Builder || !action.options || !action.options.key || !action.options.value) {
       return query;
     }
@@ -535,10 +561,13 @@ export class Datasource
   }
 
   private replace(value?: string, scopedVars?: ScopedVars) {
-    if (value !== undefined) {
-      return getTemplateSrv().replace(value, scopedVars, this.format);
+    if (value === undefined) {
+      return value;
     }
-    return value;
+    const effectiveScopedVars = filterEmptyScopedVars(scopedVars);
+    return replacePreservingBackendMacros(value, (sql) =>
+      getTemplateSrv().replace(sql, effectiveScopedVars, this.format)
+    );
   }
 
   private format(value: any) {
@@ -808,7 +837,7 @@ export class Datasource
     return this.values(frame);
   }
 
-  private getTimezone(request: DataQueryRequest<CHQuery>): string | undefined {
+  private getTimezone(request: DataQueryRequest<GreptimeQuery>): string | undefined {
     // timezone specified in the time picker
     if (request.timezone && request.timezone !== 'browser') {
       return request.timezone;
@@ -818,12 +847,16 @@ export class Datasource
     return localTimezoneInfo?.ianaName;
   }
 
-  query(request: DataQueryRequest<CHQuery>): Observable<DataQueryResponse> {
+  query(request: DataQueryRequest<GreptimeQuery>): Observable<DataQueryResponse> {
+    this.lastTimeRange = request.range
+      ? { from: request.range.from.valueOf().toString(), to: request.range.to.valueOf().toString() }
+      : undefined;
+
     const templateSrv = getTemplateSrv() as any;
     // Grafana stores adhoc filters scoped by datasource identity.
     // Using uid is more stable than name (name can be empty/changed).
     const adHocFilters: AdHocVariableFilter[] = (() => {
-      if (this.skipAdHocFilter || !templateSrv.getAdhocFilters) {
+      if (!templateSrv.getAdhocFilters) {
         return [];
       }
 
@@ -855,7 +888,7 @@ export class Datasource
       .filter((t) => t.hide !== true)
       // attach timezone information and merge ad-hoc filters for builder queries
       .map((t) => {
-        let next: CHQuery = {
+        let next: GreptimeQuery = {
           ...t,
           meta: {
             ...t?.meta,
@@ -871,7 +904,7 @@ export class Datasource
           next.editorType === EditorType.Builder &&
           next.builderOptions
         ) {
-          const extraFilters = this.buildFiltersFromAdhoc(adHocFilters);
+          const extraFilters = this.buildFiltersFromAdhoc(adHocFilters, next.builderOptions.table);
           if (extraFilters.length) {
             const mergedFilters = [
               ...(next.builderOptions.filters || []),
@@ -892,165 +925,48 @@ export class Datasource
         return next;
       })
       .filter((t) => t.rawSql);
-    const range = request.range
 
-    const getInterpolatedSql = (rawSql: string): string => {
-      const fromTimeISO = range?.from.toISOString();
-      const toTimeISO = range?.to.toISOString();
-      const rangeMs = range ? range.to.valueOf() - range.from.valueOf() : undefined;
-
-      // Resolve panel interval from Grafana's request (not logs-style 1s/1m/1h snap).
-      // Expand BEFORE templateSrv so `$__interval` inside date_bin() is not left to
-      // a mismatched Grafana variable replacement.
-      const scopedInterval =
-        typeof request.scopedVars?.__interval?.value === 'string'
-          ? request.scopedVars.__interval.value
-          : undefined;
-      const scopedIntervalMs =
-        typeof request.scopedVars?.__interval_ms?.value === 'number'
-          ? request.scopedVars.__interval_ms.value
-          : undefined;
-      const resolvedInterval = resolveGreptimePanelInterval({
-        interval: request.interval || scopedInterval,
-        intervalMs: request.intervalMs ?? scopedIntervalMs,
-        rangeMs,
-        maxDataPoints: request.maxDataPoints,
-      });
-
-      let interpolated = expandGreptimeIntervalMacros(rawSql, resolvedInterval);
-
-      // Dashboard template variables (not $__interval — already expanded above)
-      interpolated = getTemplateSrv().replace(interpolated, request.scopedVars);
-
-      // Expand custom time macros
-      if (fromTimeISO && toTimeISO) {
-        interpolated = interpolated.replace(/\$__fromTime/g, `'${fromTimeISO}'`);
-        interpolated = interpolated.replace(/\$__toTime/g, `'${toTimeISO}'`);
-
-        interpolated = interpolated.replace(/\$__timeFilter\(([^)]+)\)/g, (_match, col) => {
-          const column = String(col).trim();
-          return `${column} >= '${fromTimeISO}' AND ${column} <= '${toTimeISO}'`;
-        });
-      }
-
-      return interpolated;
-    };
-    // Create an array of Observables, one for each active target request + transformation
-  const targetObservables: Array<Observable<DataFrame[]>> = targets.map((target: CHQuery) => {
-    
-    const sql = getInterpolatedSql(target.rawSql)
-    return this._request('/v1/sql', { sql: sql }) // This returns Observable<BackendDataSourceResponse>
+    return super
+      .query({
+        ...request,
+        // adhoc merged above; dashboard vars via applyTemplateVariables inside super.query();
+        // time macros ($__timeFilter, $__interval, …) expand in Go.
+        targets,
+      })
       .pipe(
-        // Map 1: Extract the data from the response
-        map((response: FetchResponse) => {
-            // --- Optional: Add response validation here ---
-            if (!response.data /* || check response.data.code etc. */) {
-                console.error('Invalid response data received:', response);
-                // Throw an error to be caught by catchError
-                throw new Error(`Invalid response structure received for target ${target.refId}`);
-            }
-            return response.data as GreptimeResponse; // Assert or validate type
-        }),
-        // Map 2: Transform the GreptimeDB response data into Grafana DataFrames
-        map((greptimeData: GreptimeResponse) => {
-          // Pass the appropriate format hint if needed by your transformer
-          // const formatHint = target.formatHint || GrafanaDataFormat.TimeSeries;
-          const editorType = target.editorType
-          let builderOptions
-          if (editorType === EditorType.SQL) {
-            builderOptions = target.meta?.builderOptions || {}
-          } else {
-            builderOptions = target.builderOptions || {}
-          }
-          const queryType = target.refId === 'Trace ID' ? 'Trace' : builderOptions.queryType || target.queryType
-          if (queryType === QueryType.Logs) {
-            const contextColumns = this.getLogContextColumnNames()
-            const logFrame = transformGreptimeDBLogs(greptimeData, target, contextColumns) as DataFrame
-            return logFrame? [logFrame] : []
-          } else if (queryType === 'Trace') {
-            const frames = transformGreptimeDBTraceDetails(greptimeData, builderOptions as QueryBuilderOptions)
-            
-            return frames;
-          } else {
-            const frames = transformGreptimeResponseToGrafana(greptimeData, target.refId);
-            // Time Series: string dims → field.labels / multi-frame (Prepare time series equivalent).
-            // Table and other types keep long format.
-            if (queryType === QueryType.TimeSeries) {
-              return framesToMultiFrameTimeSeries(frames);
-            }
-            return frames;
-          }
-          
-          
-        }),
-        // --- Error Handling Per Target ---
-        // Catch errors specifically for this target's request/transformation
-        catchError(error => {
-          console.error(`Error processing target ${target.refId}:`, error);
-          const detail = formatQueryError(error);
+        map((response) => this.postProcessBackendQueryResponse(response, request, targets)),
+        catchError((error) => {
+          console.error('Error executing backend query:', error);
           const errorFrame = new MutableDataFrame({
-            refId: target.refId,
-            fields: [
-                { name: 'Error', values: [`Failed to process query for ${target.refId}: ${detail}`] }
-            ],
-            meta: { preferredVisualisationType: 'table' }
+            fields: [{ name: 'Error', values: [`Failed to execute query: ${formatQueryError(error)}`] }],
+            meta: { preferredVisualisationType: 'table' },
           });
-          return of([errorFrame]);
+          return of({ data: [errorFrame] });
         })
-      ); // End pipe for this target
-    })
-    // --- Combine results using forkJoin and map to final DataQueryResponse ---
-  return forkJoin(targetObservables).pipe(
-    // forkJoin emits Observable<DataFrame[][]>
-    map((results: DataFrame[][]) => {
-      // Flatten the array of DataFrame arrays into a single DataFrame array
-      const flattenedData: DataFrame[] = results.flat();
-
-      // Apply the final transformation function.
-      // This function should now directly return the DataQueryResponse object.
-      const finalResponse: DataQueryResponse = transformQueryResponseWithTraceAndLogLinks(
-        this,     // Pass the datasource instance context
-        request,  // Pass the original query request
-        { data: flattenedData } // Pass the combined data frames
       );
-      // Return the final structure Grafana expects
-      return finalResponse; // { data: DataFrame[] }
-    }),
-    // Catch errors from forkJoin or the final map transformation
-    catchError(error => {
-      console.error('Error combining results or in final transformation:', error);
-      const errorFrame = new MutableDataFrame({
-        fields: [{ name: 'Error', values: [`Failed to execute query: ${formatQueryError(error)}`] }],
-        meta: { preferredVisualisationType: 'table' }
-      });
-      return of({ data: [errorFrame] });
-    })
-  ); 
-  // The final result is Observable<DataQueryResponse> - no .toPromise() needed
-    // const promises = targets.map(async (target) => {
-    //    const response = await this._request('/v1/sql', {sql: target.rawSql}).toPromise();
-    //    const result = transformGreptimeResponseToGrafana(response.data, target.refId)
-    //    return result
-       
-    //   // return lastValueFrom(transformSqlResponse((this as any)._request('/v1/sql', {sql: target.rawSql})))
-    // })
-    
-    // return Promise.all(promises).then((data) => ( transformQueryResponseWithTraceAndLogLinks(this, request, {data: data[0]})))
-    // return super.query({
-    //   ...request,
-    //   targets,
-    // }).pipe(map((res: DataQueryResponse) => transformQueryResponseWithTraceAndLogLinks(this, request, res)));
   }
 
-  private runQuery(request: Partial<CHQuery>, options?: any): Promise<DataFrame> {
+  private postProcessBackendQueryResponse(
+    response: DataQueryResponse,
+    request: DataQueryRequest<GreptimeQuery>,
+    _targets: GreptimeQuery[]
+  ): DataQueryResponse {
+    // Multi-frame / logs / traces frames are shaped in Go (pkg/greptime.FormatFrames).
+    // Frontend only attaches Explore data links between logs and traces.
+    return transformQueryResponseWithTraceAndLogLinks(this, request, response);
+  }
+
+  private runQuery(request: Partial<GreptimeQuery>, options?: any): Promise<DataFrame> {
     return new Promise((resolve) => {
       // VariableSupport often passes `{ range: undefined }`. Do not treat a present
       // but empty options object as having a valid range — fall back to dashboard time.
       const range = options?.range ?? (getTemplateSrv() as any).timeRange;
+      const scopedVars = options?.scopedVars;
       const req = {
         targets: [{ ...request, refId: String(Math.random()) }],
         range,
-      } as DataQueryRequest<CHQuery>;
+        scopedVars,
+      } as DataQueryRequest<GreptimeQuery>;
       this.query(req).subscribe((res: DataQueryResponse) => {
         resolve(res.data[0] || { fields: [] });
       });
@@ -1083,29 +999,47 @@ export class Datasource
 
   async getTagValues({ key }: any): Promise<MetricFindValue[]> {
     const { type } = this.getTagSource();
-    const prevSkip = this.skipAdHocFilter;
-    this.skipAdHocFilter = true;
-    try {
-      if (type === TagType.query) {
-        return this.fetchTagValuesFromQuery(key);
-      }
-      return this.fetchTagValuesFromSchema(key);
-    } finally {
-      this.skipAdHocFilter = prevSkip;
+    if (type === TagType.query) {
+      return this.fetchTagValuesFromQuery(key);
     }
+    return this.fetchTagValuesFromSchema(key);
   }
 
   private async fetchTagValuesFromSchema(key: string): Promise<MetricFindValue[]> {
-    const { from } = this.getTagSource();
-    const [table, col] = key.split('.');
-    // Guard against invalid or undefined column names which can generate invalid SQL like
-    // `select distinct undefined from host limit 1000`
-    if (!table || !col || col === 'undefined') {
+    const parsed = tableAndColumnFromAdhocKey(key);
+    if (!parsed) {
       return [];
     }
-    const source = from?.includes('.') ? `${from.split('.')[0]}.${table}` : table;
-    const rawSql = `select distinct ${col} from ${source} limit 1000`;
-    const frame = await this.runQuery({ rawSql });
+    const { table, col } = parsed;
+    const { from } = this.getTagSource();
+    let source: string;
+    let db: string | undefined;
+    if (from?.includes('.')) {
+      [db] = from.split('.');
+      source = `"${db}"."${table}"`;
+    } else if (from) {
+      db = from;
+      source = `"${from}"."${table}"`;
+    } else {
+      db = this.getDefaultDatabase() || this.getDefaultLogsDatabase();
+      source = db ? `"${db}"."${table}"` : `"${table}"`;
+    }
+
+    let rawSql: string;
+    if (this.lastTimeRange && db) {
+      const timeColName = await this.fetchTimeColumn(db, table);
+      if (timeColName) {
+        const fromISO = new Date(Number(this.lastTimeRange.from)).toISOString();
+        const toISO = new Date(Number(this.lastTimeRange.to)).toISOString();
+        rawSql = `SELECT DISTINCT "${col}" FROM ${source} WHERE "${timeColName}" >= '${fromISO}' AND "${timeColName}" <= '${toISO}' LIMIT 1000`;
+      } else {
+        rawSql = `SELECT DISTINCT "${col}" FROM ${source} LIMIT 1000`;
+      }
+    } else {
+      rawSql = `SELECT DISTINCT "${col}" FROM ${source} LIMIT 1000`;
+    }
+
+    const frame = await this.runQuery({ rawSql, meta: { skipAdHocFilters: true } } as any);
     if (frame.fields?.length === 0) {
       return [];
     }
@@ -1116,6 +1050,19 @@ export class Datasource
       .map((value) => {
         return { text: String(value) };
       });
+  }
+
+  private async fetchTimeColumn(db: string, table: string): Promise<string | undefined> {
+    const sql = `SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '${db}' AND table_name = '${table}' AND column_key = 'TIME INDEX' LIMIT 1`;
+    try {
+      const frame = await this.runQuery({ rawSql: sql, meta: { skipAdHocFilters: true } } as any);
+      if (frame.fields?.length && frame.fields[0].values.length) {
+        return String(frame.fields[0].values[0]);
+      }
+    } catch {
+      // ignore errors
+    }
+    return undefined;
   }
 
   private async fetchTagValuesFromQuery(key: string): Promise<MetricFindValue[]> {
@@ -1134,36 +1081,41 @@ export class Datasource
 
   private async fetchTags(): Promise<Tags> {
     const tagSource = this.getTagSource();
-    const prevSkip = this.skipAdHocFilter;
-    this.skipAdHocFilter = true;
-    try {
-      if (tagSource.source === undefined) {
-        const rawSql =
-          'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS';
-        const results = await this.runQuery({ rawSql });
-        return { type: TagType.schema, frame: results };
-      }
+    const adHocQueryMeta = { skipAdHocFilters: true };
 
-      if (tagSource.type === TagType.query) {
-        this.adHocFilter.setTargetTableFromQuery(tagSource.source);
-      }
-
-      const results = await this.runQuery({ rawSql: tagSource.source });
-      return { type: tagSource.type, frame: results };
-    } finally {
-      this.skipAdHocFilter = prevSkip;
+    if (tagSource.source === undefined) {
+      const rawSql =
+        'SELECT column_name AS name, greptime_data_type AS type, table_name AS table FROM INFORMATION_SCHEMA.COLUMNS';
+      const results = await this.runQuery({ rawSql, meta: adHocQueryMeta } as any);
+      return { type: TagType.schema, frame: results };
     }
+
+    const results = await this.runQuery({ rawSql: tagSource.source, meta: adHocQueryMeta } as any);
+    return { type: tagSource.type, frame: results };
   }
 
   private getTagSource() {
     // @todo https://github.com/grafana/grafana/issues/13109
-    const ADHOC_VAR = '$clickhouse_adhoc_query';
+    // Prefer Greptime name; keep ClickHouse legacy variable for existing dashboards.
+    const ADHOC_VARS = ['$greptime_adhoc_query', '$clickhouse_adhoc_query'];
+    const unresolvedNames = new Set(ADHOC_VARS);
     const defaultDatabase = this.getDefaultDatabase();
-    let source = getTemplateSrv().replace(ADHOC_VAR);
-    if (source === ADHOC_VAR && isEmpty(defaultDatabase)) {
+    let source = '';
+    let unresolved = true;
+    for (const name of ADHOC_VARS) {
+      const replaced = getTemplateSrv().replace(name);
+      if (!unresolvedNames.has(replaced)) {
+        source = replaced;
+        unresolved = false;
+        break;
+      }
+    }
+    if (unresolved && isEmpty(defaultDatabase)) {
       return { type: TagType.schema, source: undefined };
     }
-    source = source === ADHOC_VAR ? defaultDatabase! : source;
+    if (unresolved) {
+      source = defaultDatabase!;
+    }
     if (source.toLowerCase().startsWith('select')) {
       return { type: TagType.query, source };
     }
@@ -1176,23 +1128,10 @@ export class Datasource
     return { type: TagType.schema, source: sql, from: source };
   }
 
-  // Returns true if ClickHouse's version is greater than or equal to 22.7
-  // 22.7 added 'settings additional_table_filters' which is used for ad hoc filters
+  // Ad-hoc filters are always enabled for GreptimeDB.
   private async canUseAdhocFilters(): Promise<AdHocFilterStatus> {
     this.skipAdHocFilter = false;
     return Promise.resolve(AdHocFilterStatus.enabled);
-    // const data = await this.fetchData(`SELECT version()`);
-    // try {
-    //   const verString = (data[0] as unknown as string).split('.');
-    //   const ver = { major: Number.parseInt(verString[0], 10), minor: Number.parseInt(verString[1], 10) };
-    //   return ver.major > this.adHocCHVerReq.major ||
-    //     (ver.major === this.adHocCHVerReq.major && ver.minor >= this.adHocCHVerReq.minor)
-    //     ? AdHocFilterStatus.enabled
-    //     : AdHocFilterStatus.disabled;
-    // } catch (err) {
-    //   console.error(`Unable to parse ClickHouse version: ${err}`);
-    //   throw err;
-    // }
   }
 
   // interface DataSourceWithLogsContextSupport
@@ -1228,7 +1167,7 @@ export class Datasource
         }
       } else if (isMapKey) {
         continue;
-      } else {
+       } else {
         // LogLines: Grafana dataplane only uses `labels` for extra metadata in the logs UI;
         // context columns may only exist on each row's labels object.
         const labelsField = row.dataFrame.fields.find(f => f.name === 'labels');
@@ -1269,7 +1208,7 @@ export class Datasource
    * 
    * If no context columns can be matched from the selected data frame, then the query is not run.
    */
-  async getLogRowContext(row: LogRowModel, options?: LogRowContextOptions, query?: CHQuery | undefined, cacheFilters?: boolean): Promise<DataQueryResponse> {
+  async getLogRowContext(row: LogRowModel, options?: LogRowContextOptions, query?: GreptimeQuery | undefined, cacheFilters?: boolean): Promise<DataQueryResponse> {
     if (!query) {
       throw new Error('Missing query for log context');
     } else if (!options || !options.direction || options.limit === undefined) {
@@ -1350,7 +1289,8 @@ export class Datasource
     contextQuery.rawSql = generateSql(builderOptions);
     const req = {
       targets: [contextQuery],
-    } as DataQueryRequest<CHQuery>;
+      range,
+    } as DataQueryRequest<GreptimeQuery>;
 
     // Do NOT toggle this.skipAdHocFilter here: concurrent dashboard/log queries on the same
     // datasource instance would skip ad hoc filters. Per-target meta.skipAdHocFilters is enough.
@@ -1368,7 +1308,7 @@ export class Datasource
   /**
    * Returns a React component that is displayed in the top portion of the log context panel
    */
-  getLogRowContextUi(row: LogRowModel, runContextQuery?: (() => void) | undefined, query?: CHQuery | undefined): ReactNode {
+  getLogRowContextUi(row: LogRowModel, runContextQuery?: (() => void) | undefined, query?: GreptimeQuery | undefined): ReactNode {
     const contextColumns = this.getLogContextColumnsFromLogRow(row);
     return createReactElement(LogsContextPanel, { columns: contextColumns, datasourceUid: this.uid });
   }

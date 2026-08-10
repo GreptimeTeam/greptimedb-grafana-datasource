@@ -1,7 +1,7 @@
 import React from 'react';
 import { Alert, Icon, IconName, Stack, useTheme2 } from '@grafana/ui';
 import { css } from '@emotion/css';
-import { LogContextColumn } from 'data/CHDatasource';
+import { LogContextColumn } from 'data/GreptimeDatasource';
 import { Components } from 'selectors';
 
 

@@ -1,14 +1,15 @@
 import { DataSourceSettings } from "@grafana/data";
 import { renderHook } from "@testing-library/react";
-import { CHConfig, CHHttpHeader, CHSecureConfig, Protocol } from "types/config";
-import { onHttpHeadersChange, useConfigDefaults } from "./CHConfigEditorHooks";
+import { GreptimeConfig, GreptimeHttpHeader, GreptimeSecureConfig, Protocol } from "types/config";
+import { onHttpHeadersChange, useConfigDefaults } from "./GreptimeConfigEditorHooks";
 import { pluginVersion } from "utils/version";
 import { defaultLogsTable, defaultTraceTable } from "otel";
+import { TimeUnit } from "types/queryBuilder";
 
 describe('onHttpHeadersChange', () => {
   it('should properly sort headers into secure/plain config fields', async () => {
     const onOptionsChange = jest.fn();
-    const headers: CHHttpHeader[] = [
+    const headers: GreptimeHttpHeader[] = [
       {
         name: 'X-Existing-Auth-Header',
         value: '',
@@ -48,7 +49,7 @@ describe('onHttpHeadersChange', () => {
       secureJsonFields: {
         'secureHttpHeaders.X-Existing-Auth-Header': true
       },
-    } as any as DataSourceSettings<CHConfig, CHSecureConfig>;
+    } as any as DataSourceSettings<GreptimeConfig, GreptimeSecureConfig>;
 
     onHttpHeadersChange(headers, opts, onOptionsChange);
 
@@ -91,16 +92,25 @@ describe('onHttpHeadersChange', () => {
 });
 
 describe('useConfigDefaults', () => {
-  const expectedDefaults: Partial<CHConfig> = {
+  const expectedDefaults: Partial<GreptimeConfig> = {
     version: pluginVersion,
     protocol: Protocol.Native,
     logs: {
       defaultTable: defaultLogsTable,
       selectContextColumns: true,
-      contextColumns: []
+      contextColumns: [],
+      traceIdColumn: 'trace_id',
     },
     traces: {
-      defaultTable: defaultTraceTable
+      defaultTable: defaultTraceTable,
+      traceIdColumn: 'trace_id',
+      spanIdColumn: 'span_id',
+      operationNameColumn: 'span_name',
+      parentSpanIdColumn: 'parent_span_id',
+      serviceNameColumn: 'service_name',
+      durationColumn: 'duration_nano',
+      durationUnit: TimeUnit.Nanoseconds,
+      startTimeColumn: 'timestamp',
     }
   };
 
@@ -111,7 +121,7 @@ describe('useConfigDefaults', () => {
         server: 'address',
         timeout: '8'
       }
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
 
@@ -132,7 +142,7 @@ describe('useConfigDefaults', () => {
       jsonData: {
         server: 'address'
       }
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
 
@@ -155,7 +165,7 @@ describe('useConfigDefaults', () => {
         timeout: '6',
         dialTimeout: '8'
       }
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
 
@@ -176,7 +186,7 @@ describe('useConfigDefaults', () => {
       jsonData: {
         protocol: Protocol.Native,
       }
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
 
@@ -198,7 +208,7 @@ describe('useConfigDefaults', () => {
         version: '3.0.0',
         protocol: Protocol.Native,
       }
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
 
@@ -227,7 +237,7 @@ describe('useConfigDefaults', () => {
           defaultTable: '' // empty
         }
       }
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
 
@@ -253,7 +263,7 @@ describe('useConfigDefaults', () => {
     const onOptionsChange = jest.fn();
     const options = {
       jsonData: {}
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
 
@@ -268,7 +278,7 @@ describe('useConfigDefaults', () => {
     const onOptionsChange = jest.fn();
     const options = {
       jsonData: {}
-    } as any as DataSourceSettings<CHConfig>;
+    } as any as DataSourceSettings<GreptimeConfig>;
 
     const hook = renderHook(opts => useConfigDefaults(opts, onOptionsChange), { initialProps: options });
     hook.rerender();

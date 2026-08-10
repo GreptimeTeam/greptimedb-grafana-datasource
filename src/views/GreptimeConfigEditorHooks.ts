@@ -1,7 +1,7 @@
 import { DataSourceSettings, KeyValue } from "@grafana/data";
 import { defaultLogsTable, defaultTraceTable } from "otel";
 import { useEffect, useRef } from "react";
-import { CHConfig, CHHttpHeader, CHSecureConfig, CHTracesConfig, Protocol } from "types/config";
+import { GreptimeConfig, GreptimeHttpHeader, GreptimeSecureConfig, GreptimeTracesConfig, Protocol } from "types/config";
 import { TimeUnit } from "types/queryBuilder";
 import { pluginVersion } from "utils/version";
 
@@ -12,8 +12,8 @@ import { pluginVersion } from "utils/version";
  * If the header is marked as secure, its value goes to the
  * secure json config where it is hidden.
  */
-export const onHttpHeadersChange = (headers: CHHttpHeader[], options: DataSourceSettings<CHConfig, CHSecureConfig>, onOptionsChange: (opts: DataSourceSettings<CHConfig, CHSecureConfig>) => void) => {
-  const httpHeaders: CHHttpHeader[] = [];
+export const onHttpHeadersChange = (headers: GreptimeHttpHeader[], options: DataSourceSettings<GreptimeConfig, GreptimeSecureConfig>, onOptionsChange: (opts: DataSourceSettings<GreptimeConfig, GreptimeSecureConfig>) => void) => {
+  const httpHeaders: GreptimeHttpHeader[] = [];
   const secureHttpHeaderKeys: KeyValue<boolean> = {};
   const secureHttpHeaderValues: KeyValue<string> = {};
 
@@ -61,7 +61,7 @@ export const onHttpHeadersChange = (headers: CHHttpHeader[], options: DataSource
   });
 }
 
-const defaultTraceConfig: CHTracesConfig = {
+const defaultTraceConfig: GreptimeTracesConfig = {
   traceIdColumn: 'trace_id',
   spanIdColumn: 'span_id',
   operationNameColumn: 'span_name',
@@ -75,7 +75,7 @@ const defaultTraceConfig: CHTracesConfig = {
 /**
  * Applies default settings and migrations to config options.
  */
-export const useConfigDefaults = (options: DataSourceSettings<CHConfig>, onOptionsChange: (opts: DataSourceSettings<CHConfig>) => void) => {
+export const useConfigDefaults = (options: DataSourceSettings<GreptimeConfig>, onOptionsChange: (opts: DataSourceSettings<GreptimeConfig>) => void) => {
   const appliedDefaults = useRef<boolean>(false);
   useEffect(() => {
     if (appliedDefaults.current) {

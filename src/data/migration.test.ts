@@ -1,14 +1,14 @@
-import { CHBuilderQuery, CHQuery, CHSqlQuery, EditorType } from "types/sql";
-import { migrateCHQuery } from "./migration";
+import { GreptimeBuilderQuery, GreptimeQuery, GreptimeSqlQuery, EditorType } from "types/sql";
+import { migrateGreptimeQuery } from "./migration";
 import { pluginVersion } from "utils/version";
 import { AggregateType, BuilderMode, ColumnHint, Filter, FilterOperator, OrderByDirection, QueryBuilderOptions, QueryType } from "types/queryBuilder";
 import { mapQueryTypeToGrafanaFormat } from "./utils";
 
 describe('Query Editor Version Migration', () => {
   it('does not apply migration for empty query', () => {
-    const query = {} as CHQuery;
+    const query = {} as GreptimeQuery;
 
-    const migratedQuery = migrateCHQuery(query);
+    const migratedQuery = migrateGreptimeQuery(query);
     expect(migratedQuery).not.toBeUndefined();
     expect(migratedQuery).toEqual(query);
   });
@@ -17,15 +17,15 @@ describe('Query Editor Version Migration', () => {
     const defaultGrafanaQuery = {
       datasource: 'test-ds',
       refId: 'A'
-    } as unknown as CHQuery;
+    } as unknown as GreptimeQuery;
 
-    const migratedQuery = migrateCHQuery(defaultGrafanaQuery);
+    const migratedQuery = migrateGreptimeQuery(defaultGrafanaQuery);
     expect(migratedQuery).not.toBeUndefined();
     expect(migratedQuery).toEqual(defaultGrafanaQuery);
   });
 
   it('does not apply migration to latest query schema', () => {
-    const latestQuery: CHBuilderQuery = {
+    const latestQuery: GreptimeBuilderQuery = {
       pluginVersion,
       editorType: EditorType.Builder,
       builderOptions: {
@@ -64,7 +64,7 @@ describe('Query Editor Version Migration', () => {
       refId: 'A'
     };
 
-    const migratedQuery = migrateCHQuery(latestQuery);
+    const migratedQuery = migrateGreptimeQuery(latestQuery);
     expect(migratedQuery).toBe(latestQuery);
     expect(migratedQuery).toEqual(latestQuery);
   });
@@ -126,9 +126,9 @@ describe('Query Editor Version Migration', () => {
       meta: {
         timezone: 'tz'
       }
-    } as unknown as CHQuery;
+    } as unknown as GreptimeQuery;
 
-    const latestQuery: CHBuilderQuery = {
+    const latestQuery: GreptimeBuilderQuery = {
       pluginVersion,
       editorType: EditorType.Builder,
       refId: 'A',
@@ -187,7 +187,7 @@ describe('Query Editor Version Migration', () => {
       }
     };
 
-    const migratedQuery = migrateCHQuery(v3Query);
+    const migratedQuery = migrateGreptimeQuery(v3Query);
     expect(migratedQuery).toEqual(latestQuery);
   });
 
@@ -214,9 +214,9 @@ describe('Query Editor Version Migration', () => {
       format: 1,
       selectedFormat: 1,
       expand: true
-    } as unknown as CHQuery;
+    } as unknown as GreptimeQuery;
 
-    const latestQuery: CHSqlQuery = {
+    const latestQuery: GreptimeSqlQuery = {
       pluginVersion,
       editorType: EditorType.SQL,
       refId: 'A',
@@ -244,7 +244,7 @@ describe('Query Editor Version Migration', () => {
       }
     };
 
-    const migratedQuery = migrateCHQuery(v3Query);
+    const migratedQuery = migrateGreptimeQuery(v3Query);
     expect(migratedQuery).toEqual(latestQuery);
   });
 
@@ -255,9 +255,9 @@ describe('Query Editor Version Migration', () => {
         mode: 'list',
       },
       rawSql: ''
-    } as unknown as CHQuery;
+    } as unknown as GreptimeQuery;
 
-    const latestQuery: CHBuilderQuery = {
+    const latestQuery: GreptimeBuilderQuery = {
       pluginVersion,
       editorType: EditorType.Builder,
       builderOptions: {
@@ -271,7 +271,7 @@ describe('Query Editor Version Migration', () => {
       refId: ''
     };
 
-    const migratedQuery = migrateCHQuery(v3Query);
+    const migratedQuery = migrateGreptimeQuery(v3Query);
     expect(migratedQuery).toEqual(latestQuery);
   });
 
@@ -284,9 +284,9 @@ describe('Query Editor Version Migration', () => {
         logLevelField: 'level'
       },
       rawSql: ''
-    } as unknown as CHQuery;
+    } as unknown as GreptimeQuery;
 
-    const latestQuery: CHBuilderQuery = {
+    const latestQuery: GreptimeBuilderQuery = {
       pluginVersion,
       editorType: EditorType.Builder,
       builderOptions: {
@@ -303,7 +303,7 @@ describe('Query Editor Version Migration', () => {
       refId: ''
     };
 
-    const migratedQuery = migrateCHQuery(v3Query);
+    const migratedQuery = migrateGreptimeQuery(v3Query);
     expect(migratedQuery).toEqual(latestQuery);
   });
 
@@ -315,9 +315,9 @@ describe('Query Editor Version Migration', () => {
         timeFieldType: 'DateTime',
       },
       rawSql: ''
-    } as unknown as CHQuery;
+    } as unknown as GreptimeQuery;
 
-    const latestQuery: CHBuilderQuery = {
+    const latestQuery: GreptimeBuilderQuery = {
       pluginVersion,
       editorType: EditorType.Builder,
       builderOptions: {
@@ -333,7 +333,7 @@ describe('Query Editor Version Migration', () => {
       refId: ''
     };
 
-    const migratedQuery = migrateCHQuery(v3Query);
+    const migratedQuery = migrateGreptimeQuery(v3Query);
     expect(migratedQuery).toEqual(latestQuery);
   });
 
@@ -344,9 +344,9 @@ describe('Query Editor Version Migration', () => {
         logLevelField: 'level',
       },
       rawSql: ''
-    } as unknown as CHQuery;
+    } as unknown as GreptimeQuery;
 
-    const latestQuery: CHBuilderQuery = {
+    const latestQuery: GreptimeBuilderQuery = {
       pluginVersion,
       editorType: EditorType.Builder,
       builderOptions: {
@@ -362,7 +362,7 @@ describe('Query Editor Version Migration', () => {
       refId: ''
     };
 
-    const migratedQuery = migrateCHQuery(v3Query);
+    const migratedQuery = migrateGreptimeQuery(v3Query);
     expect(migratedQuery).toEqual(latestQuery);
   });
 });

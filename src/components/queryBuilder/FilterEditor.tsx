@@ -5,7 +5,7 @@ import { Filter, FilterOperator, TableColumn, NullFilter } from 'types/queryBuil
 import * as utils from 'components/queryBuilder/utils';
 import labels from 'labels';
 import { styles } from 'styles';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import useUniqueMapKeys from 'hooks/useUniqueMapKeys';
 import { validateUserFilters } from './filterValidator';
 

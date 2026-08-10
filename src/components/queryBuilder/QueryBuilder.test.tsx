@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { QueryBuilder } from './QueryBuilder';
-import { Datasource } from 'data/CHDatasource';
+import { Datasource } from 'data/GreptimeDatasource';
 import { BuilderMode, QueryType } from 'types/queryBuilder';
 import { CoreApp } from '@grafana/data';
 
