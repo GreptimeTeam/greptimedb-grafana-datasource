@@ -8,7 +8,7 @@ on:
       - '*'
 
 env:
-  GRAFANA_VERSION: "11.2.5"
+  GRAFANA_VERSION: "12.4.8"
 
 jobs:
   build_release:

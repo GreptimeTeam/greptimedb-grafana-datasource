@@ -1,4 +1,4 @@
-FROM docker.io/grafana/grafana:11.2.5
+FROM docker.io/grafana/grafana:12.4.8
 
 COPY info8fcc-greptimedb-datasource-unsigned.zip .
 RUN unzip info8fcc-greptimedb-datasource-unsigned.zip -d /var/lib/grafana/plugins/
