@@ -140,9 +140,6 @@ func LoadSettings(ctx context.Context, config backend.DataSourceInstanceSettings
 		}
 	}
 
-	if jsonData["username"] != nil {
-		settings.Username = jsonData["username"].(string)
-	}
 	if jsonData["defaultDatabase"] != nil {
 		settings.DefaultDatabase = jsonData["defaultDatabase"].(string)
 	}
@@ -215,11 +212,15 @@ func LoadSettings(ctx context.Context, config backend.DataSourceInstanceSettings
 		settings.MaxOpenConns = "50"
 	}
 
-	// Load secure settings
-	password, ok := config.DecryptedSecureJSONData["password"]
-	if ok {
-		settings.Password = password
+	// Auth credentials come from Grafana's standard Basic Auth fields
+	// (Connection Auth UI / convertLegacyAuthProps).
+	if config.BasicAuthEnabled {
+		settings.Username = config.BasicAuthUser
+		if basicAuthPassword, ok := config.DecryptedSecureJSONData["basicAuthPassword"]; ok {
+			settings.Password = basicAuthPassword
+		}
 	}
+
 	tlsCACert, ok := config.DecryptedSecureJSONData["tlsCACert"]
 	if ok {
 		settings.TlsCACert = tlsCACert
@@ -258,7 +259,9 @@ func LoadSettings(ctx context.Context, config backend.DataSourceInstanceSettings
 	return settings, settings.isValid()
 }
 
-// loadHttpHeaders loads secure and plain text headers from the config
+// loadHttpHeaders loads secure and plain text headers from the config.
+// Supports plugin-specific httpHeaders / secureHttpHeaders.*, and Grafana Auth
+// UI custom headers (httpHeaderNameN / httpHeaderValueN).
 func loadHttpHeaders(jsonData map[string]interface{}, secureJsonData map[string]string) map[string]string {
 	httpHeaders := make(map[string]string)
 
@@ -280,6 +283,22 @@ func loadHttpHeaders(jsonData map[string]interface{}, secureJsonData map[string]
 		if v != "" && strings.HasPrefix(k, secureHeaderKeyPrefix) {
 			headerName := strings.TrimSpace(k[len(secureHeaderKeyPrefix):])
 			httpHeaders[headerName] = v
+		}
+	}
+
+	// Grafana Auth UI / convertLegacyAuthProps custom headers
+	for index := 1; ; index++ {
+		headerNameKey := fmt.Sprintf("httpHeaderName%d", index)
+		headerValueKey := fmt.Sprintf("httpHeaderValue%d", index)
+		nameRaw, exists := jsonData[headerNameKey]
+		if !exists {
+			break
+		}
+		headerName, _ := nameRaw.(string)
+		headerName = strings.TrimSpace(headerName)
+		headerValue := strings.TrimSpace(secureJsonData[headerValueKey])
+		if headerName != "" && headerValue != "" {
+			httpHeaders[headerName] = headerValue
 		}
 	}
 

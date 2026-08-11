@@ -38,19 +38,20 @@ func TestLoadSettings(t *testing.T) {
 				name: "should parse and set all json fields correctly",
 				args: args{
 					config: backend.DataSourceInstanceSettings{
-						UID: "ds-uid",
+						UID:              "ds-uid",
+						BasicAuthEnabled: true,
+						BasicAuthUser:    "baz",
 						JSONData: []byte(`{
 							"host": "foo", "port": 443,
 							"path": "custom-path", "protocol": "http",
-							"username": "baz",
 							"defaultDatabase":"example", "tlsSkipVerify": true, "tlsAuth" : true,
 							"tlsAuthWithCACert": true, "dialTimeout": "10", "enableSecureSocksProxy": true,
 							"httpHeaders": [{ "name": " test-plain-1 ", "value": "value-1", "secure": false }],
 							"forwardGrafanaHeaders": true
 						}`),
 						DecryptedSecureJSONData: map[string]string{
-							"password":  "bar",
-							"tlsCACert": "caCert", "tlsClientCert": "clientCert", "tlsClientKey": "clientKey",
+							"basicAuthPassword": "bar",
+							"tlsCACert":         "caCert", "tlsClientCert": "clientCert", "tlsClientKey": "clientKey",
 							"secureSocksProxyPassword":          "test",
 							"secureHttpHeaders. test-secure-2 ": "value-2",
 							"secureHttpHeaders.test-secure-3":   "value-3",
@@ -143,6 +144,90 @@ func TestLoadSettings(t *testing.T) {
 					QueryTimeout:    "60",
 					HttpHeaders:     map[string]string{},
 					RowLimit:        1000000,
+				},
+				wantErr: nil,
+				testCtx: ctx,
+			},
+			{
+				name: "should read Grafana basic auth fields",
+				args: args{
+					config: backend.DataSourceInstanceSettings{
+						BasicAuthEnabled: true,
+						BasicAuthUser:    "grafana-user",
+						JSONData:         []byte(`{"host": "http://localhost:4000"}`),
+						DecryptedSecureJSONData: map[string]string{
+							"basicAuthPassword": "grafana-pass",
+						},
+					},
+				},
+				wantSettings: Settings{
+					Host:            "http://localhost:4000",
+					Username:        "grafana-user",
+					Password:        "grafana-pass",
+					ConnMaxLifetime: "5",
+					DialTimeout:     "10",
+					MaxIdleConns:    "25",
+					MaxOpenConns:    "50",
+					QueryTimeout:    "60",
+					HttpHeaders:     map[string]string{},
+					RowLimit:        1000000,
+				},
+				wantErr: nil,
+				testCtx: ctx,
+			},
+			{
+				name: "should ignore legacy username/password when basic auth is disabled",
+				args: args{
+					config: backend.DataSourceInstanceSettings{
+						BasicAuthEnabled: false,
+						BasicAuthUser:    "grafana-user",
+						JSONData:         []byte(`{"host": "http://localhost:4000", "username": "legacy-user"}`),
+						DecryptedSecureJSONData: map[string]string{
+							"password":          "legacy-pass",
+							"basicAuthPassword": "grafana-pass",
+						},
+					},
+				},
+				wantSettings: Settings{
+					Host:            "http://localhost:4000",
+					ConnMaxLifetime: "5",
+					DialTimeout:     "10",
+					MaxIdleConns:    "25",
+					MaxOpenConns:    "50",
+					QueryTimeout:    "60",
+					HttpHeaders:     map[string]string{},
+					RowLimit:        1000000,
+				},
+				wantErr: nil,
+				testCtx: ctx,
+			},
+			{
+				name: "should load Grafana Auth UI custom headers",
+				args: args{
+					config: backend.DataSourceInstanceSettings{
+						JSONData: []byte(`{
+							"host": "http://localhost:4000",
+							"httpHeaderName1": "Authorization",
+							"httpHeaderName2": "X-Custom"
+						}`),
+						DecryptedSecureJSONData: map[string]string{
+							"httpHeaderValue1": "Basic dXNlcjpwYXNz",
+							"httpHeaderValue2": "custom-value",
+						},
+					},
+				},
+				wantSettings: Settings{
+					Host:            "http://localhost:4000",
+					ConnMaxLifetime: "5",
+					DialTimeout:     "10",
+					MaxIdleConns:    "25",
+					MaxOpenConns:    "50",
+					QueryTimeout:    "60",
+					HttpHeaders: map[string]string{
+						"Authorization": "Basic dXNlcjpwYXNz",
+						"X-Custom":      "custom-value",
+					},
+					RowLimit: 1000000,
 				},
 				wantErr: nil,
 				testCtx: ctx,
