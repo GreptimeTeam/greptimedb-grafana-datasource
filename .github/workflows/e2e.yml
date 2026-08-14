@@ -72,16 +72,31 @@ jobs:
             sleep 5
             ELAPSED=$((ELAPSED + 5))
           done
-      # - name: Wait for Grafana to start
-      #   run: |
-      #     curl http://localhost:3000
-      #     #RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
-      #     #echo $response
-      #     #if [ $RESPONSE -ne 200 ]; then
-      #     #  sleep 5;
-      #     #  echo "Grafana is not accessible"
-      #     #  exit 1
-      #     #fi
+
+      - name: Wait for GreptimeDB to start
+        run: |
+          TIMEOUT=300
+          ELAPSED=0
+          GREPTIME_URL="http://localhost:4000/v1/sql"
+          while true; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$GREPTIME_URL" || true)
+            HTTP_CODE="${HTTP_CODE:-0}"
+            echo "Checking GreptimeDB at $GREPTIME_URL. HTTP Status Code: $HTTP_CODE"
+
+            # 200/400/401/405 all mean service is reachable on HTTP.
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "400" ] || [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "405" ]; then
+              echo "GreptimeDB is reachable"
+              break
+            fi
+
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+              echo "Timeout waiting for GreptimeDB to become reachable"
+              exit 1
+            fi
+
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
 
       - name: Run Playwright tests
         run: yarn playwright test

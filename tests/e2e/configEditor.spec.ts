@@ -8,12 +8,8 @@ test.describe('Config Editor', () => {
     const configPage = await createDataSourceConfigPage({ type: PLUGIN_UID });
     await page.locator('input[name="host"]').fill(GreptimeDB_URL);
 
-    await configPage.saveAndTest({
-      path: ''
-    });
+    await configPage.saveAndTest();
     await expect(configPage).toHaveAlert('success');
-
-    await page.pause();
   });
 
   test('mandatory fields should show error if left empty', async ({ createDataSourceConfigPage, page }) => {
@@ -23,6 +19,5 @@ test.describe('Config Editor', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByText('Server address required')).toBeVisible();
     await expect(configPage).not.toHaveAlert('success');
-    // await expect(configPage.saveAndTest({path: ''})).not.toBeOK();
   });
 });
