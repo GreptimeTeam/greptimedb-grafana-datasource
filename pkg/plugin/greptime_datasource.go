@@ -174,12 +174,18 @@ func (ds *GreptimeDatasource) tlsConfig() (*tls.Config, error) {
 	if ds.settings.TlsAuthWithCACert || ds.settings.TlsClientAuth {
 		return getTLSConfig(ds.settings)
 	}
+
+	baseConfig := &tls.Config{
+		InsecureSkipVerify: ds.settings.InsecureSkipVerify,
+		ServerName:         serverNameFromHost(ds.settings.Host),
+	}
+
 	if ds.settings.Secure {
-		return &tls.Config{InsecureSkipVerify: ds.settings.InsecureSkipVerify}, nil
+		return baseConfig, nil
 	}
 	host := strings.TrimSpace(ds.settings.Host)
 	if strings.HasPrefix(host, "https://") {
-		return &tls.Config{InsecureSkipVerify: ds.settings.InsecureSkipVerify}, nil
+		return baseConfig, nil
 	}
 	return nil, nil
 }

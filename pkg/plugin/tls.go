@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net"
+	"net/url"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	sdkproxy "github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
@@ -12,12 +14,21 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-// getTLSConfig returns tlsConfig from settings.
-// Logic reused from https://github.com/grafana/grafana/blob/615c153b3a2e4d80cff263e67424af6edb992211/pkg/models/datasource_cache.go#L211
+func serverNameFromHost(host string) string {
+	host = strings.TrimSpace(host)
+	if u, err := url.Parse(host); err == nil && u.Hostname() != "" {
+		return u.Hostname()
+	}
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		return h
+	}
+	return host
+}
+
 func getTLSConfig(settings Settings) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: settings.InsecureSkipVerify,
-		ServerName:         settings.Host,
+		ServerName:         serverNameFromHost(settings.Host),
 	}
 	if settings.TlsClientAuth || settings.TlsAuthWithCACert {
 		if settings.TlsAuthWithCACert && len(settings.TlsCACert) > 0 {
