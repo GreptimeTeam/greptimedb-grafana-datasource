@@ -7,7 +7,8 @@ on:
 jobs:
   test:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    # Pin 24.04: ubuntu-latest is 26.04 and Playwright 1.50.1 cannot install Chromium there.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
